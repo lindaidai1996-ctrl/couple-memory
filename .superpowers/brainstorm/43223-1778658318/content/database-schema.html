@@ -1,0 +1,152 @@
+<h2>数据库模型设计</h2>
+<p class="subtitle">PostgreSQL + Prisma — 共享数据库 Row-Level 多租户</p>
+
+<div class="mockup">
+  <div class="mockup-header">Entity Relationship Diagram</div>
+  <div class="mockup-body" style="padding: 32px; font-family: monospace; font-size: 12px; line-height: 1.5; background: #0a0a0a; overflow-x: auto;">
+
+    <div style="display: flex; gap: 24px; flex-wrap: wrap; justify-content: center;">
+
+      <!-- User Table -->
+      <div style="min-width: 240px; background: #111; border: 2px solid #0070f3; border-radius: 8px; overflow: hidden;">
+        <div style="background: #0070f3; color: white; padding: 8px 12px; font-weight: bold; font-size: 13px;">User</div>
+        <div style="padding: 12px; color: #ccc;">
+          <div><span style="color: #f39c12;">PK</span> id <span style="color: #666;">String (cuid)</span></div>
+          <div>email <span style="color: #666;">String @unique</span></div>
+          <div>password <span style="color: #666;">String (hashed)</span></div>
+          <div>name <span style="color: #666;">String</span></div>
+          <div>avatar <span style="color: #666;">String?</span></div>
+          <div>createdAt <span style="color: #666;">DateTime</span></div>
+          <div style="border-top: 1px solid #333; margin-top: 8px; padding-top: 8px;">
+            <span style="color: #2ecc71;">→</span> couples <span style="color: #666;">CoupleUser[]</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Couple (Tenant) Table -->
+      <div style="min-width: 260px; background: #111; border: 2px solid #e94560; border-radius: 8px; overflow: hidden;">
+        <div style="background: #e94560; color: white; padding: 8px 12px; font-weight: bold; font-size: 13px;">Couple (Tenant)</div>
+        <div style="padding: 12px; color: #ccc;">
+          <div><span style="color: #f39c12;">PK</span> id <span style="color: #666;">String (cuid)</span></div>
+          <div>slug <span style="color: #666;">String @unique</span></div>
+          <div>name <span style="color: #666;">String ("我们的故事")</span></div>
+          <div>startDate <span style="color: #666;">DateTime?</span></div>
+          <div>coverImage <span style="color: #666;">String?</span></div>
+          <div>theme <span style="color: #666;">String @default("minimal")</span></div>
+          <div>isPublic <span style="color: #666;">Boolean @default(true)</span></div>
+          <div>plan <span style="color: #666;">Enum (FREE/PRO)</span></div>
+          <div>createdAt <span style="color: #666;">DateTime</span></div>
+          <div style="border-top: 1px solid #333; margin-top: 8px; padding-top: 8px;">
+            <span style="color: #2ecc71;">→</span> members <span style="color: #666;">CoupleUser[]</span><br>
+            <span style="color: #2ecc71;">→</span> albums <span style="color: #666;">Album[]</span><br>
+            <span style="color: #2ecc71;">→</span> photos <span style="color: #666;">Photo[]</span><br>
+            <span style="color: #2ecc71;">→</span> milestones <span style="color: #666;">Milestone[]</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CoupleUser Join Table -->
+      <div style="min-width: 220px; background: #111; border: 2px solid #9b59b6; border-radius: 8px; overflow: hidden;">
+        <div style="background: #9b59b6; color: white; padding: 8px 12px; font-weight: bold; font-size: 13px;">CoupleUser (关联表)</div>
+        <div style="padding: 12px; color: #ccc;">
+          <div><span style="color: #f39c12;">PK</span> id <span style="color: #666;">String</span></div>
+          <div><span style="color: #3498db;">FK</span> userId <span style="color: #666;">→ User</span></div>
+          <div><span style="color: #3498db;">FK</span> coupleId <span style="color: #666;">→ Couple</span></div>
+          <div>role <span style="color: #666;">Enum (OWNER/PARTNER)</span></div>
+          <div>nickname <span style="color: #666;">String?</span></div>
+          <div>joinedAt <span style="color: #666;">DateTime</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Second Row -->
+    <div style="display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; margin-top: 24px;">
+
+      <!-- Album Table -->
+      <div style="min-width: 240px; background: #111; border: 2px solid #2ecc71; border-radius: 8px; overflow: hidden;">
+        <div style="background: #2ecc71; color: white; padding: 8px 12px; font-weight: bold; font-size: 13px;">Album</div>
+        <div style="padding: 12px; color: #ccc;">
+          <div><span style="color: #f39c12;">PK</span> id <span style="color: #666;">String</span></div>
+          <div><span style="color: #3498db;">FK</span> coupleId <span style="color: #666;">→ Couple</span></div>
+          <div>title <span style="color: #666;">String</span></div>
+          <div>description <span style="color: #666;">String?</span></div>
+          <div>coverPhotoId <span style="color: #666;">String?</span></div>
+          <div>sortOrder <span style="color: #666;">Int</span></div>
+          <div>createdAt <span style="color: #666;">DateTime</span></div>
+          <div style="border-top: 1px solid #333; margin-top: 8px; padding-top: 8px;">
+            <span style="color: #2ecc71;">→</span> photos <span style="color: #666;">Photo[]</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Photo Table -->
+      <div style="min-width: 280px; background: #111; border: 2px solid #f39c12; border-radius: 8px; overflow: hidden;">
+        <div style="background: #f39c12; color: white; padding: 8px 12px; font-weight: bold; font-size: 13px;">Photo (核心表)</div>
+        <div style="padding: 12px; color: #ccc;">
+          <div><span style="color: #f39c12;">PK</span> id <span style="color: #666;">String</span></div>
+          <div><span style="color: #3498db;">FK</span> coupleId <span style="color: #666;">→ Couple</span></div>
+          <div><span style="color: #3498db;">FK</span> albumId <span style="color: #666;">→ Album?</span></div>
+          <div><span style="color: #3498db;">FK</span> uploadedBy <span style="color: #666;">→ User</span></div>
+          <div style="border-top: 1px dashed #333; margin: 6px 0; padding-top: 6px;">
+            <div style="color: #f39c12; font-size: 11px; margin-bottom: 4px;">— 图片信息 —</div>
+            <div>originalUrl <span style="color: #666;">String (OSS)</span></div>
+            <div>thumbnailUrl <span style="color: #666;">String</span></div>
+            <div>mediumUrl <span style="color: #666;">String</span></div>
+            <div>width <span style="color: #666;">Int</span></div>
+            <div>height <span style="color: #666;">Int</span></div>
+            <div>fileSize <span style="color: #666;">Int</span></div>
+          </div>
+          <div style="border-top: 1px dashed #333; margin: 6px 0; padding-top: 6px;">
+            <div style="color: #f39c12; font-size: 11px; margin-bottom: 4px;">— EXIF 数据 —</div>
+            <div>takenAt <span style="color: #666;">DateTime?</span></div>
+            <div>latitude <span style="color: #666;">Float?</span></div>
+            <div>longitude <span style="color: #666;">Float?</span></div>
+            <div>camera <span style="color: #666;">String?</span></div>
+            <div>lens <span style="color: #666;">String?</span></div>
+            <div>exifData <span style="color: #666;">Json? (完整EXIF)</span></div>
+          </div>
+          <div style="border-top: 1px dashed #333; margin: 6px 0; padding-top: 6px;">
+            <div style="color: #f39c12; font-size: 11px; margin-bottom: 4px;">— AI 生成 —</div>
+            <div>aiCaption <span style="color: #666;">String?</span></div>
+            <div>userCaption <span style="color: #666;">String?</span></div>
+            <div>aiLayout <span style="color: #666;">String?</span></div>
+          </div>
+          <div>sortOrder <span style="color: #666;">Int</span></div>
+          <div>createdAt <span style="color: #666;">DateTime</span></div>
+        </div>
+      </div>
+
+      <!-- Milestone Table -->
+      <div style="min-width: 240px; background: #111; border: 2px solid #1abc9c; border-radius: 8px; overflow: hidden;">
+        <div style="background: #1abc9c; color: white; padding: 8px 12px; font-weight: bold; font-size: 13px;">Milestone (里程碑)</div>
+        <div style="padding: 12px; color: #ccc;">
+          <div><span style="color: #f39c12;">PK</span> id <span style="color: #666;">String</span></div>
+          <div><span style="color: #3498db;">FK</span> coupleId <span style="color: #666;">→ Couple</span></div>
+          <div>title <span style="color: #666;">String ("第一次旅行")</span></div>
+          <div>description <span style="color: #666;">String?</span></div>
+          <div>date <span style="color: #666;">DateTime</span></div>
+          <div>icon <span style="color: #666;">String?</span></div>
+          <div>location <span style="color: #666;">String?</span></div>
+          <div>coverPhotoId <span style="color: #666;">String?</span></div>
+          <div>sortOrder <span style="color: #666;">Int</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Relationship Lines Description -->
+    <div style="margin-top: 28px; padding: 16px; background: #111; border: 1px solid #222; border-radius: 8px;">
+      <div style="color: #888; font-weight: bold; margin-bottom: 8px;">关系说明</div>
+      <div style="color: #aaa; font-size: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div><span style="color: #0070f3;">User</span> ←M:N→ <span style="color: #e94560;">Couple</span> (通过 CoupleUser)</div>
+        <div><span style="color: #e94560;">Couple</span> ←1:N→ <span style="color: #2ecc71;">Album</span></div>
+        <div><span style="color: #e94560;">Couple</span> ←1:N→ <span style="color: #f39c12;">Photo</span></div>
+        <div><span style="color: #2ecc71;">Album</span> ←1:N→ <span style="color: #f39c12;">Photo</span></div>
+        <div><span style="color: #e94560;">Couple</span> ←1:N→ <span style="color: #1abc9c;">Milestone</span></div>
+        <div>所有表通过 <span style="color: #e94560;">coupleId</span> 实现租户隔离</div>
+      </div>
+    </div>
+
+  </div>
+</div>

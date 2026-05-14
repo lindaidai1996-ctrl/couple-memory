@@ -1,0 +1,126 @@
+<h2>系统架构总览</h2>
+<p class="subtitle">情侣记忆网站 SaaS 平台 — 混合部署架构</p>
+
+<div class="mockup">
+  <div class="mockup-header">Architecture Overview</div>
+  <div class="mockup-body" style="padding: 32px; font-family: monospace; font-size: 13px; line-height: 1.6; background: #0a0a0a;">
+
+    <!-- User Layer -->
+    <div style="text-align: center; margin-bottom: 24px;">
+      <div style="display: inline-block; background: #1a1a2e; border: 1px solid #16213e; border-radius: 8px; padding: 12px 24px; color: #e94560;">
+        <strong>Users / Visitors</strong>
+        <div style="font-size: 11px; color: #888;">couple-name.yourdomain.com</div>
+      </div>
+    </div>
+
+    <div style="text-align: center; color: #444; margin-bottom: 16px;">|<br>v</div>
+
+    <!-- Vercel Layer -->
+    <div style="border: 2px solid #0070f3; border-radius: 12px; padding: 20px; margin-bottom: 24px; background: #0a1628;">
+      <div style="color: #0070f3; font-weight: bold; margin-bottom: 12px; font-size: 14px;">
+        Vercel (Frontend)
+      </div>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 140px; background: #111; border: 1px solid #222; border-radius: 6px; padding: 10px; text-align: center;">
+          <div style="color: #0070f3; font-size: 12px;">Next.js App</div>
+          <div style="color: #666; font-size: 11px;">SSR + CSR</div>
+        </div>
+        <div style="flex: 1; min-width: 140px; background: #111; border: 1px solid #222; border-radius: 6px; padding: 10px; text-align: center;">
+          <div style="color: #0070f3; font-size: 12px;">Tailwind CSS</div>
+          <div style="color: #666; font-size: 11px;">Photographer Aesthetic</div>
+        </div>
+        <div style="flex: 1; min-width: 140px; background: #111; border: 1px solid #222; border-radius: 6px; padding: 10px; text-align: center;">
+          <div style="color: #0070f3; font-size: 12px;">Zustand</div>
+          <div style="color: #666; font-size: 11px;">State Management</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align: center; color: #444; margin-bottom: 16px;">| REST API / tRPC |<br>v</div>
+
+    <!-- Docker Server Layer -->
+    <div style="border: 2px solid #e94560; border-radius: 12px; padding: 20px; margin-bottom: 24px; background: #1a0a10;">
+      <div style="color: #e94560; font-weight: bold; margin-bottom: 12px; font-size: 14px;">
+        Cloud Server — Docker Compose
+      </div>
+
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;">
+        <div style="flex: 1; min-width: 120px; background: #111; border: 1px solid #333; border-radius: 6px; padding: 10px; text-align: center;">
+          <div style="color: #f39c12; font-size: 12px;">API Server</div>
+          <div style="color: #666; font-size: 11px;">Node.js / Express</div>
+        </div>
+        <div style="flex: 1; min-width: 120px; background: #111; border: 1px solid #333; border-radius: 6px; padding: 10px; text-align: center;">
+          <div style="color: #2ecc71; font-size: 12px;">AI Service</div>
+          <div style="color: #666; font-size: 11px;">Unified Adapter</div>
+        </div>
+        <div style="flex: 1; min-width: 120px; background: #111; border: 1px solid #333; border-radius: 6px; padding: 10px; text-align: center;">
+          <div style="color: #9b59b6; font-size: 12px;">Image Pipeline</div>
+          <div style="color: #666; font-size: 11px;">Sharp + EXIF</div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 150px; background: #111; border: 1px solid #333; border-radius: 6px; padding: 10px; text-align: center;">
+          <div style="color: #3498db; font-size: 12px;">PostgreSQL</div>
+          <div style="color: #666; font-size: 11px;">Core Data + Prisma</div>
+        </div>
+        <div style="flex: 1; min-width: 150px; background: #111; border: 1px solid #333; border-radius: 6px; padding: 10px; text-align: center;">
+          <div style="color: #e74c3c; font-size: 12px;">Redis</div>
+          <div style="color: #666; font-size: 11px;">Cache + Session</div>
+        </div>
+        <div style="flex: 1; min-width: 150px; background: #111; border: 1px solid #333; border-radius: 6px; padding: 10px; text-align: center;">
+          <div style="color: #1abc9c; font-size: 12px;">Nginx</div>
+          <div style="color: #666; font-size: 11px;">Reverse Proxy + SSL</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align: center; color: #444; margin-bottom: 16px;">|<br>v</div>
+
+    <!-- External Services -->
+    <div style="border: 2px dashed #555; border-radius: 12px; padding: 20px; background: #0a0a0a;">
+      <div style="color: #888; font-weight: bold; margin-bottom: 12px; font-size: 14px;">
+        External Services
+      </div>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 120px; background: #111; border: 1px solid #333; border-radius: 6px; padding: 10px; text-align: center;">
+          <div style="color: #ff9500; font-size: 12px;">Aliyun OSS</div>
+          <div style="color: #666; font-size: 11px;">Image Storage + CDN</div>
+        </div>
+        <div style="flex: 1; min-width: 120px; background: #111; border: 1px solid #333; border-radius: 6px; padding: 10px; text-align: center;">
+          <div style="color: #00d4aa; font-size: 12px;">DeepSeek API</div>
+          <div style="color: #666; font-size: 11px;">Text Generation</div>
+        </div>
+        <div style="flex: 1; min-width: 120px; background: #111; border: 1px solid #333; border-radius: 6px; padding: 10px; text-align: center;">
+          <div style="color: #888; font-size: 12px;">Other AI APIs</div>
+          <div style="color: #666; font-size: 11px;">Pluggable Models</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div style="margin-top: 24px;">
+  <h3>架构说明</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px;">
+    <div style="background: #111; border: 1px solid #222; border-radius: 8px; padding: 16px;">
+      <div style="color: #0070f3; font-weight: bold; margin-bottom: 8px;">Frontend (Vercel)</div>
+      <ul style="color: #aaa; font-size: 13px; padding-left: 16px; margin: 0;">
+        <li>Next.js 14 App Router</li>
+        <li>Tailwind CSS + Framer Motion</li>
+        <li>Zustand 状态管理</li>
+        <li>自动部署 + 全球 CDN</li>
+      </ul>
+    </div>
+    <div style="background: #111; border: 1px solid #222; border-radius: 8px; padding: 16px;">
+      <div style="color: #e94560; font-weight: bold; margin-bottom: 8px;">Backend (Docker)</div>
+      <ul style="color: #aaa; font-size: 13px; padding-left: 16px; margin: 0;">
+        <li>Node.js API (Express/Fastify)</li>
+        <li>Prisma ORM + PostgreSQL</li>
+        <li>Redis Cache + BullMQ</li>
+        <li>Docker Compose 编排</li>
+      </ul>
+    </div>
+  </div>
+</div>
