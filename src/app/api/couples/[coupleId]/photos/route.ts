@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withAuth } from '@/lib/api-middleware'
-import type { PhotoStatus } from '../../../../../../../../prisma/generated/prisma/enums'
+import type { PhotoStatus } from '../../../../../../prisma/generated/prisma/enums'
 
 export const GET = withAuth(async (req, { coupleUser }) => {
   const url = new URL(req.url)
