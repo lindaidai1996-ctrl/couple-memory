@@ -2,6 +2,16 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withAuth } from '@/lib/api-middleware'
 
+export const GET = withAuth(async (_req, { coupleUser }, params) => {
+  const album = await prisma.album.findFirst({
+    where: { id: params.albumId, coupleId: coupleUser.coupleId },
+  })
+  if (!album) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+  return NextResponse.json(album)
+})
+
 export const PATCH = withAuth(async (req, { coupleUser }, params) => {
   const body = await req.json()
   const album = await prisma.album.updateMany({

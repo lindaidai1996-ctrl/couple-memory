@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { getSTSCredentials } from '@/lib/oss'
+import { generateSignedPutUrl } from '@/lib/oss'
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB（压缩前原图上限）
+const MAX_FILE_SIZE = 10 * 1024 * 1024
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic']
 
 export async function POST(req: Request) {
@@ -33,6 +33,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'No couple space found' }, { status: 400 })
   }
 
-  const result = await getSTSCredentials(coupleUser.coupleId, fileName)
-  return NextResponse.json(result)
+  try {
+    const result = generateSignedPutUrl(coupleUser.coupleId, fileName, fileType)
+    return NextResponse.json(result)
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Upload sign failed'
+    console.error('[upload/sign]', message)
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }

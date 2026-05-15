@@ -367,7 +367,7 @@ NEXTAUTH_URL=https://your-domain.com
 # 阿里云 OSS
 OSS_ACCESS_KEY_ID=xxx
 OSS_ACCESS_KEY_SECRET=xxx
-OSS_BUCKET=couple-memory
+OSS_BUCKET=couple-memory-bucket
 OSS_REGION=oss-cn-guangzhou
 OSS_CDN_DOMAIN=cdn.your-domain.com
 

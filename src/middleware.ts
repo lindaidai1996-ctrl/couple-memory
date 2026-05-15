@@ -1,6 +1,8 @@
+import NextAuth from "next-auth"
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
-import { auth } from "@/lib/auth"
+import authConfig from "@/lib/auth.config"
+
+const { auth } = NextAuth(authConfig)
 
 export default auth((req) => {
   const { nextUrl, auth: session } = req
@@ -11,9 +13,6 @@ export default auth((req) => {
                       nextUrl.pathname.startsWith("/albums") ||
                       nextUrl.pathname.startsWith("/settings") ||
                       nextUrl.pathname.startsWith("/timeline")
-  const isPublic = nextUrl.pathname === "/" ||
-                   nextUrl.pathname.startsWith("/s/") ||
-                   nextUrl.pathname.startsWith("/api/health")
 
   if (isAuthPage && isLoggedIn) {
     return NextResponse.redirect(new URL("/dashboard", req.url))
@@ -28,6 +27,6 @@ export default auth((req) => {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|images).*)",
+    "/((?!_next/static|_next/image|favicon.ico|images|api).*)",
   ],
 }

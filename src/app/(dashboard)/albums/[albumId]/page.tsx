@@ -71,11 +71,12 @@ export default function AlbumDetailPage() {
     return () => clearInterval(interval)
   }, [coupleId, albumId, photos])
 
+  useEffect(() => {
+    if (!loading && !album) router.push('/albums')
+  }, [loading, album, router])
+
   if (loading) return <DetailSkeleton />
-  if (!album) {
-    router.push('/albums')
-    return null
-  }
+  if (!album) return null
 
   return (
     <div>

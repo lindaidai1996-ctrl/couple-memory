@@ -1,4 +1,61 @@
 import type { Agent, PipelineInput, AgentOutput } from './engine/types'
+import { callDeepSeek } from './deepseek-client'
+
+const ANALYSIS_PROMPT = `你是一位专业摄影师兼情感分析师。请分析这张情侣照片的拍摄信息，以 JSON 格式输出：
+{
+  "scene": "场景描述，20-50字",
+  "mood": "情绪氛围，如温馨浪漫、活泼欢快",
+  "composition": "构图方式，如三分法、对称、引导线",
+  "colorTone": "色调分析，如暖色调、冷色调",
+  "subjects": ["主体1", "主体2"],
+  "confidence": 0.0-1.0
+}
+只输出 JSON。`
+
+async function analyzeWithClaude(input: PipelineInput, contextParts: string[]): Promise<AgentOutput> {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.CLAUDE_API_KEY!,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 500,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'url', url: input.photoUrl } },
+          {
+            type: 'text',
+            text: `${ANALYSIS_PROMPT}${contextParts.length ? `\n拍摄信息：${contextParts.join('，')}` : ''}`,
+          },
+        ],
+      }],
+    }),
+  })
+
+  const data = await response.json() as {
+    content: { text: string }[]
+    usage?: { input_tokens: number; output_tokens: number }
+  }
+  const text = data.content[0].text
+  const tokens = (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0)
+
+  return { data: JSON.parse(text), tokens, cost: tokens * 0.000015 }
+}
+
+async function analyzeWithDeepSeek(contextParts: string[]): Promise<AgentOutput> {
+  const userPrompt = contextParts.length
+    ? `以下是一张照片的拍摄信息：\n${contextParts.join('\n')}\n\n请根据这些信息推断并分析这张照片。`
+    : '这是一张情侣合照，请给出一个通用的温馨场景分析。'
+
+  const { text, tokens, cost } = await callDeepSeek(ANALYSIS_PROMPT, userPrompt)
+  const cleaned = text.replace(/```json\s*|```/g, '').trim()
+
+  return { data: JSON.parse(cleaned), tokens, cost }
+}
 
 export const photoAnalyzer: Agent = {
   id: 'photoAnalyzer',
@@ -10,50 +67,9 @@ export const photoAnalyzer: Agent = {
       contextParts.push(`相机：${String(input.exif.cameraMake)} ${String(input.exif.cameraModel || '')}`)
     }
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.CLAUDE_API_KEY!,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 500,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'url', url: input.photoUrl } },
-            {
-              type: 'text',
-              text: `你是一位专业摄影师兼情感分析师。请分析这张情侣照片，以 JSON 格式输出：
-{
-  "scene": "场景描述，20-50字",
-  "mood": "情绪氛围，如温馨浪漫、活泼欢快",
-  "composition": "构图方式，如三分法、对称、引导线",
-  "colorTone": "色调分析，如暖色调、冷色调",
-  "subjects": ["主体1", "主体2"],
-  "confidence": 0.0-1.0
-}
-${contextParts.length ? `\n拍摄信息：${contextParts.join('，')}` : ''}
-只输出 JSON。`,
-            },
-          ],
-        }],
-      }),
-    })
-
-    const data = await response.json() as {
-      content: { text: string }[]
-      usage?: { input_tokens: number; output_tokens: number }
+    if (process.env.CLAUDE_API_KEY) {
+      return analyzeWithClaude(input, contextParts)
     }
-    const text = data.content[0].text
-    const tokens = (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0)
-
-    return {
-      data: JSON.parse(text),
-      tokens,
-      cost: tokens * 0.000015,
-    }
+    return analyzeWithDeepSeek(contextParts)
   },
 }

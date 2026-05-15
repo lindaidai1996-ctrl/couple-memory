@@ -34,15 +34,11 @@ export async function compressAndUpload(
     const err = await signRes.json()
     throw new Error(err.error || 'Failed to get upload signature')
   }
-  const { ossKey, bucket, region, credentials } = await signRes.json()
+  const { ossKey, signedUrl } = await signRes.json()
 
-  const uploadUrl = `https://${bucket}.${region}.aliyuncs.com/${ossKey}`
-  const uploadRes = await fetch(uploadUrl, {
+  const uploadRes = await fetch(signedUrl, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'image/jpeg',
-      'x-oss-security-token': credentials.securityToken,
-    },
+    headers: { 'Content-Type': 'image/jpeg' },
     body: compressed,
   })
   if (!uploadRes.ok) throw new Error('Failed to upload to OSS')
