@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withAuth } from '@/lib/api-middleware'
+import { processPhoto } from '@/lib/pipeline/process-photo'
 import type { PhotoStatus } from '../../../../../../prisma/generated/prisma/enums'
 
 export const GET = withAuth(async (req, { coupleUser }) => {
@@ -49,6 +50,9 @@ export const POST = withAuth(async (req, { coupleUser }) => {
       status: 'PROCESSING',
     },
   })
+
+  // 异步触发图片处理（不阻塞响应）
+  processPhoto(photo.id, ossKey)
 
   return NextResponse.json({ id: photo.id, status: 'PROCESSING' }, { status: 201 })
 })
