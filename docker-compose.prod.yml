@@ -1,6 +1,6 @@
 services:
   app:
-    image: registry.cn-guangzhou.aliyuncs.com/couple-memory/app:latest
+    image: registry.cn-hongkong.aliyuncs.com/couple-memory/app:latest
     ports:
       - "3000:3000"
     env_file:

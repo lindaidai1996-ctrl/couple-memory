@@ -5,8 +5,8 @@ on:
     branches: [main]
 
 env:
-  REGISTRY: registry.cn-guangzhou.aliyuncs.com
-  IMAGE: registry.cn-guangzhou.aliyuncs.com/couple-memory/app
+  REGISTRY: registry.cn-hongkong.aliyuncs.com
+  IMAGE: registry.cn-hongkong.aliyuncs.com/couple-memory/app
 
 jobs:
   build-and-deploy:
@@ -45,7 +45,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            docker login -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }} registry.cn-guangzhou.aliyuncs.com
+            docker login -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }} registry.cn-hongkong.aliyuncs.com
             cd /opt/couple-memory
             docker compose -f docker-compose.prod.yml pull app
             docker compose -f docker-compose.prod.yml up -d
