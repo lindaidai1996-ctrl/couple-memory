@@ -27,12 +27,11 @@ export function Sidebar() {
       </button>
 
       {/* 移动端遮罩 */}
-      {mobileOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black/30 z-40"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
+      <div
+        className={`lg:hidden fixed inset-0 z-40 bg-black/30 transition-opacity duration-300
+          ${mobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        onClick={() => setMobileOpen(false)}
+      />
 
       {/* 侧边栏 */}
       <aside
