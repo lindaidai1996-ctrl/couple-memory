@@ -3,6 +3,7 @@ import { downloadFromOSS } from '@/lib/oss'
 import { generateSizes } from './image-resize'
 import { extractExif } from './exif-extract'
 import { reverseGeocode } from './geocode'
+import { runAIPipeline, applyPipelineResults } from '@/lib/agents/pipeline'
 
 export async function processPhoto(photoId: string, ossKey: string) {
   try {
@@ -39,8 +40,31 @@ export async function processPhoto(photoId: string, ossKey: string) {
           iso: exif.iso,
         }),
         locationName,
-        status: 'READY',
       },
+    })
+
+    // AI Pipeline：图片分析 → 文案/排版/时间轴（并行）
+    const photo = await prisma.photo.findUnique({
+      where: { id: photoId },
+      include: { album: true },
+    })
+
+    const pipelineResult = await runAIPipeline({
+      photoId,
+      photoUrl: `https://${cdnDomain}/${sizes.displayPath}`,
+      exif: exif as Record<string, unknown> | null,
+      width: sizes.width || 0,
+      height: sizes.height || 0,
+      locationName,
+    }, photo!.album.coupleId)
+
+    if (pipelineResult.status === 'COMPLETED') {
+      await applyPipelineResults(photoId, pipelineResult.nodeResults, photo!.album.coupleId)
+    }
+
+    await prisma.photo.update({
+      where: { id: photoId },
+      data: { status: 'READY' },
     })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error'
