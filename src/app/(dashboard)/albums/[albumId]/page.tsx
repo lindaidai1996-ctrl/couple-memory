@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { PhotoUploader } from '@/components/photo-uploader'
 import Link from 'next/link'
@@ -33,27 +33,29 @@ export default function AlbumDetailPage() {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
-  const fetchData = useCallback(async () => {
-    const coupleRes = await fetch('/api/couples/mine')
-    if (!coupleRes.ok) return
-    const couple = await coupleRes.json()
-    setCoupleId(couple.id)
+  useEffect(() => {
+    async function fetchData() {
+      const coupleRes = await fetch('/api/couples/mine')
+      if (!coupleRes.ok) return
+      const couple = await coupleRes.json()
+      setCoupleId(couple.id)
 
-    const [albumRes, photosRes] = await Promise.all([
-      fetch(`/api/couples/${couple.id}/albums/${albumId}`),
-      fetch(`/api/couples/${couple.id}/photos?albumId=${albumId}&limit=100`),
-    ])
+      const [albumRes, photosRes] = await Promise.all([
+        fetch(`/api/couples/${couple.id}/albums/${albumId}`),
+        fetch(`/api/couples/${couple.id}/photos?albumId=${albumId}&limit=100`),
+      ])
 
-    if (albumRes.ok) setAlbum(await albumRes.json())
-    if (photosRes.ok) {
-      const data = await photosRes.json()
-      setPhotos(data.photos)
+      if (albumRes.ok) setAlbum(await albumRes.json())
+      if (photosRes.ok) {
+        const data = await photosRes.json()
+        setPhotos(data.photos)
+      }
+      setLoading(false)
     }
-    setLoading(false)
-  }, [albumId])
-
-  useEffect(() => { fetchData() }, [fetchData])
+    fetchData()
+  }, [albumId, refreshKey])
 
   useEffect(() => {
     if (!coupleId) return
@@ -105,7 +107,7 @@ export default function AlbumDetailPage() {
           <PhotoUploader
             coupleId={coupleId}
             albumId={albumId}
-            onUploaded={() => fetchData()}
+            onUploaded={() => setRefreshKey(k => k + 1)}
           />
         </div>
       )}

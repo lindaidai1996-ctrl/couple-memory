@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 interface Album {
@@ -17,22 +17,24 @@ export default function AlbumsPage() {
   const [coupleId, setCoupleId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
 
-  const fetchData = useCallback(async () => {
-    const coupleRes = await fetch('/api/couples/mine')
-    if (!coupleRes.ok) return setLoading(false)
-    const couple = await coupleRes.json()
-    setCoupleId(couple.id)
+  useEffect(() => {
+    async function fetchData() {
+      const coupleRes = await fetch('/api/couples/mine')
+      if (!coupleRes.ok) return setLoading(false)
+      const couple = await coupleRes.json()
+      setCoupleId(couple.id)
 
-    const albumsRes = await fetch(`/api/couples/${couple.id}/albums`)
-    if (albumsRes.ok) {
-      const data = await albumsRes.json()
-      setAlbums(data.albums)
+      const albumsRes = await fetch(`/api/couples/${couple.id}/albums`)
+      if (albumsRes.ok) {
+        const data = await albumsRes.json()
+        setAlbums(data.albums)
+      }
+      setLoading(false)
     }
-    setLoading(false)
-  }, [])
-
-  useEffect(() => { fetchData() }, [fetchData])
+    fetchData()
+  }, [refreshKey])
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -50,7 +52,7 @@ export default function AlbumsPage() {
 
     if (res.ok) {
       setShowCreate(false)
-      fetchData()
+      setRefreshKey(k => k + 1)
     }
   }
 
@@ -60,7 +62,7 @@ export default function AlbumsPage() {
     await fetch(`/api/couples/${coupleId}/albums/${albumId}`, {
       method: 'DELETE',
     })
-    fetchData()
+    setRefreshKey(k => k + 1)
   }
 
   if (loading) return <AlbumsSkeleton />

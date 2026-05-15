@@ -43,8 +43,9 @@ export default async function DashboardPage() {
     where: { coupleId: couple.id },
   })
 
+  const now = new Date()
   const daysTogether = couple.startDate
-    ? Math.floor((Date.now() - couple.startDate.getTime()) / (1000 * 60 * 60 * 24))
+    ? Math.floor((now.getTime() - couple.startDate.getTime()) / (1000 * 60 * 60 * 24))
     : null
 
   const stats = [

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useReducer, useEffect, useRef } from 'react'
 
 type PhotoStatus = 'UPLOADING' | 'PROCESSING' | 'READY' | 'FAILED'
 
@@ -10,7 +10,7 @@ interface Photo {
   [key: string]: unknown
 }
 
-interface UsePhotoStatusReturn {
+export interface UsePhotoStatusReturn {
   photo: Photo | null
   loading: boolean
   error: string | null
@@ -19,66 +19,70 @@ interface UsePhotoStatusReturn {
 const POLL_INTERVAL = 3000
 const TERMINAL_STATUSES: PhotoStatus[] = ['READY', 'FAILED']
 
+type State = UsePhotoStatusReturn
+
+type Action =
+  | { type: 'FETCH_START' }
+  | { type: 'FETCH_SUCCESS'; photo: Photo }
+  | { type: 'FETCH_ERROR'; error: string }
+
+function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case 'FETCH_START':
+      return { photo: null, loading: true, error: null }
+    case 'FETCH_SUCCESS':
+      return { photo: action.photo, loading: false, error: null }
+    case 'FETCH_ERROR':
+      return { ...state, loading: false, error: action.error }
+  }
+}
+
+const INITIAL_STATE: State = { photo: null, loading: false, error: null }
+
 export function usePhotoStatus(coupleId: string, photoId: string): UsePhotoStatusReturn {
-  const [photo, setPhoto] = useState<Photo | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const abortRef = useRef<AbortController | null>(null)
-
-  const clearTimer = useCallback(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current)
-      timerRef.current = null
-    }
-  }, [])
-
-  const fetchStatus = useCallback(async () => {
-    abortRef.current?.abort()
-    const controller = new AbortController()
-    abortRef.current = controller
-
-    try {
-      const res = await fetch(`/api/couples/${coupleId}/photos/${photoId}`, {
-        signal: controller.signal,
-      })
-      if (!res.ok) throw new Error(`请求失败: ${res.status}`)
-
-      const data: Photo = await res.json()
-      setPhoto(data)
-      setError(null)
-
-      if (TERMINAL_STATUSES.includes(data.status)) {
-        clearTimer()
-        return
-      }
-
-      timerRef.current = setTimeout(fetchStatus, POLL_INTERVAL)
-    } catch (err) {
-      if ((err as Error).name === 'AbortError') return
-      setError((err as Error).message)
-      timerRef.current = setTimeout(fetchStatus, POLL_INTERVAL)
-    }
-  }, [coupleId, photoId, clearTimer])
 
   useEffect(() => {
-    if (!coupleId || !photoId) {
-      setPhoto(null)
-      setLoading(false)
-      setError(null)
-      return
+    if (!coupleId || !photoId) return
+
+    const controller = new AbortController()
+    dispatch({ type: 'FETCH_START' })
+
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/couples/${coupleId}/photos/${photoId}`, {
+          signal: controller.signal,
+        })
+        if (!res.ok) throw new Error(`请求失败: ${res.status}`)
+
+        const data: Photo = await res.json()
+        dispatch({ type: 'FETCH_SUCCESS', photo: data })
+
+        if (!TERMINAL_STATUSES.includes(data.status)) {
+          timerRef.current = setTimeout(poll, POLL_INTERVAL)
+        }
+      } catch (err) {
+        if ((err as Error).name === 'AbortError') return
+        dispatch({ type: 'FETCH_ERROR', error: (err as Error).message })
+        timerRef.current = setTimeout(poll, POLL_INTERVAL)
+      }
     }
 
-    setLoading(true)
-    setError(null)
-
-    fetchStatus().finally(() => setLoading(false))
+    poll()
 
     return () => {
-      clearTimer()
-      abortRef.current?.abort()
+      controller.abort()
+      if (timerRef.current) {
+        clearTimeout(timerRef.current)
+        timerRef.current = null
+      }
     }
-  }, [coupleId, photoId, fetchStatus, clearTimer])
+  }, [coupleId, photoId])
 
-  return { photo, loading, error }
+  if (!coupleId || !photoId) {
+    return INITIAL_STATE
+  }
+
+  return state
 }

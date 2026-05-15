@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 
 interface CoupleData {
   id: string
@@ -19,15 +19,16 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  const fetchCouple = useCallback(async () => {
-    const res = await fetch('/api/couples/mine')
-    if (res.ok) {
-      setCouple(await res.json())
+  useEffect(() => {
+    async function fetchCouple() {
+      const res = await fetch('/api/couples/mine')
+      if (res.ok) {
+        setCouple(await res.json())
+      }
+      setLoading(false)
     }
-    setLoading(false)
+    fetchCouple()
   }, [])
-
-  useEffect(() => { fetchCouple() }, [fetchCouple])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()

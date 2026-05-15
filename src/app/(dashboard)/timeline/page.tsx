@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 
 interface Milestone {
   id: string
@@ -19,22 +19,24 @@ export default function TimelinePage() {
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
-  const fetchData = useCallback(async () => {
-    const coupleRes = await fetch('/api/couples/mine')
-    if (!coupleRes.ok) return setLoading(false)
-    const couple = await coupleRes.json()
-    setCoupleId(couple.id)
+  useEffect(() => {
+    async function fetchData() {
+      const coupleRes = await fetch('/api/couples/mine')
+      if (!coupleRes.ok) return setLoading(false)
+      const couple = await coupleRes.json()
+      setCoupleId(couple.id)
 
-    const res = await fetch(`/api/couples/${couple.id}/milestones`)
-    if (res.ok) {
-      const data = await res.json()
-      setMilestones(data.milestones)
+      const res = await fetch(`/api/couples/${couple.id}/milestones`)
+      if (res.ok) {
+        const data = await res.json()
+        setMilestones(data.milestones)
+      }
+      setLoading(false)
     }
-    setLoading(false)
-  }, [])
-
-  useEffect(() => { fetchData() }, [fetchData])
+    fetchData()
+  }, [refreshKey])
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -54,7 +56,7 @@ export default function TimelinePage() {
 
     if (res.ok) {
       setShowCreate(false)
-      fetchData()
+      setRefreshKey(k => k + 1)
     }
   }
 
@@ -74,13 +76,13 @@ export default function TimelinePage() {
       }),
     })
     setEditingId(null)
-    fetchData()
+    setRefreshKey(k => k + 1)
   }
 
   async function handleDelete(id: string) {
     if (!coupleId || !confirm('确定删除此里程碑？')) return
     await fetch(`/api/couples/${coupleId}/milestones/${id}`, { method: 'DELETE' })
-    fetchData()
+    setRefreshKey(k => k + 1)
   }
 
   if (loading) return <TimelineSkeleton />
