@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { useLocale } from 'next-intl'
 
 export interface TimelineMilestone {
   id: string
@@ -16,8 +17,8 @@ export interface TimelineMilestone {
   } | null
 }
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('zh-CN', {
+function formatDate(dateStr: string, locale: string) {
+  return new Date(dateStr).toLocaleDateString(locale, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -25,6 +26,7 @@ function formatDate(dateStr: string) {
 }
 
 export function TimelineView({ milestones }: { milestones: TimelineMilestone[] }) {
+  const locale = useLocale()
   return (
     <div className="relative">
       {/* 中心线 (desktop) / 左侧线 (mobile) */}
@@ -54,9 +56,9 @@ export function TimelineView({ milestones }: { milestones: TimelineMilestone[] }
               {/* 间距占位 (desktop) */}
               <div className="hidden md:block md:w-1/2" />
 
-              {/* 卡片 */}
+                {/* 卡片 */}
               <div className="md:w-1/2 md:px-8 w-full">
-                <MilestoneCard milestone={m} />
+                <MilestoneCard milestone={m} locale={locale} />
               </div>
             </motion.div>
           )
@@ -79,7 +81,7 @@ function TimelineDot({ isAuto }: { isAuto: boolean }) {
   )
 }
 
-function MilestoneCard({ milestone: m }: { milestone: TimelineMilestone }) {
+function MilestoneCard({ milestone: m, locale }: { milestone: TimelineMilestone; locale: string }) {
   const photoUrl = m.photo?.displayUrl || m.photo?.thumbnailUrl
 
   return (
@@ -92,7 +94,7 @@ function MilestoneCard({ milestone: m }: { milestone: TimelineMilestone }) {
         className="inline-block text-xs text-film-accent-light tracking-wider mb-2"
         style={{ fontFamily: 'var(--font-latin)' }}
       >
-        {formatDate(m.date)}
+        {formatDate(m.date, locale)}
       </span>
 
       <div className="flex items-start gap-4">

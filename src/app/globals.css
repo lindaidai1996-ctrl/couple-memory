@@ -24,6 +24,11 @@
   --color-warm-accent-hover: #a87c55;
   --color-warm-border: #ede8e3;
   --color-warm-sidebar: #f5f1ed;
+  --color-warm-skeleton-base: #eee6de;
+  --color-warm-skeleton-highlight: #f8f2eb;
+
+  --color-film-skeleton-base: #2a2421;
+  --color-film-skeleton-highlight: #3a312d;
 
   /* ─── 共享 ─── */
   --color-error: #d94545;
@@ -40,6 +45,28 @@
   --radius-md: 12px;
   --radius-lg: 20px;
   --radius-xl: 28px;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+
+  --color-warm-bg: #141110;
+  --color-warm-surface: #201a18;
+  --color-warm-text: #f3ece6;
+  --color-warm-muted: #b7a99d;
+  --color-warm-accent: #d0a278;
+  --color-warm-accent-hover: #e2b387;
+  --color-warm-border: #3a302b;
+  --color-warm-sidebar: #181412;
+  --color-warm-skeleton-base: #2b221f;
+  --color-warm-skeleton-highlight: #3a2f2a;
+
+  --color-film-skeleton-base: #2c2522;
+  --color-film-skeleton-highlight: #433731;
 }
 
 /* ─── 自托管字体 ─── */
@@ -80,6 +107,8 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: var(--color-warm-bg);
+  color: var(--color-warm-text);
 }
 
 /* ─── 胶片颗粒纹理 (公开页使用) ─── */

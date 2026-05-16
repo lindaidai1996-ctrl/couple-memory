@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { PhotoUploader } from '@/components/photo-uploader'
 import { PhotoDetailModal } from '@/components/photo-detail-modal'
 import Link from 'next/link'
@@ -16,7 +17,20 @@ interface Album {
   description: string | null
 }
 
+type Translator = (key: string, values?: Record<string, string | number>) => string
+
+export function buildAlbumDetailUiText(t: Translator) {
+  return {
+    photoCount: (count: number) => t('photoCount', { count }),
+    selectedCount: (count: number) => t('selectedCount', { count }),
+    moveSelected: t('moveSelected'),
+    deleteSelected: t('deleteSelected'),
+    reorder: t('reorder'),
+  }
+}
+
 export default function AlbumDetailPage() {
+  const t = useTranslations('AlbumDetailPage')
   const params = useParams()
   const router = useRouter()
   const albumId = params.albumId as string
@@ -37,6 +51,7 @@ export default function AlbumDetailPage() {
   const [draggingPhotoId, setDraggingPhotoId] = useState<string | null>(null)
   const [savingOrder, setSavingOrder] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  const uiText = buildAlbumDetailUiText(t)
 
   useEffect(() => {
     async function fetchData() {
@@ -101,7 +116,7 @@ export default function AlbumDetailPage() {
 
   async function handleBatchDelete() {
     if (!coupleId || selectedPhotoIds.length === 0 || deleting) return
-    if (!confirm(`确定删除已选的 ${selectedPhotoIds.length} 张照片吗？`)) return
+    if (!confirm(t('deleteSelectedConfirm', { count: selectedPhotoIds.length }))) return
 
     setActionError(null)
     setDeleting(true)
@@ -125,7 +140,7 @@ export default function AlbumDetailPage() {
     }
 
     const data = await res.json().catch(() => null)
-    setActionError(data?.error?.message || '删除照片失败，请稍后再试')
+    setActionError(data?.error?.message || t('deleteFailed'))
   }
 
   async function handleSetCover(photoId: string) {
@@ -147,7 +162,7 @@ export default function AlbumDetailPage() {
     }
 
     const data = await res.json().catch(() => null)
-    setActionError(data?.error?.message || '设置相册封面失败，请稍后再试')
+    setActionError(data?.error?.message || t('setCoverFailed'))
   }
 
   async function handleBatchMove() {
@@ -175,7 +190,7 @@ export default function AlbumDetailPage() {
     }
 
     const data = await res.json().catch(() => null)
-    setActionError(data?.error?.message || '移动照片失败，请稍后再试')
+    setActionError(data?.error?.message || t('moveFailed'))
   }
 
   function enterReorderMode() {
@@ -227,7 +242,7 @@ export default function AlbumDetailPage() {
     }
 
     const data = await res.json().catch(() => null)
-    setActionError(data?.error?.message || '保存排序失败，请稍后再试')
+    setActionError(data?.error?.message || t('saveOrderFailed'))
   }
 
   if (loading) return <PhotoGridSkeleton />
@@ -257,20 +272,20 @@ export default function AlbumDetailPage() {
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm text-warm-muted">
-          共 {photos.length} 张照片
+          {uiText.photoCount(photos.length)}
         </div>
         <div className="flex items-center gap-2">
           {mode === 'select' ? (
             <>
               <span className="text-sm text-warm-muted">
-                已选 {selectedPhotoIds.length} 张
+                {uiText.selectedCount(selectedPhotoIds.length)}
               </span>
               <select
                 value={targetAlbumId}
                 onChange={e => setTargetAlbumId(e.target.value)}
                 className="px-3 py-2 text-sm rounded-[var(--radius-md)] border border-warm-border bg-warm-surface text-warm-text"
               >
-                <option value="">选择目标相册</option>
+                <option value="">{t('targetAlbumPlaceholder')}</option>
                 {allAlbums
                   .filter(item => item.id !== albumId)
                   .map(item => (
@@ -285,7 +300,7 @@ export default function AlbumDetailPage() {
                 className="px-3 py-2 text-sm text-white bg-info rounded-[var(--radius-md)]
                   disabled:opacity-50 transition-colors"
               >
-                {moving ? '移动中...' : '移动已选'}
+                {moving ? t('moving') : t('moveSelected')}
               </button>
               <button
                 onClick={handleBatchDelete}
@@ -293,7 +308,7 @@ export default function AlbumDetailPage() {
                 className="px-3 py-2 text-sm text-white bg-error rounded-[var(--radius-md)]
                   disabled:opacity-50 transition-colors"
               >
-                {deleting ? '删除中...' : '删除已选'}
+                {deleting ? t('deleting') : t('deleteSelected')}
               </button>
               <button
                 onClick={() => {
@@ -304,26 +319,26 @@ export default function AlbumDetailPage() {
                 className="px-3 py-2 text-sm text-warm-muted border border-warm-border
                   rounded-[var(--radius-md)] hover:bg-warm-bg transition-colors"
               >
-                取消选择
+                {t('cancelSelect')}
               </button>
             </>
           ) : mode === 'reorder' ? (
             <>
-              <span className="text-sm text-warm-muted">拖拽照片调整顺序</span>
+              <span className="text-sm text-warm-muted">{t('dragToReorder')}</span>
               <button
                 onClick={saveReorder}
                 disabled={savingOrder}
                 className="px-3 py-2 text-sm text-white bg-warm-accent rounded-[var(--radius-md)]
                   disabled:opacity-50 transition-colors"
               >
-                {savingOrder ? '保存中...' : '保存排序'}
+                {savingOrder ? t('saving') : t('saveOrder')}
               </button>
               <button
                 onClick={cancelReorderMode}
                 className="px-3 py-2 text-sm text-warm-muted border border-warm-border
                   rounded-[var(--radius-md)] hover:bg-warm-bg transition-colors"
               >
-                取消排序
+                {t('cancelReorder')}
               </button>
             </>
           ) : (
@@ -333,14 +348,14 @@ export default function AlbumDetailPage() {
                 className="px-3 py-2 text-sm text-warm-accent border border-warm-accent
                   rounded-[var(--radius-md)] hover:bg-warm-accent/10 transition-colors"
               >
-                选择照片
+                {t('selectPhotos')}
               </button>
               <button
                 onClick={enterReorderMode}
                 className="px-3 py-2 text-sm text-warm-text border border-warm-border
                   rounded-[var(--radius-md)] hover:bg-warm-bg transition-colors"
               >
-                调整排序
+                {uiText.reorder}
               </button>
             </>
           )}
@@ -365,7 +380,7 @@ export default function AlbumDetailPage() {
 
       {photos.length === 0 ? (
         <div className="text-center py-16 bg-warm-surface rounded-[var(--radius-lg)] border border-warm-border">
-          <p className="text-warm-muted">还没有照片，上传一些吧</p>
+          <p className="text-warm-muted">{t('empty')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -400,7 +415,7 @@ export default function AlbumDetailPage() {
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <span className="text-warm-muted text-xs">
-                    {photo.status === 'PROCESSING' ? '处理中...' : '无预览'}
+                    {photo.status === 'PROCESSING' ? t('processing') : t('noPreview')}
                   </span>
                 </div>
               )}
@@ -408,13 +423,13 @@ export default function AlbumDetailPage() {
               {photo.status !== 'READY' && (
                 <div className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-medium text-white
                   ${photo.status === 'PROCESSING' ? 'bg-info' : 'bg-error'}`}>
-                  {photo.status === 'PROCESSING' ? '处理中' : '失败'}
+                  {photo.status === 'PROCESSING' ? t('processingShort') : t('failed')}
                 </div>
               )}
 
               {photo.isAlbumCover && (
                 <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-medium text-white bg-warm-text/80">
-                  封面
+                  {t('cover')}
                 </div>
               )}
 
@@ -449,5 +464,4 @@ export default function AlbumDetailPage() {
     </div>
   )
 }
-
 

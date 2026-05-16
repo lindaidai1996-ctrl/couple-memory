@@ -1,8 +1,10 @@
 'use client'
 
 import type { LayoutProps } from './cinema-wide'
+import { useTranslations } from 'next-intl'
 
 export function GridSquare({ photo, caption }: LayoutProps) {
+  const t = useTranslations('Layout')
   const src = photo.thumbnailUrl || photo.displayUrl
 
   return (
@@ -17,7 +19,7 @@ export function GridSquare({ photo, caption }: LayoutProps) {
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center">
-          <span className="text-film-muted text-sm">无图片</span>
+          <span className="text-film-muted text-sm">{t('noImage')}</span>
         </div>
       )}
 

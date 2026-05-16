@@ -1,11 +1,13 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 
 export default function RegisterPage() {
+  const t = useTranslations('RegisterPage')
   const router = useRouter()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -22,13 +24,13 @@ export default function RegisterPage() {
     const confirmPassword = formData.get('confirmPassword') as string
 
     if (password !== confirmPassword) {
-      setError('两次输入的密码不一致')
+      setError(t('errorPasswordMismatch'))
       setLoading(false)
       return
     }
 
     if (password.length < 6) {
-      setError('密码至少6位')
+      setError(t('errorPasswordShort'))
       setLoading(false)
       return
     }
@@ -41,7 +43,7 @@ export default function RegisterPage() {
 
     if (!res.ok) {
       const data = await res.json()
-      setError(data.error || '注册失败，请重试')
+      setError(data.error || t('errorRegisterFailed'))
       setLoading(false)
       return
     }
@@ -53,7 +55,7 @@ export default function RegisterPage() {
     })
 
     if (result?.error) {
-      setError('注册成功但自动登录失败，请手动登录')
+      setError(t('errorAutoLoginFailed'))
       setLoading(false)
     } else {
       router.push('/dashboard')
@@ -64,9 +66,9 @@ export default function RegisterPage() {
     <>
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold text-warm-text tracking-tight">
-          创建账号
+          {t('title')}
         </h1>
-        <p className="text-warm-muted text-sm mt-1">开始记录你们的故事</p>
+        <p className="text-warm-muted text-sm mt-1">{t('subtitle')}</p>
       </div>
 
       {error && (
@@ -78,7 +80,7 @@ export default function RegisterPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-warm-text mb-1.5">
-            昵称
+            {t('name')}
           </label>
           <input
             id="name"
@@ -89,13 +91,13 @@ export default function RegisterPage() {
               bg-warm-bg text-warm-text placeholder:text-warm-muted/60
               focus:ring-2 focus:ring-warm-accent/30 focus:border-warm-accent outline-none
               transition-all duration-200"
-            placeholder="你的昵称"
+            placeholder={t('namePlaceholder')}
           />
         </div>
 
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-warm-text mb-1.5">
-            邮箱
+            {t('email')}
           </label>
           <input
             id="email"
@@ -113,7 +115,7 @@ export default function RegisterPage() {
 
         <div>
           <label htmlFor="password" className="block text-sm font-medium text-warm-text mb-1.5">
-            密码
+            {t('password')}
           </label>
           <input
             id="password"
@@ -126,13 +128,13 @@ export default function RegisterPage() {
               bg-warm-bg text-warm-text placeholder:text-warm-muted/60
               focus:ring-2 focus:ring-warm-accent/30 focus:border-warm-accent outline-none
               transition-all duration-200"
-            placeholder="至少6位"
+            placeholder={t('passwordPlaceholder')}
           />
         </div>
 
         <div>
           <label htmlFor="confirmPassword" className="block text-sm font-medium text-warm-text mb-1.5">
-            确认密码
+            {t('confirmPassword')}
           </label>
           <input
             id="confirmPassword"
@@ -145,7 +147,7 @@ export default function RegisterPage() {
               bg-warm-bg text-warm-text placeholder:text-warm-muted/60
               focus:ring-2 focus:ring-warm-accent/30 focus:border-warm-accent outline-none
               transition-all duration-200"
-            placeholder="再次输入密码"
+            placeholder={t('confirmPasswordPlaceholder')}
           />
         </div>
 
@@ -157,14 +159,14 @@ export default function RegisterPage() {
             disabled:opacity-50 disabled:cursor-not-allowed
             transition-all duration-200 shadow-sm hover:shadow-md"
         >
-          {loading ? '注册中...' : '注册'}
+          {loading ? t('submitting') : t('submit')}
         </button>
       </form>
 
       <p className="text-center text-sm text-warm-muted mt-6">
-        已有账号？
+        {t('hasAccount')}
         <Link href="/login" className="text-warm-accent hover:text-warm-accent-hover font-medium ml-1">
-          登录
+          {t('login')}
         </Link>
       </p>
     </>

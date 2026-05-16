@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 interface Album {
   id: string
@@ -12,7 +13,18 @@ interface Album {
   createdAt: string
 }
 
+type Translator = (key: string, values?: Record<string, string | number>) => string
+
+export function buildAlbumsUiText(t: Translator) {
+  return {
+    title: t('title'),
+    create: t('create'),
+    empty: t('empty'),
+  }
+}
+
 export default function AlbumsPage() {
+  const t = useTranslations('AlbumsPage')
   const [albums, setAlbums] = useState<Album[]>([])
   const [coupleId, setCoupleId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -57,7 +69,7 @@ export default function AlbumsPage() {
   }
 
   async function handleDelete(albumId: string) {
-    if (!coupleId || !confirm('确定删除此相册？相册内的照片也会被删除。')) return
+    if (!coupleId || !confirm(t('deleteConfirm'))) return
 
     await fetch(`/api/couples/${coupleId}/albums/${albumId}`, {
       method: 'DELETE',
@@ -66,29 +78,30 @@ export default function AlbumsPage() {
   }
 
   if (loading) return <AlbumsSkeleton />
+  const uiText = buildAlbumsUiText(t)
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-warm-text">相册</h1>
+        <h1 className="text-2xl font-bold text-warm-text">{uiText.title}</h1>
         <button
           onClick={() => setShowCreate(true)}
           className="px-4 py-2 text-sm bg-warm-accent text-white rounded-[var(--radius-md)] font-medium
             hover:bg-warm-accent-hover transition-colors"
         >
-          新建相册
+          {uiText.create}
         </button>
       </div>
 
       {albums.length === 0 ? (
         <div className="text-center py-20 bg-warm-surface rounded-[var(--radius-lg)] border border-warm-border">
-          <p className="text-warm-muted mb-4">还没有相册，创建一个吧</p>
+          <p className="text-warm-muted mb-4">{uiText.empty}</p>
           <button
             onClick={() => setShowCreate(true)}
             className="px-4 py-2 text-sm text-warm-accent border border-warm-accent
               rounded-[var(--radius-md)] hover:bg-warm-accent/10 transition-colors"
           >
-            新建相册
+            {uiText.create}
           </button>
         </div>
       ) : (
@@ -129,7 +142,7 @@ export default function AlbumsPage() {
                   <button
                     onClick={e => { e.preventDefault(); handleDelete(album.id) }}
                     className="p-1 text-warm-muted hover:text-error rounded transition-colors opacity-0 group-hover:opacity-100"
-                    title="删除"
+                    title={t('deleteTitle')}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="3 6 5 6 21 6" />
@@ -138,7 +151,7 @@ export default function AlbumsPage() {
                   </button>
                 </div>
                 <p className="text-xs text-warm-muted mt-2">
-                  {album.photoCount} 张照片
+                  {t('photoCount', { count: album.photoCount })}
                 </p>
               </div>
             </Link>
@@ -151,10 +164,10 @@ export default function AlbumsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowCreate(false)} />
           <div className="relative bg-warm-surface rounded-[var(--radius-xl)] shadow-2xl p-6 w-full max-w-md mx-4">
-            <h2 className="text-lg font-bold text-warm-text mb-4">新建相册</h2>
+            <h2 className="text-lg font-bold text-warm-text mb-4">{t('createTitle')}</h2>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-warm-text mb-1.5">标题</label>
+                <label className="block text-sm font-medium text-warm-text mb-1.5">{t('fieldTitle')}</label>
                 <input
                   name="title"
                   required
@@ -163,11 +176,11 @@ export default function AlbumsPage() {
                     bg-warm-bg text-warm-text placeholder:text-warm-muted/60
                     focus:ring-2 focus:ring-warm-accent/30 focus:border-warm-accent outline-none
                     transition-all duration-200 text-sm"
-                  placeholder="给相册起个名字"
+                  placeholder={t('fieldTitlePlaceholder')}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-warm-text mb-1.5">描述（可选）</label>
+                <label className="block text-sm font-medium text-warm-text mb-1.5">{t('fieldDescription')}</label>
                 <textarea
                   name="description"
                   rows={2}
@@ -175,7 +188,7 @@ export default function AlbumsPage() {
                     bg-warm-bg text-warm-text placeholder:text-warm-muted/60
                     focus:ring-2 focus:ring-warm-accent/30 focus:border-warm-accent outline-none
                     transition-all duration-200 text-sm resize-none"
-                  placeholder="描述这个相册..."
+                  placeholder={t('fieldDescriptionPlaceholder')}
                 />
               </div>
               <div className="flex gap-3 pt-2">
@@ -185,14 +198,14 @@ export default function AlbumsPage() {
                   className="flex-1 py-2.5 text-sm text-warm-muted border border-warm-border
                     rounded-[var(--radius-md)] hover:bg-warm-bg transition-colors"
                 >
-                  取消
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 py-2.5 text-sm bg-warm-accent text-white font-medium
                     rounded-[var(--radius-md)] hover:bg-warm-accent-hover transition-colors"
                 >
-                  创建
+                  {t('submit')}
                 </button>
               </div>
             </form>

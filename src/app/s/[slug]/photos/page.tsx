@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { PhotoStream } from '@/components/photo-stream'
 import {
@@ -6,6 +7,16 @@ import {
   getPublicSpacePageDataBySlug,
   resolvePublicMetadata,
 } from '@/lib/public-metadata'
+
+type Translator = (key: string) => string
+
+export function buildPublicPhotosUiText(t: Translator) {
+  return {
+    back: t('back'),
+    title: t('title'),
+    end: t('end'),
+  }
+}
 
 export async function generateMetadata({
   params,
@@ -23,12 +34,14 @@ export default async function PhotosPage({
 }) {
   const { slug } = await params
   const space = await getPublicSpacePageDataBySlug(slug)
+  const t = await getTranslations('PublicPhotosPage')
 
   if (!space?.isPublic) {
     notFound()
   }
 
   const photos = await getPublicPhotosByCoupleId(space.id)
+  const uiText = buildPublicPhotosUiText(t)
 
   return (
     <div className="min-h-screen py-12">
@@ -48,14 +61,14 @@ export default async function PhotosPage({
           >
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
-          返回
+          {uiText.back}
         </Link>
 
         <h1
           className="text-3xl md:text-4xl font-bold"
           style={{ fontFamily: 'var(--font-display)' }}
         >
-          照片
+          {uiText.title}
         </h1>
       </header>
 
@@ -66,7 +79,7 @@ export default async function PhotosPage({
           <PhotoStream photos={photos} />
 
           <div className="py-12 flex justify-center">
-            <p className="text-film-muted text-sm">已展示全部照片</p>
+            <p className="text-film-muted text-sm">{uiText.end}</p>
           </div>
         </>
       )}
@@ -75,10 +88,16 @@ export default async function PhotosPage({
 }
 
 function EmptyState() {
+  // Server component helper keeps text grouped and easy to localize.
+  return <EmptyStateContent />
+}
+
+async function EmptyStateContent() {
+  const t = await getTranslations('PublicPhotosPage')
   return (
     <div className="text-center py-24 px-6">
-      <p className="text-film-muted text-lg mb-2">暂无照片</p>
-      <p className="text-film-muted/60 text-sm">这里还没有上传任何照片</p>
+      <p className="text-film-muted text-lg mb-2">{t('empty')}</p>
+      <p className="text-film-muted/60 text-sm">{t('emptyDescription')}</p>
     </div>
   )
 }

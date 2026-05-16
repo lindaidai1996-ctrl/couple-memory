@@ -1,8 +1,11 @@
 'use client'
 
 import type { LayoutProps } from './cinema-wide'
+import { useLocale, useTranslations } from 'next-intl'
 
 export function PortraitHero({ photo, caption }: LayoutProps) {
+  const t = useTranslations('Layout')
+  const locale = useLocale()
   const src = photo.displayUrl || photo.thumbnailUrl
 
   return (
@@ -17,7 +20,7 @@ export function PortraitHero({ photo, caption }: LayoutProps) {
         />
       ) : (
         <div className="w-full h-full bg-film-surface flex items-center justify-center">
-          <span className="text-film-muted text-sm">无图片</span>
+          <span className="text-film-muted text-sm">{t('noImage')}</span>
         </div>
       )}
 
@@ -35,7 +38,7 @@ export function PortraitHero({ photo, caption }: LayoutProps) {
           {photo.locationName && <span>{photo.locationName}</span>}
           {photo.takenAt && (
             <time dateTime={photo.takenAt}>
-              {new Date(photo.takenAt).toLocaleDateString('zh-CN')}
+              {new Date(photo.takenAt).toLocaleDateString(locale)}
             </time>
           )}
         </div>

@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 export interface LayoutPhotoData {
   id: string
   displayUrl: string | null
@@ -17,7 +19,17 @@ export interface LayoutProps {
   index?: number
 }
 
+type Translator = (key: string) => string
+
+export function buildLayoutUiText(t: Translator) {
+  return {
+    noImage: t('noImage'),
+  }
+}
+
 export function CinemaWide({ photo, caption }: LayoutProps) {
+  const t = useTranslations('Layout')
+  const copy = buildLayoutUiText(t)
   const src = photo.displayUrl || photo.thumbnailUrl
 
   return (
@@ -35,7 +47,7 @@ export function CinemaWide({ photo, caption }: LayoutProps) {
           />
         ) : (
           <div className="w-full h-full bg-film-surface flex items-center justify-center">
-            <span className="text-film-muted text-sm">无图片</span>
+            <span className="text-film-muted text-sm">{copy.noImage}</span>
           </div>
         )}
 

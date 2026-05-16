@@ -2,19 +2,22 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useState } from 'react'
-
-const navItems = [
-  { href: '/dashboard', label: '概览', icon: DashboardIcon },
-  { href: '/albums', label: '相册', icon: AlbumIcon },
-  { href: '/timeline', label: '时间轴', icon: TimelineIcon },
-  { href: '/pipeline', label: 'Pipeline', icon: PipelineIcon },
-  { href: '/settings', label: '设置', icon: SettingsIcon },
-]
+import { LocaleSwitcher } from '@/components/preferences/locale-switcher'
+import { ThemeToggle } from '@/components/preferences/theme-toggle'
 
 export function Sidebar() {
+  const t = useTranslations('Sidebar')
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const navItems = [
+    { href: '/dashboard', label: t('dashboard'), icon: DashboardIcon },
+    { href: '/albums', label: t('albums'), icon: AlbumIcon },
+    { href: '/timeline', label: t('timeline'), icon: TimelineIcon },
+    { href: '/pipeline', label: t('pipeline'), icon: PipelineIcon },
+    { href: '/settings', label: t('settings'), icon: SettingsIcon },
+  ]
 
   return (
     <>
@@ -22,7 +25,7 @@ export function Sidebar() {
       <button
         onClick={() => setMobileOpen(true)}
         className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-[var(--radius-sm)] bg-warm-surface shadow-md"
-        aria-label="打开导航"
+        aria-label={t('openNavigation')}
       >
         <MenuIcon />
       </button>
@@ -42,7 +45,7 @@ export function Sidebar() {
       >
         <div className="px-6 py-5 border-b border-warm-border">
           <h2 className="text-lg font-bold text-warm-text tracking-tight">
-            我们的空间
+            Couple Memory
           </h2>
         </div>
 
@@ -67,6 +70,13 @@ export function Sidebar() {
             )
           })}
         </nav>
+
+        <div className="border-t border-warm-border px-4 py-4 space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <LocaleSwitcher />
+            <ThemeToggle />
+          </div>
+        </div>
       </aside>
     </>
   )

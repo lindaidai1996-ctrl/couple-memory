@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { TimelineView } from '@/components/timeline-view'
 import {
@@ -6,6 +7,16 @@ import {
   getPublicTimelineByCoupleId,
   resolvePublicMetadata,
 } from '@/lib/public-metadata'
+
+type Translator = (key: string) => string
+
+export function buildPublicTimelineUiText(t: Translator) {
+  return {
+    back: t('back'),
+    title: t('title'),
+    empty: t('empty'),
+  }
+}
 
 export async function generateMetadata({
   params,
@@ -23,12 +34,14 @@ export default async function PublicTimelinePage({
 }) {
   const { slug } = await params
   const space = await getPublicSpacePageDataBySlug(slug)
+  const t = await getTranslations('PublicTimelinePage')
 
   if (!space?.isPublic) {
     notFound()
   }
 
   const milestones = await getPublicTimelineByCoupleId(space.id)
+  const uiText = buildPublicTimelineUiText(t)
 
   return (
     <div className="min-h-screen px-6 py-12 md:py-20">
@@ -48,18 +61,18 @@ export default async function PublicTimelinePage({
           >
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
-          返回
+          {uiText.back}
         </Link>
 
         <h1
           className="text-3xl md:text-4xl font-bold mb-12 md:mb-16 text-center"
           style={{ fontFamily: 'var(--font-display)' }}
         >
-          时间轴
+          {uiText.title}
         </h1>
 
         {milestones.length === 0 ? (
-          <EmptyState />
+          <EmptyState text={uiText.empty} />
         ) : (
           <TimelineView milestones={milestones} />
         )}
@@ -68,10 +81,10 @@ export default async function PublicTimelinePage({
   )
 }
 
-function EmptyState() {
+function EmptyState({ text }: { text: string }) {
   return (
     <div className="text-center py-20">
-      <p className="text-film-muted text-lg">暂无时间轴记录</p>
+      <p className="text-film-muted text-lg">{text}</p>
     </div>
   )
 }

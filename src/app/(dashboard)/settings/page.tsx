@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { SettingsFormSkeleton } from '@/components/skeleton/settings-form-skeleton'
 
 type CoverMode = 'NONE' | 'PHOTO' | 'UPLOAD'
@@ -112,6 +113,7 @@ export function extractApiErrorMessage(
 }
 
 export default function SettingsPage() {
+  const t = useTranslations('SettingsPage')
   const [couple, setCouple] = useState<CoupleData | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [avatarInput, setAvatarInput] = useState('')
@@ -161,12 +163,12 @@ export default function SettingsPage() {
       const updated = await res.json()
       setProfile(updated)
       setAvatarInput(updated.avatar ?? '')
-      setMessage({ type: 'success', text: '头像已更新' })
+      setMessage({ type: 'success', text: t('avatarUpdated') })
     } else {
       const data = await res.json()
       setMessage({
         type: 'error',
-        text: extractApiErrorMessage(data, '头像更新失败'),
+        text: extractApiErrorMessage(data, t('avatarFailed')),
       })
     }
 
@@ -189,12 +191,12 @@ export default function SettingsPage() {
     if (res.ok) {
       const data = await res.json()
       setCouple(normalizeCoupleResponse(data))
-      setMessage({ type: 'success', text: '保存成功' })
+      setMessage({ type: 'success', text: t('saved') })
     } else {
       const data = await res.json()
       setMessage({
         type: 'error',
-        text: extractApiErrorMessage(data, '保存失败'),
+        text: extractApiErrorMessage(data, t('saveFailed')),
       })
     }
 
@@ -225,7 +227,7 @@ export default function SettingsPage() {
         inviteCode: data.inviteCode,
         inviteExpiresAt: data.inviteExpiresAt,
       } : null)
-      setMessage({ type: 'success', text: '邀请链接已重新生成' })
+      setMessage({ type: 'success', text: t('inviteRegenerated') })
     }
   }
 
@@ -236,7 +238,7 @@ export default function SettingsPage() {
   if (!couple) {
     return (
       <div className="text-center py-20">
-        <p className="text-warm-muted">未找到空间信息</p>
+        <p className="text-warm-muted">{t('notFound')}</p>
       </div>
     )
   }
@@ -248,7 +250,7 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold text-warm-text mb-6">空间设置</h1>
+      <h1 className="text-2xl font-bold text-warm-text mb-6">{t('title')}</h1>
 
       {message && (
         <div className={`mb-6 p-3 rounded-[var(--radius-md)] text-sm ${
@@ -261,27 +263,27 @@ export default function SettingsPage() {
       )}
 
       <form onSubmit={handleAvatarSubmit} className="mb-6">
-        <Section title="头像">
+        <Section title={t('avatar')}>
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="w-20 h-20 shrink-0 rounded-full overflow-hidden border border-warm-border bg-warm-bg flex items-center justify-center">
               {avatarPreviewUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={avatarPreviewUrl}
-                  alt="当前头像预览"
+                  alt={t('avatarPreviewAlt')}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-xs text-warm-muted text-center px-2">暂无头像</span>
+                <span className="text-xs text-warm-muted text-center px-2">{t('avatarEmpty')}</span>
               )}
             </div>
             <div className="flex-1 space-y-3">
-              <Field label="头像图片链接" hint="第一批先使用图片 URL 更新头像，后续可接上传器">
+              <Field label={t('avatarField')} hint={t('avatarHint')}>
                 <input
                   value={avatarInput}
                   onChange={e => setAvatarInput(e.target.value)}
                   className={inputClass}
-                  placeholder="https://cdn.example.com/avatar.jpg"
+                  placeholder={t('avatarPlaceholder')}
                 />
               </Field>
               <div className="flex flex-wrap gap-3">
@@ -291,7 +293,7 @@ export default function SettingsPage() {
                   className="px-4 py-2 text-sm bg-warm-accent text-white rounded-[var(--radius-md)]
                     hover:bg-warm-accent-hover disabled:opacity-50 transition-colors"
                 >
-                  {avatarSaving ? '保存中...' : '更新头像'}
+                  {avatarSaving ? t('saving') : t('updateAvatar')}
                 </button>
                 <button
                   type="button"
@@ -299,7 +301,7 @@ export default function SettingsPage() {
                   className="px-4 py-2 text-sm border border-warm-border text-warm-text
                     rounded-[var(--radius-md)] hover:bg-warm-bg transition-colors"
                 >
-                  清空
+                  {t('clear')}
                 </button>
               </div>
             </div>
@@ -308,18 +310,18 @@ export default function SettingsPage() {
       </form>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <Section title="基本信息">
-          <Field label="空间名称">
+        <Section title={t('basicInfo')}>
+          <Field label={t('name')}>
             <input
               value={couple.name}
               onChange={e => setCouple(prev => prev ? { ...prev, name: e.target.value } : prev)}
               required
               className={inputClass}
-              placeholder="给你们的空间起个名字"
+              placeholder={t('namePlaceholder')}
             />
           </Field>
 
-          <Field label="链接标识" hint="公开链接使用，仅支持字母数字和连字符">
+          <Field label={t('slug')} hint={t('slugHint')}>
             <input
               value={couple.slug}
               onChange={e => setCouple(prev => prev ? { ...prev, slug: e.target.value } : prev)}
@@ -330,7 +332,7 @@ export default function SettingsPage() {
             />
           </Field>
 
-          <Field label="在一起的日子">
+          <Field label={t('date')}>
             <input
               type="date"
               value={couple.startDate?.split('T')[0] || ''}
@@ -342,18 +344,18 @@ export default function SettingsPage() {
             />
           </Field>
 
-          <Field label="简介">
+          <Field label={t('bio')}>
             <textarea
               value={couple.bio || ''}
               onChange={e => setCouple(prev => prev ? { ...prev, bio: e.target.value || null } : prev)}
               rows={3}
               className={inputClass + ' resize-none'}
-              placeholder="写一段关于你们的介绍..."
+              placeholder={t('bioPlaceholder')}
             />
           </Field>
         </Section>
 
-        <Section title="公开设置">
+        <Section title={t('visibility')}>
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
@@ -362,15 +364,15 @@ export default function SettingsPage() {
               className="w-5 h-5 rounded border-warm-border text-warm-accent
                 focus:ring-warm-accent/30 cursor-pointer"
             />
-            <span className="text-sm text-warm-text">公开展示空间</span>
+            <span className="text-sm text-warm-text">{t('visibilityLabel')}</span>
           </label>
           <p className="text-xs text-warm-muted mt-1 ml-8">
-            开启后，任何人都可以通过公开链接查看你们的照片和时间轴
+            {t('visibilityDescription')}
           </p>
         </Section>
 
-        <Section title="空间封面">
-          <Field label="封面来源">
+        <Section title={t('cover')}>
+          <Field label={t('coverSource')}>
             <select
               value={couple.coverMode}
               onChange={e => setCouple(prev => prev ? {
@@ -379,15 +381,15 @@ export default function SettingsPage() {
               } : prev)}
               className={inputClass}
             >
-              <option value="NONE">不设置封面</option>
-              <option value="PHOTO">使用已有照片</option>
-              <option value="UPLOAD">使用外部图片</option>
+              <option value="NONE">{t('coverNone')}</option>
+              <option value="PHOTO">{t('coverPhoto')}</option>
+              <option value="UPLOAD">{t('coverUpload')}</option>
             </select>
           </Field>
 
           {couple.coverMode === 'PHOTO' && (
             <>
-              <Field label="封面照片 ID" hint="第一批先保留基础输入，后续再接照片选择器">
+              <Field label={t('coverPhotoId')} hint={t('coverPhotoIdHint')}>
                 <input
                   value={couple.coverPhotoId || ''}
                   onChange={e => setCouple(prev => prev ? {
@@ -398,7 +400,7 @@ export default function SettingsPage() {
                   placeholder="photo_123"
                 />
               </Field>
-              <Field label="封面预览图链接" hint="用于 settings 内即时预览，也会一并保存">
+              <Field label={t('coverPreviewUrl')} hint={t('coverPreviewUrlHint')}>
                 <input
                   value={couple.coverPhotoUrl || ''}
                   onChange={e => setCouple(prev => prev ? {
@@ -413,7 +415,7 @@ export default function SettingsPage() {
           )}
 
           {couple.coverMode === 'UPLOAD' && (
-            <Field label="封面图片链接" hint="第一批先用 URL 打通封面配置链路">
+            <Field label={t('coverUploadUrl')} hint={t('coverUploadUrlHint')}>
               <input
                 value={couple.coverPhotoUrl || ''}
                 onChange={e => setCouple(prev => prev ? {
@@ -432,20 +434,20 @@ export default function SettingsPage() {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={couple.coverPhotoUrl}
-                  alt="空间封面预览"
+                  alt={t('coverPreviewAlt')}
                   className="w-full h-44 object-cover"
                 />
               ) : (
                 <div className="h-44 flex items-center justify-center text-sm text-warm-muted">
-                  请输入可访问的封面图片链接以查看预览
+                  {t('coverPreviewEmpty')}
                 </div>
               )}
             </div>
           )}
         </Section>
 
-        <Section title="公开预览">
-          <Field label="公开访问链接">
+        <Section title={t('publicPreview')}>
+          <Field label={t('publicPreviewUrl')}>
             <input value={publicPreviewUrl} readOnly className={inputClass} />
           </Field>
 
@@ -458,26 +460,26 @@ export default function SettingsPage() {
                 rounded-[var(--radius-md)] hover:bg-warm-accent/10 disabled:opacity-50
                 disabled:hover:bg-transparent transition-colors"
             >
-              查看公开预览
+              {t('openPreview')}
             </button>
             <button
               type="button"
               disabled={!couple.slug}
               onClick={() => {
                 navigator.clipboard.writeText(publicPreviewUrl)
-                setMessage({ type: 'success', text: '已复制公开链接' })
+                setMessage({ type: 'success', text: t('copiedPreview') })
               }}
               className="px-4 py-2 text-sm border border-warm-border text-warm-text
                 rounded-[var(--radius-md)] hover:bg-warm-bg disabled:opacity-50 transition-colors"
             >
-              复制公开链接
+              {t('copyPreview')}
             </button>
           </div>
 
           <p className="text-xs text-warm-muted">
             {!couple.isPublic
-              ? '需要先开启公开展示空间，外部访问才会生效。'
-              : '当前已可从公开入口预览你们的空间页面。'}
+              ? t('visibilityHintOff')
+              : t('visibilityHintOn')}
           </p>
         </Section>
 
@@ -487,12 +489,12 @@ export default function SettingsPage() {
           className="px-6 py-2.5 bg-warm-accent text-white rounded-[var(--radius-md)] font-medium
             hover:bg-warm-accent-hover disabled:opacity-50 transition-colors"
         >
-          {saving ? '保存中...' : '保存'}
+          {saving ? t('saving') : t('save')}
         </button>
       </form>
 
       <div className="mt-10 pt-8 border-t border-warm-border">
-        <Section title="邀请伴侣">
+        <Section title={t('invite')}>
           <InviteSection couple={couple} onGenerate={handleGenerateInvite} onRegenerate={handleRegenerateInvite} />
         </Section>
       </div>
@@ -533,6 +535,7 @@ function InviteSection({
   onGenerate: () => void
   onRegenerate: () => void
 }) {
+  const t = useTranslations('SettingsPage')
   const [copied, setCopied] = useState(false)
 
   const daysLeft = useMemo(() => {
@@ -549,7 +552,7 @@ function InviteSection({
   }
 
   function handleRegenerate() {
-    if (!confirm('重新生成将使当前邀请链接立即失效，确定继续？')) return
+    if (!confirm(t('inviteRegenerateConfirm'))) return
     onRegenerate()
   }
 
@@ -561,7 +564,7 @@ function InviteSection({
         className="px-4 py-2 text-sm text-warm-accent border border-warm-accent
           rounded-[var(--radius-md)] hover:bg-warm-accent/10 transition-colors"
       >
-        生成邀请链接
+        {t('inviteGenerate')}
       </button>
     )
   }
@@ -578,12 +581,12 @@ function InviteSection({
           className="px-3 py-2 text-sm text-warm-accent hover:bg-warm-accent/10
             rounded-[var(--radius-sm)] transition-colors whitespace-nowrap"
         >
-          {copied ? '已复制 ✓' : '复制'}
+          {copied ? t('inviteCopied') : t('inviteCopy')}
         </button>
       </div>
       {daysLeft !== null && (
         <p className="text-xs text-warm-muted">
-          剩余有效期：{daysLeft} 天
+          {t('inviteExpires', { days: daysLeft })}
         </p>
       )}
       <button
@@ -592,10 +595,8 @@ function InviteSection({
         className="px-3 py-2 text-xs text-warm-muted border border-warm-border
           rounded-[var(--radius-sm)] hover:bg-warm-bg transition-colors"
       >
-        重新生成
+        {t('inviteRegenerate')}
       </button>
     </div>
   )
 }
-
-

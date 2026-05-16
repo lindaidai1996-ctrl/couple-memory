@@ -1,34 +1,39 @@
 import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
+import { PreferenceDock } from '@/components/preferences/preference-dock'
 
-export default function Home() {
+export default async function Home() {
+  const t = await getTranslations('HomePage')
+
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <PreferenceDock />
       <div className="absolute inset-0 bg-gradient-to-br from-film-bg via-[#2a2420] to-[#1a1510]" />
       <div className="absolute inset-0 bg-[url('/images/auth-bg.jpg')] bg-cover bg-center opacity-40" />
       <div className="absolute inset-0 backdrop-blur-[2px]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.6)_100%)]" />
 
       <div className="relative z-10 w-full max-w-[480px] mx-4">
-        <div className="bg-white/95 backdrop-blur-md rounded-[var(--radius-xl)] shadow-2xl p-10 sm:p-12">
-          <h1 className="text-3xl font-bold tracking-tight text-black">
-            Couple Memory
+        <div className="rounded-[var(--radius-xl)] border border-warm-border bg-warm-surface/95 p-10 shadow-2xl backdrop-blur-md sm:p-12">
+          <h1 className="text-3xl font-bold tracking-tight text-warm-text">
+            {t('title')}
           </h1>
-          <p className="mt-2 text-base text-zinc-500">
-            AI-driven couple memory platform
+          <p className="mt-2 text-base text-warm-muted">
+            {t('subtitle')}
           </p>
 
           <div className="mt-8 flex flex-col gap-3">
             <Link
               href="/login"
-              className="w-full py-3 px-4 bg-black text-white rounded-[var(--radius-lg)] text-center font-medium hover:bg-zinc-800 transition-colors"
+              className="w-full rounded-[var(--radius-lg)] bg-warm-accent px-4 py-3 text-center font-medium text-white transition-colors hover:bg-warm-accent-hover"
             >
-              登录
+              {t('login')}
             </Link>
             <Link
               href="/register"
-              className="w-full py-3 px-4 border border-zinc-300 text-black rounded-[var(--radius-lg)] text-center font-medium hover:bg-zinc-100 transition-colors"
+              className="w-full rounded-[var(--radius-lg)] border border-warm-border px-4 py-3 text-center font-medium text-warm-text transition-colors hover:bg-warm-bg"
             >
-              注册
+              {t('register')}
             </Link>
           </div>
         </div>

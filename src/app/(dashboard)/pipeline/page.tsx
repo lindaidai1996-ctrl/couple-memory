@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 
 type RunStatus = 'RUNNING' | 'COMPLETED' | 'FAILED' | 'DEGRADED'
 
@@ -48,15 +49,30 @@ type PipelineRunDetail = {
   } | null
 }
 
-const STATUS_OPTIONS: Array<{ label: string; value: '' | RunStatus }> = [
-  { label: '全部状态', value: '' },
-  { label: '运行中', value: 'RUNNING' },
-  { label: '已完成', value: 'COMPLETED' },
-  { label: '失败', value: 'FAILED' },
-  { label: '降级完成', value: 'DEGRADED' },
-]
+type Translator = (key: string, values?: Record<string, string | number>) => string
+
+export function buildPipelineStatusOptions(t: Translator): Array<{ label: string; value: '' | RunStatus }> {
+  return [
+    { label: t('allStatuses'), value: '' },
+    { label: t('running'), value: 'RUNNING' },
+    { label: t('completed'), value: 'COMPLETED' },
+    { label: t('failed'), value: 'FAILED' },
+    { label: t('degraded'), value: 'DEGRADED' },
+  ]
+}
+
+export function buildPipelineUiText(t: Translator) {
+  return {
+    title: t('title'),
+    subtitle: t('subtitle'),
+    recentRuns: t('recentRuns'),
+    runDetail: t('runDetail'),
+  }
+}
 
 export default function PipelineRunsPage() {
+  const t = useTranslations('PipelinePage')
+  const locale = useLocale()
   const [coupleId, setCoupleId] = useState<string | null>(null)
   const [status, setStatus] = useState<'' | RunStatus>('')
   const [runs, setRuns] = useState<PipelineRunListItem[]>([])
@@ -65,6 +81,8 @@ export default function PipelineRunsPage() {
   const [runDetail, setRunDetail] = useState<PipelineRunDetail | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [errorText, setErrorText] = useState<string | null>(null)
+  const statusOptions = useMemo(() => buildPipelineStatusOptions(t), [t])
+  const uiText = useMemo(() => buildPipelineUiText(t), [t])
 
   useEffect(() => {
     async function fetchRuns() {
@@ -74,7 +92,7 @@ export default function PipelineRunsPage() {
       const coupleRes = await fetch('/api/couples/mine')
       if (!coupleRes.ok) {
         setLoading(false)
-        setErrorText('获取空间信息失败')
+        setErrorText(t('loadCoupleFailed'))
         return
       }
       const couple = await coupleRes.json()
@@ -85,7 +103,7 @@ export default function PipelineRunsPage() {
       const runsRes = await fetch(`/api/couples/${couple.id}/runs?${query.toString()}`)
       if (!runsRes.ok) {
         setLoading(false)
-        setErrorText('获取 Pipeline 记录失败')
+        setErrorText(t('loadRunsFailed'))
         return
       }
 
@@ -95,7 +113,7 @@ export default function PipelineRunsPage() {
     }
 
     fetchRuns()
-  }, [status])
+  }, [status, t])
 
   useEffect(() => {
     async function fetchRunDetail() {
@@ -131,8 +149,8 @@ export default function PipelineRunsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-warm-text">Pipeline 执行记录</h1>
-          <p className="text-sm text-warm-muted mt-1">查看每次照片处理的执行状态与节点结果</p>
+          <h1 className="text-2xl font-bold text-warm-text">{uiText.title}</h1>
+          <p className="text-sm text-warm-muted mt-1">{uiText.subtitle}</p>
         </div>
 
         <select
@@ -140,7 +158,7 @@ export default function PipelineRunsPage() {
           onChange={e => setStatus(e.target.value as '' | RunStatus)}
           className="px-3 py-2 rounded-[var(--radius-md)] border border-warm-border bg-warm-surface text-sm text-warm-text"
         >
-          {STATUS_OPTIONS.map(option => (
+          {statusOptions.map(option => (
             <option key={option.label} value={option.value}>
               {option.label}
             </option>
@@ -157,13 +175,13 @@ export default function PipelineRunsPage() {
       <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_1fr] gap-4">
         <section className="bg-warm-surface border border-warm-border rounded-[var(--radius-lg)] overflow-hidden">
           <div className="px-4 py-3 border-b border-warm-border text-sm font-semibold text-warm-text">
-            最近执行记录
+            {uiText.recentRuns}
           </div>
 
           {loading ? (
-            <div className="p-4 text-sm text-warm-muted">加载中...</div>
+            <div className="p-4 text-sm text-warm-muted">{t('loading')}</div>
           ) : runs.length === 0 ? (
-            <div className="p-8 text-sm text-warm-muted text-center">暂无记录</div>
+            <div className="p-8 text-sm text-warm-muted text-center">{t('empty')}</div>
           ) : (
             <div className="divide-y divide-warm-border/70">
               {runs.map(run => (
@@ -180,7 +198,7 @@ export default function PipelineRunsPage() {
                         {run.photo?.fileName || run.id}
                       </p>
                       <p className="text-xs text-warm-muted mt-1 truncate">
-                        {run.photo?.album?.title || '未知相册'} · attempt #{run.attemptNumber}
+                        {run.photo?.album?.title || t('unknownAlbum')} · {t('attempt', { count: run.attemptNumber })}
                       </p>
                     </div>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusPillClass[run.status]}`}>
@@ -188,7 +206,7 @@ export default function PipelineRunsPage() {
                     </span>
                   </div>
                   <div className="mt-2 flex items-center gap-3 text-xs text-warm-muted">
-                    <span>{new Date(run.startedAt).toLocaleString('zh-CN')}</span>
+                    <span>{new Date(run.startedAt).toLocaleString(locale)}</span>
                     {run.duration !== null && <span>{run.duration} ms</span>}
                     {run.triggerType && <span>{run.triggerType}</span>}
                   </div>
@@ -203,33 +221,33 @@ export default function PipelineRunsPage() {
 
         <section className="bg-warm-surface border border-warm-border rounded-[var(--radius-lg)] overflow-hidden">
           <div className="px-4 py-3 border-b border-warm-border text-sm font-semibold text-warm-text">
-            运行详情
+            {uiText.runDetail}
           </div>
 
           {!selectedRunId ? (
             <div className="p-8 text-sm text-warm-muted text-center">
-              选择一条记录查看详情
+              {t('selectRun')}
             </div>
           ) : detailLoading ? (
-            <div className="p-4 text-sm text-warm-muted">加载详情中...</div>
+            <div className="p-4 text-sm text-warm-muted">{t('loadingDetail')}</div>
           ) : !runDetail ? (
-            <div className="p-4 text-sm text-error">详情加载失败</div>
+            <div className="p-4 text-sm text-error">{t('loadDetailFailed')}</div>
           ) : (
             <div className="p-4 space-y-3 text-sm">
               <DetailRow label="Run ID" value={runDetail.id} mono />
-              <DetailRow label="状态" value={runDetail.status} />
-              <DetailRow label="触发来源" value={runDetail.triggerType || '-'} />
-              <DetailRow label="重试次数" value={String(runDetail.attemptNumber)} />
-              <DetailRow label="耗时" value={runDetail.duration !== null ? `${runDetail.duration} ms` : '-'} />
+              <DetailRow label={t('status')} value={runDetail.status} />
+              <DetailRow label={t('triggerType')} value={runDetail.triggerType || '-'} />
+              <DetailRow label={t('attemptNumber')} value={String(runDetail.attemptNumber)} />
+              <DetailRow label={t('duration')} value={runDetail.duration !== null ? `${runDetail.duration} ms` : '-'} />
               <DetailRow label="Token" value={runDetail.totalTokens !== null ? String(runDetail.totalTokens) : '-'} />
               <DetailRow label="Cost" value={runDetail.totalCost !== null ? String(runDetail.totalCost) : '-'} />
-              <DetailRow label="错误码" value={runDetail.errorCode || '-'} />
-              <DetailRow label="摘要" value={runDetail.summary || '-'} />
-              <DetailRow label="照片状态" value={runDetail.photo?.status || '-'} />
-              <DetailRow label="处理错误" value={runDetail.photo?.processingError || '-'} />
+              <DetailRow label={t('errorCode')} value={runDetail.errorCode || '-'} />
+              <DetailRow label={t('summary')} value={runDetail.summary || '-'} />
+              <DetailRow label={t('photoStatus')} value={runDetail.photo?.status || '-'} />
+              <DetailRow label={t('processingError')} value={runDetail.photo?.processingError || '-'} />
 
               <div className="pt-3 border-t border-warm-border">
-                <p className="text-xs font-medium text-warm-text mb-2">Node Results</p>
+                <p className="text-xs font-medium text-warm-text mb-2">{t('nodeResults')}</p>
                 <pre className="text-xs bg-warm-bg rounded-[var(--radius-sm)] p-3 overflow-auto max-h-64 text-warm-muted">
                   {JSON.stringify(runDetail.nodeResults, null, 2)}
                 </pre>

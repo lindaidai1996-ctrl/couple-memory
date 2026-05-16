@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { PreferenceDock } from '@/components/preferences/preference-dock'
 
 interface InviteInfo {
   coupleName: string
@@ -20,6 +22,7 @@ type PageState =
   | { status: 'success' }
 
 export default function InvitePage() {
+  const t = useTranslations('InvitePage')
   const params = useParams()
   const router = useRouter()
   const code = params.code as string
@@ -35,15 +38,15 @@ export default function InvitePage() {
       }
       const data = await res.json()
       if (res.status === 410) {
-        setState({ status: 'error', code: 410, message: '邀请已过期', coupleName: data.coupleName })
+        setState({ status: 'error', code: 410, message: t('expired'), coupleName: data.coupleName })
       } else if (res.status === 404) {
-        setState({ status: 'error', code: 404, message: '邀请链接无效' })
+        setState({ status: 'error', code: 404, message: t('invalid') })
       } else {
-        setState({ status: 'error', code: res.status, message: '加载失败' })
+        setState({ status: 'error', code: res.status, message: t('loadFailed') })
       }
     }
     fetchInfo()
-  }, [code])
+  }, [code, t])
 
   async function handleAccept() {
     setState({ status: 'accepting' })
@@ -60,22 +63,23 @@ export default function InvitePage() {
       return
     }
     if (res.status === 409) {
-      const msg = data.error === 'Already a member' ? '你已经是成员了' : '空间已满员'
+      const msg = data.error === 'Already a member' ? t('alreadyMember') : t('spaceFull')
       setState({ status: 'error', code: 409, message: msg })
       return
     }
-    setState({ status: 'error', code: res.status, message: data.error || '加入失败' })
+    setState({ status: 'error', code: res.status, message: data.error || t('joinFailed') })
   }
 
   function formatExpiry(expiresAt: string | null) {
     if (!expiresAt) return null
     const diff = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-    if (diff <= 0) return '即将过期'
-    return `邀请将在 ${diff} 天后过期`
+    if (diff <= 0) return t('expiresSoon')
+    return t('expiresInDays', { days: diff })
   }
 
   return (
     <div className="min-h-screen bg-film-bg text-film-text film-grain flex items-center justify-center px-4">
+      <PreferenceDock showTheme={false} />
       <div
         className="w-full max-w-sm rounded-[var(--radius-xl)] p-8 text-center"
         style={{
@@ -87,8 +91,8 @@ export default function InvitePage() {
         {state.status === 'ready' && (
           <ReadyState info={state.info} onAccept={handleAccept} formatExpiry={formatExpiry} />
         )}
-        {state.status === 'accepting' && <AcceptingState />}
-        {state.status === 'success' && <SuccessState />}
+        {state.status === 'accepting' && <AcceptingState message={t('joining')} />}
+        {state.status === 'success' && <SuccessState message={t('joined')} />}
         {state.status === 'error' && (
           <ErrorState code={state.code} message={state.message} coupleName={state.coupleName} />
         )}
@@ -115,6 +119,7 @@ function ReadyState({
   onAccept: () => void
   formatExpiry: (e: string | null) => string | null
 }) {
+  const t = useTranslations('InvitePage')
   const expiry = formatExpiry(info.expiresAt)
 
   return (
@@ -142,7 +147,7 @@ function ReadyState({
         {info.coupleName}
       </h1>
       <p className="text-sm text-film-muted mb-6">
-        {info.ownerName ?? '对方'}邀请你成为伴侣
+        {t('inviteYou', { name: info.ownerName ?? t('partnerFallback') })}
       </p>
 
       <button
@@ -150,7 +155,7 @@ function ReadyState({
         className="w-full py-3 text-sm font-medium text-film-text bg-film-accent
           rounded-[var(--radius-md)] hover:opacity-90 transition-opacity"
       >
-        加入空间
+        {t('joinSpace')}
       </button>
 
       {expiry && (
@@ -160,16 +165,16 @@ function ReadyState({
   )
 }
 
-function AcceptingState() {
+function AcceptingState({ message }: { message: string }) {
   return (
     <div className="py-8">
       <div className="w-8 h-8 border-2 border-film-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-      <p className="text-sm text-film-muted">加入中...</p>
+      <p className="text-sm text-film-muted">{message}</p>
     </div>
   )
 }
 
-function SuccessState() {
+function SuccessState({ message }: { message: string }) {
   return (
     <div className="py-8">
       <div className="w-12 h-12 rounded-full bg-success/20 flex items-center justify-center mx-auto mb-4">
@@ -177,7 +182,7 @@ function SuccessState() {
           <polyline points="20 6 9 17 4 12" />
         </svg>
       </div>
-      <p className="text-sm text-film-text">加入成功，正在跳转...</p>
+      <p className="text-sm text-film-text">{message}</p>
     </div>
   )
 }
@@ -191,6 +196,7 @@ function ErrorState({
   message: string
   coupleName?: string
 }) {
+  const t = useTranslations('InvitePage')
   return (
     <div className="py-4">
       {coupleName && (
@@ -198,8 +204,8 @@ function ErrorState({
       )}
       <p className="text-base text-film-text mb-2">{message}</p>
       <p className="text-xs text-film-muted mb-6">
-        {code === 410 && '请联系对方重新发送邀请链接'}
-        {code === 404 && '请确认链接是否正确'}
+        {code === 410 && t('expiredHint')}
+        {code === 404 && t('invalidHint')}
         {code === 409 && ''}
       </p>
       <Link
@@ -207,7 +213,7 @@ function ErrorState({
         className="inline-block px-5 py-2.5 text-sm font-medium text-film-muted border border-film-surface
           rounded-[var(--radius-md)] hover:bg-film-surface transition-colors"
       >
-        返回首页
+        {t('backHome')}
       </Link>
     </div>
   )

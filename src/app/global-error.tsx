@@ -1,11 +1,14 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 export default function GlobalError({
   reset,
 }: {
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const t = useTranslations('ErrorPage')
   return (
     <html lang="zh-CN">
       <body
@@ -26,10 +29,10 @@ export default function GlobalError({
           Oops
         </p>
         <p style={{ fontSize: '16px', color: '#3d3530', margin: '0 0 8px' }}>
-          页面开小差了
+          {t('title')}
         </p>
         <p style={{ fontSize: '14px', color: '#9c8e82', margin: '0 0 32px' }}>
-          别担心，刷新一下通常就好了
+          {t('subtitle')}
         </p>
         <div style={{ display: 'flex', gap: '12px' }}>
           <button
@@ -45,7 +48,7 @@ export default function GlobalError({
               cursor: 'pointer',
             }}
           >
-            刷新页面
+            {t('retry')}
           </button>
           <button
             onClick={() => (window.location.href = '/')}
@@ -60,7 +63,7 @@ export default function GlobalError({
               cursor: 'pointer',
             }}
           >
-            返回首页
+            {t('backHome')}
           </button>
         </div>
       </body>

@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 export interface PhotoData {
   id: string
   fileName: string
@@ -23,7 +25,21 @@ export interface PhotoData {
   canBeCover?: boolean
 }
 
+type Translator = (key: string) => string
+
+export function buildPhotoCardStatusCopy(t: Translator) {
+  return {
+    processing: t('processing'),
+    noPreview: t('noPreview'),
+    processingShort: t('processingShort'),
+    failed: t('failed'),
+  }
+}
+
 export function PhotoCard({ photo, onClick }: { photo: PhotoData; onClick: () => void }) {
+  const t = useTranslations('PhotoCard')
+  const copy = buildPhotoCardStatusCopy(t)
+
   return (
     <div
       onClick={onClick}
@@ -40,13 +56,13 @@ export function PhotoCard({ photo, onClick }: { photo: PhotoData; onClick: () =>
       ) : (
         <div className="w-full h-full flex items-center justify-center">
           <span className="text-warm-muted text-xs">
-            {photo.status === 'PROCESSING' ? '处理中...' : '无预览'}
+            {photo.status === 'PROCESSING' ? copy.processing : copy.noPreview}
           </span>
         </div>
       )}
 
       {photo.status !== 'READY' && (
-        <StatusBadge status={photo.status} />
+        <StatusBadge status={photo.status} processingLabel={copy.processingShort} failedLabel={copy.failed} />
       )}
 
       <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/50 to-transparent
@@ -59,10 +75,18 @@ export function PhotoCard({ photo, onClick }: { photo: PhotoData; onClick: () =>
   )
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({
+  status,
+  processingLabel,
+  failedLabel,
+}: {
+  status: string
+  processingLabel: string
+  failedLabel: string
+}) {
   const config = status === 'PROCESSING'
-    ? { bg: 'bg-info', label: '处理中' }
-    : { bg: 'bg-error', label: '失败' }
+    ? { bg: 'bg-info', label: processingLabel }
+    : { bg: 'bg-error', label: failedLabel }
 
   return (
     <div className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-medium text-white ${config.bg}`}>

@@ -14,6 +14,12 @@ const radiusMap = {
   full: '9999px',
 } as const
 
+export function buildSkeletonGradient(variant: NonNullable<SkeletonProps['variant']>) {
+  return variant === 'warm'
+    ? 'linear-gradient(90deg, var(--color-warm-skeleton-base) 25%, var(--color-warm-skeleton-highlight) 50%, var(--color-warm-skeleton-base) 75%)'
+    : 'linear-gradient(90deg, var(--color-film-skeleton-base) 25%, var(--color-film-skeleton-highlight) 50%, var(--color-film-skeleton-base) 75%)'
+}
+
 export function Skeleton({
   width,
   height,
@@ -21,10 +27,6 @@ export function Skeleton({
   variant = 'warm',
   className = '',
 }: SkeletonProps) {
-  const gradient = variant === 'warm'
-    ? 'linear-gradient(90deg, var(--color-warm-border) 25%, var(--color-warm-sidebar) 50%, var(--color-warm-border) 75%)'
-    : 'linear-gradient(90deg, var(--color-film-surface) 25%, #2e2e2e 50%, var(--color-film-surface) 75%)'
-
   return (
     <div
       className={`animate-shimmer ${className}`}
@@ -32,7 +34,7 @@ export function Skeleton({
         width: typeof width === 'number' ? `${width}px` : width,
         height: typeof height === 'number' ? `${height}px` : height,
         borderRadius: radiusMap[radius],
-        backgroundImage: gradient,
+        backgroundImage: buildSkeletonGradient(variant),
         backgroundSize: '200% 100%',
       }}
     />

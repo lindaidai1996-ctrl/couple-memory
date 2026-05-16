@@ -1,8 +1,10 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getTranslations } from 'next-intl/server'
 import { redirect } from 'next/navigation'
 
 export default async function DashboardPage() {
+  const t = await getTranslations('DashboardPage')
   const session = await auth()
   if (!session) redirect('/login')
 
@@ -20,14 +22,14 @@ export default async function DashboardPage() {
   if (!coupleUser) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <h1 className="text-2xl font-bold text-warm-text mb-3">还没有创建空间</h1>
-        <p className="text-warm-muted mb-6">创建一个情侣空间，开始记录你们的故事</p>
+        <h1 className="text-2xl font-bold text-warm-text mb-3">{t('emptyTitle')}</h1>
+        <p className="text-warm-muted mb-6">{t('emptySubtitle')}</p>
         <a
           href="/settings"
           className="px-6 py-3 bg-warm-accent text-white rounded-[var(--radius-md)] font-medium
             hover:bg-warm-accent-hover transition-colors"
         >
-          前往设置
+          {t('goToSettings')}
         </a>
       </div>
     )
@@ -49,20 +51,20 @@ export default async function DashboardPage() {
     : null
 
   const stats = [
-    { label: '照片', value: photoCount, suffix: '张' },
-    { label: '相册', value: couple._count.albums, suffix: '个' },
-    { label: '里程碑', value: milestoneCount, suffix: '个' },
-    ...(daysTogether !== null ? [{ label: '在一起', value: daysTogether, suffix: '天' }] : []),
+    { label: t('photos'), value: photoCount, suffix: t('photoSuffix') },
+    { label: t('albums'), value: couple._count.albums, suffix: t('albumSuffix') },
+    { label: t('milestones'), value: milestoneCount, suffix: t('milestoneSuffix') },
+    ...(daysTogether !== null ? [{ label: t('daysTogether'), value: daysTogether, suffix: t('daySuffix') }] : []),
   ]
 
   return (
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-warm-text">
-          {couple.name || '我们的空间'}
+          {couple.name || t('spaceNameFallback')}
         </h1>
         <p className="text-warm-muted text-sm mt-1">
-          欢迎回来，{session.user.name || ''}
+          {t('welcomeBack', { name: session.user.name || '' })}
         </p>
       </div>
 
@@ -86,7 +88,7 @@ export default async function DashboardPage() {
 
       {couple.isPublic && couple.slug && (
         <div className="mt-8 p-5 bg-warm-surface rounded-[var(--radius-lg)] border border-warm-border">
-          <p className="text-sm text-warm-muted mb-2">公开链接</p>
+          <p className="text-sm text-warm-muted mb-2">{t('publicLink')}</p>
           <p className="text-warm-accent font-medium break-all">
             /s/{couple.slug}
           </p>

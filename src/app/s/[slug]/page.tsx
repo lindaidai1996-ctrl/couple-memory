@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import {
   getPublicSpacePageDataBySlug,
@@ -21,6 +22,7 @@ export default async function PublicHomePage({
 }) {
   const { slug } = await params
   const space = await getPublicSpacePageDataBySlug(slug)
+  const t = await getTranslations('PublicPage')
 
   if (!space?.isPublic) {
     notFound()
@@ -77,8 +79,8 @@ export default async function PublicHomePage({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <NavCard
               href={`/s/${slug}/photos`}
-              title="照片"
-              subtitle="我们拍下的每一帧"
+              title={t('photos')}
+              subtitle={t('photosSubtitle')}
               icon={
                 <svg
                   width="28"
@@ -96,8 +98,8 @@ export default async function PublicHomePage({
             />
             <NavCard
               href={`/s/${slug}/timeline`}
-              title="时间轴"
-              subtitle="属于我们的每一个节点"
+              title={t('timeline')}
+              subtitle={t('timelineSubtitle')}
               icon={
                 <svg
                   width="28"

@@ -1,8 +1,11 @@
 'use client'
 
 import type { LayoutProps } from './cinema-wide'
+import { useLocale, useTranslations } from 'next-intl'
 
 export function SideBySide({ photo, caption, index = 0 }: LayoutProps) {
+  const t = useTranslations('Layout')
+  const locale = useLocale()
   const src = photo.displayUrl || photo.thumbnailUrl
   const flipped = index % 2 === 1
 
@@ -18,7 +21,7 @@ export function SideBySide({ photo, caption, index = 0 }: LayoutProps) {
         />
       ) : (
         <div className="w-full h-full bg-film-surface flex items-center justify-center min-h-[240px]">
-          <span className="text-film-muted text-sm">无图片</span>
+          <span className="text-film-muted text-sm">{t('noImage')}</span>
         </div>
       )}
     </div>
@@ -35,7 +38,7 @@ export function SideBySide({ photo, caption, index = 0 }: LayoutProps) {
         {photo.locationName && <span>{photo.locationName}</span>}
         {photo.takenAt && (
           <time dateTime={photo.takenAt}>
-            {new Date(photo.takenAt).toLocaleDateString('zh-CN')}
+            {new Date(photo.takenAt).toLocaleDateString(locale)}
           </time>
         )}
       </div>

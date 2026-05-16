@@ -2,10 +2,12 @@
 
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import Link from 'next/link'
 
 export default function LoginPage() {
+  const t = useTranslations('LoginPage')
   const router = useRouter()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -23,7 +25,7 @@ export default function LoginPage() {
     })
 
     if (result?.error) {
-      setError('邮箱或密码错误')
+      setError(t('error'))
       setLoading(false)
     } else {
       router.push('/dashboard')
@@ -34,9 +36,9 @@ export default function LoginPage() {
     <>
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold text-warm-text tracking-tight">
-          欢迎回来
+          {t('title')}
         </h1>
-        <p className="text-warm-muted text-sm mt-1">登录你的情侣空间</p>
+        <p className="text-warm-muted text-sm mt-1">{t('subtitle')}</p>
       </div>
 
       {error && (
@@ -48,7 +50,7 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-warm-text mb-1.5">
-            邮箱
+            {t('email')}
           </label>
           <input
             id="email"
@@ -66,7 +68,7 @@ export default function LoginPage() {
 
         <div>
           <label htmlFor="password" className="block text-sm font-medium text-warm-text mb-1.5">
-            密码
+            {t('password')}
           </label>
           <input
             id="password"
@@ -90,14 +92,14 @@ export default function LoginPage() {
             disabled:opacity-50 disabled:cursor-not-allowed
             transition-all duration-200 shadow-sm hover:shadow-md"
         >
-          {loading ? '登录中...' : '登录'}
+          {loading ? t('submitting') : t('submit')}
         </button>
       </form>
 
       <p className="text-center text-sm text-warm-muted mt-6">
-        还没有账号？
+        {t('noAccount')}
         <Link href="/register" className="text-warm-accent hover:text-warm-accent-hover font-medium ml-1">
-          注册
+          {t('register')}
         </Link>
       </p>
     </>

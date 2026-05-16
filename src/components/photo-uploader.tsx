@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { compressAndUpload, type UploadStage } from '@/lib/upload'
 
 type UploadItem = {
@@ -12,13 +13,17 @@ type UploadItem = {
   error?: string
 }
 
-const STAGE_LABELS: Record<UploadItem['status'], string> = {
-  pending: '等待中',
-  compressing: '压缩中',
-  uploading: '上传中',
-  confirming: '确认中',
-  done: '完成',
-  error: '失败',
+type Translator = (key: string) => string
+
+export function buildUploaderStageLabels(t: Translator): Record<UploadItem['status'], string> {
+  return {
+    pending: t('pending'),
+    compressing: t('compressing'),
+    uploading: t('uploading'),
+    confirming: t('confirming'),
+    done: t('done'),
+    error: t('error'),
+  }
 }
 
 export function PhotoUploader({
@@ -30,6 +35,8 @@ export function PhotoUploader({
   albumId: string
   onUploaded?: (photoId: string) => void
 }) {
+  const t = useTranslations('PhotoUploader')
+  const stageLabels = buildUploaderStageLabels(t)
   const [items, setItems] = useState<UploadItem[]>([])
 
   const updateItem = useCallback((id: string, patch: Partial<UploadItem>) => {
@@ -62,13 +69,13 @@ export function PhotoUploader({
             updateItem(item.id, { status: 'done', photoId: result.id })
             onUploaded?.(result.id)
           } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : String(err || '上传失败')
+            const message = err instanceof Error ? err.message : String(err || t('uploadFailed'))
             updateItem(item.id, { status: 'error', error: message })
           }
         })
       )
     }
-  }, [coupleId, albumId, onUploaded, updateItem])
+  }, [coupleId, albumId, onUploaded, t, updateItem])
 
   return (
     <div className="space-y-4">
@@ -80,8 +87,8 @@ export function PhotoUploader({
           className="hidden"
           onChange={e => e.target.files && handleFiles(e.target.files)}
         />
-        <p className="text-sm text-gray-600">点击或拖拽照片到此处上传</p>
-        <p className="mt-1 text-xs text-gray-400">支持 JPEG、PNG、WebP、HEIC，单张最大 10MB</p>
+        <p className="text-sm text-gray-600">{t('dropzoneTitle')}</p>
+        <p className="mt-1 text-xs text-gray-400">{t('dropzoneHint')}</p>
       </label>
 
       {items.length > 0 && (
@@ -90,7 +97,7 @@ export function PhotoUploader({
             <li key={item.id} className="flex items-center justify-between rounded bg-gray-50 px-3 py-2 text-sm">
               <span className="truncate">{item.fileName}</span>
               <span className={item.status === 'error' ? 'text-red-500' : 'text-gray-500'}>
-                {item.status === 'error' ? item.error : STAGE_LABELS[item.status]}
+                {item.status === 'error' ? item.error : stageLabels[item.status]}
               </span>
             </li>
           ))}
