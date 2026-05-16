@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { SettingsFormSkeleton } from '@/components/skeleton/settings-form-skeleton'
 
 type CoverMode = 'NONE' | 'PHOTO' | 'UPLOAD'
@@ -212,6 +212,20 @@ export default function SettingsPage() {
         inviteCode: data.inviteCode,
         inviteExpiresAt: data.inviteExpiresAt,
       } : null)
+    }
+  }
+
+  async function handleRegenerateInvite() {
+    if (!couple) return
+    const res = await fetch(`/api/couples/${couple.id}/invite`, { method: 'POST' })
+    if (res.ok) {
+      const data = await res.json()
+      setCouple(prev => prev ? {
+        ...prev,
+        inviteCode: data.inviteCode,
+        inviteExpiresAt: data.inviteExpiresAt,
+      } : null)
+      setMessage({ type: 'success', text: '邀请链接已重新生成' })
     }
   }
 
@@ -479,40 +493,7 @@ export default function SettingsPage() {
 
       <div className="mt-10 pt-8 border-t border-warm-border">
         <Section title="邀请伴侣">
-          {couple.inviteCode ? (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <code className="flex-1 px-3 py-2 bg-warm-bg rounded-[var(--radius-sm)] text-sm text-warm-text border border-warm-border break-all">
-                  {typeof window !== 'undefined' ? window.location.origin : ''}/invite/{couple.inviteCode}
-                </code>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/invite/${couple.inviteCode}`)
-                    setMessage({ type: 'success', text: '已复制邀请链接' })
-                  }}
-                  className="px-3 py-2 text-sm text-warm-accent hover:bg-warm-accent/10
-                    rounded-[var(--radius-sm)] transition-colors whitespace-nowrap"
-                >
-                  复制
-                </button>
-              </div>
-              {couple.inviteExpiresAt && (
-                <p className="text-xs text-warm-muted">
-                  有效期至 {new Date(couple.inviteExpiresAt).toLocaleDateString('zh-CN')}
-                </p>
-              )}
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={handleGenerateInvite}
-              className="px-4 py-2 text-sm text-warm-accent border border-warm-accent
-                rounded-[var(--radius-md)] hover:bg-warm-accent/10 transition-colors"
-            >
-              生成邀请链接
-            </button>
-          )}
+          <InviteSection couple={couple} onGenerate={handleGenerateInvite} onRegenerate={handleRegenerateInvite} />
         </Section>
       </div>
     </div>
@@ -539,6 +520,80 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       <label className="block text-sm font-medium text-warm-text mb-1.5">{label}</label>
       {hint && <p className="text-xs text-warm-muted mb-1.5">{hint}</p>}
       {children}
+    </div>
+  )
+}
+
+function InviteSection({
+  couple,
+  onGenerate,
+  onRegenerate,
+}: {
+  couple: CoupleData
+  onGenerate: () => void
+  onRegenerate: () => void
+}) {
+  const [copied, setCopied] = useState(false)
+
+  const daysLeft = useMemo(() => {
+    if (!couple.inviteExpiresAt) return null
+    const expiresAt = new Date(couple.inviteExpiresAt)
+    return Math.max(0, Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+  }, [couple.inviteExpiresAt])
+
+  function handleCopy() {
+    const url = `${window.location.origin}/invite/${couple.inviteCode}`
+    navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
+  function handleRegenerate() {
+    if (!confirm('重新生成将使当前邀请链接立即失效，确定继续？')) return
+    onRegenerate()
+  }
+
+  if (!couple.inviteCode) {
+    return (
+      <button
+        type="button"
+        onClick={onGenerate}
+        className="px-4 py-2 text-sm text-warm-accent border border-warm-accent
+          rounded-[var(--radius-md)] hover:bg-warm-accent/10 transition-colors"
+      >
+        生成邀请链接
+      </button>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <code className="flex-1 px-3 py-2 bg-warm-bg rounded-[var(--radius-sm)] text-sm text-warm-text border border-warm-border break-all">
+          {typeof window !== 'undefined' ? window.location.origin : ''}/invite/{couple.inviteCode}
+        </code>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="px-3 py-2 text-sm text-warm-accent hover:bg-warm-accent/10
+            rounded-[var(--radius-sm)] transition-colors whitespace-nowrap"
+        >
+          {copied ? '已复制 ✓' : '复制'}
+        </button>
+      </div>
+      {daysLeft !== null && (
+        <p className="text-xs text-warm-muted">
+          剩余有效期：{daysLeft} 天
+        </p>
+      )}
+      <button
+        type="button"
+        onClick={handleRegenerate}
+        className="px-3 py-2 text-xs text-warm-muted border border-warm-border
+          rounded-[var(--radius-sm)] hover:bg-warm-bg transition-colors"
+      >
+        重新生成
+      </button>
     </div>
   )
 }
