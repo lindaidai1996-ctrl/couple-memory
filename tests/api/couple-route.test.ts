@@ -17,9 +17,9 @@ test('createCouplePatchHandler returns a unified conflict error when slug is alr
   const handler = createCouplePatchHandler({
     prisma: {
       couple: {
-        findUnique: async ({ where }: { where: { slug: string } }) => ({
+        findUnique: async (args: Record<string, unknown>) => ({
           id: 'other-couple',
-          slug: where.slug,
+          slug: (args as { where: { slug: string } }).where.slug,
         }),
         update: async () => {
           throw new Error('update should not be called when slug conflicts')

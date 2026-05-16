@@ -1,0 +1,58 @@
+<h2>邀请接受页布局</h2>
+<p class="subtitle">Partner 打开邀请链接后看到的页面，使用 film-* 暗色体系</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 24px; background: #1a1a1a; min-height: 240px; display: flex; align-items: center; justify-content: center;">
+      <div style="text-align: center; max-width: 300px;">
+        <div style="font-size: 11px; letter-spacing: 2px; color: #8b7355; text-transform: uppercase; margin-bottom: 16px;">邀请加入</div>
+        <div style="font-family: serif; font-size: 28px; color: #f5f0eb; margin-bottom: 8px; font-weight: 300;">Our Story</div>
+        <div style="font-size: 13px; color: #a89f95; margin-bottom: 24px; line-height: 1.6;">小林邀请你一起记录<br>属于你们的故事</div>
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: #242424; border: 1px solid #8b7355; margin: 0 auto 24px; display: flex; align-items: center; justify-content: center;">
+          <span style="color: #b89b6f; font-size: 20px; font-family: serif;">L</span>
+        </div>
+        <div style="padding: 12px 32px; border-radius: 12px; background: #8b7355; color: #f5f0eb; font-size: 14px; display: inline-block; font-weight: 500;">接受邀请</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 居中极简</h3>
+      <p>纯文字排版，空间名称作为视觉中心，Owner 头像做信任标识。安静优雅。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 24px; background: #1a1a1a; min-height: 240px; display: flex; align-items: center; justify-content: center;">
+      <div style="background: #242424; border-radius: 20px; border: 1px solid rgba(139,115,85,0.2); padding: 28px 24px; max-width: 280px; width: 100%; text-align: center;">
+        <div style="display: flex; justify-content: center; gap: -8px; margin-bottom: 16px;">
+          <div style="width: 44px; height: 44px; border-radius: 50%; background: #3a3530; border: 2px solid #242424; display: flex; align-items: center; justify-content: center;"><span style="color: #b89b6f; font-size: 16px;">L</span></div>
+          <div style="width: 44px; height: 44px; border-radius: 50%; background: #3a3530; border: 2px solid #242424; display: flex; align-items: center; justify-content: center; margin-left: -12px;"><span style="color: #a89f95; font-size: 16px;">?</span></div>
+        </div>
+        <div style="font-family: serif; font-size: 20px; color: #f5f0eb; margin-bottom: 6px;">Our Story</div>
+        <div style="font-size: 12px; color: #a89f95; margin-bottom: 20px;">小林邀请你成为伴侣</div>
+        <div style="padding: 11px 28px; border-radius: 12px; background: #8b7355; color: #f5f0eb; font-size: 13px; display: inline-block; font-weight: 500;">加入空间</div>
+        <div style="font-size: 11px; color: #6b5f53; margin-top: 12px;">邀请将在 6 天后过期</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 卡片式</h3>
+      <p>浮层卡片内聚所有信息（双头像暗示配对关系 + 过期提示）。有"收到请帖"的仪式感。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 24px; background: #1a1a1a; min-height: 240px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+      <div style="position: absolute; top: 0; left: 0; right: 0; height: 100px; background: linear-gradient(180deg, rgba(139,115,85,0.15) 0%, transparent 100%);"></div>
+      <div style="position: relative; display: flex; flex-direction: column; align-items: center; text-align: center;">
+        <div style="width: 72px; height: 72px; border-radius: 16px; background: #242424; border: 1px solid rgba(139,115,85,0.3); margin-bottom: 16px; display: flex; align-items: center; justify-content: center; font-family: serif; font-size: 24px; color: #b89b6f;">OS</div>
+        <div style="font-size: 22px; color: #f5f0eb; font-family: serif; margin-bottom: 4px;">Our Story</div>
+        <div style="font-size: 12px; color: #a89f95; margin-bottom: 6px;">3 个相册 · 28 张照片</div>
+        <div style="font-size: 13px; color: #a89f95; margin-bottom: 20px; line-height: 1.5;">小林想和你一起在这里<br>记录你们的珍贵瞬间</div>
+        <div style="padding: 12px 36px; border-radius: 12px; background: #8b7355; color: #f5f0eb; font-size: 14px; font-weight: 500;">接受邀请，加入空间</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 空间预览</h3>
+      <p>展示空间 logo + 数据概览（相册/照片数），让 Partner 看到"里面有内容等着你"。更有说服力。</p>
+    </div>
+  </div>
+</div>

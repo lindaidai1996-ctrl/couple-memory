@@ -1,0 +1,107 @@
+<h2>设计方案总览 — 第一批前端体验 P1</h2>
+<p class="subtitle">P1-9 骨架屏 · P1-10 错误边界 · P1-11 邀请页面</p>
+
+<div class="section">
+  <h3>P1-9：骨架屏 + 预加载</h3>
+  <div class="mockup">
+    <div class="mockup-header">覆盖范围 & 技术方案</div>
+    <div class="mockup-body" style="padding: 20px; font-size: 14px; line-height: 1.8;">
+      <div style="margin-bottom: 16px;">
+        <span class="label">动画风格</span>
+        <div style="margin-top: 4px;">Shimmer（微光扫过）— 左→右高光横扫，后台用 warm-border/warm-sidebar 色，公开页用 film-surface 色</div>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <span class="label">覆盖页面</span>
+        <div style="margin-top: 4px;">
+          <strong>后台 (warm-*)：</strong>照片网格、相册列表、设置页表单、照片详情 Modal、Sidebar 导航<br>
+          <strong>公开页 (film-*)：</strong>PhotoStream、Timeline、首页 Hero
+        </div>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <span class="label">预加载策略</span>
+        <div style="margin-top: 4px;">IntersectionObserver + rootMargin: "200px" — 图片进入视口前 200px 触发加载，配合骨架屏实现无缝过渡</div>
+      </div>
+      <div>
+        <span class="label">组件设计</span>
+        <div style="margin-top: 4px;">
+          • 通用 <code>&lt;Skeleton&gt;</code> 基础组件（支持 width/height/radius/variant 参数）<br>
+          • 场景组合组件：<code>&lt;PhotoGridSkeleton&gt;</code>、<code>&lt;TimelineSkeleton&gt;</code>、<code>&lt;SettingsFormSkeleton&gt;</code> 等<br>
+          • CSS keyframes 定义在 globals.css，通过 Tailwind 自定义动画类 <code>animate-shimmer</code> 使用<br>
+          • 后台用纯 CSS（遵循"后台纯 CSS transition"原则），公开页骨架屏配合 Framer Motion 入场
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>P1-10：错误边界</h3>
+  <div class="mockup">
+    <div class="mockup-header">架构 & UI 设计</div>
+    <div class="mockup-body" style="padding: 20px; font-size: 14px; line-height: 1.8;">
+      <div style="margin-bottom: 16px;">
+        <span class="label">粒度</span>
+        <div style="margin-top: 4px;">页面级 Error Boundary — 每个路由页面顶层包裹，崩溃时整页替换为错误 UI</div>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <span class="label">视觉风格</span>
+        <div style="margin-top: 4px;">大字排版 — 巨型装饰文字 "Oops" 作为视觉焦点 + 友好文案 + 双操作按钮（刷新/返回首页）</div>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <span class="label">主题适配</span>
+        <div style="margin-top: 4px;">
+          • 后台页面：warm-* 配色，"Oops" 用 warm-border 浅色，按钮用 warm-accent<br>
+          • 公开页面：film-* 配色，"Oops" 用 film-surface 深灰色，按钮用 film-accent
+        </div>
+      </div>
+      <div>
+        <span class="label">技术实现</span>
+        <div style="margin-top: 4px;">
+          • Next.js App Router 内置 <code>error.tsx</code> 约定（每个路由段可放置）<br>
+          • 根 <code>app/error.tsx</code> 作为全局兜底<br>
+          • <code>app/global-error.tsx</code> 捕获 layout 级错误（含根 layout）<br>
+          • 提供 reset() 刷新功能 + router.push('/') 返回首页
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>P1-11：邀请链接页面</h3>
+  <div class="mockup">
+    <div class="mockup-header">双端设计</div>
+    <div class="mockup-body" style="padding: 20px; font-size: 14px; line-height: 1.8;">
+      <div style="margin-bottom: 16px;">
+        <span class="label">Partner 接受页（film-* 暗色）</span>
+        <div style="margin-top: 4px;">
+          • 全屏暗色背景 + film-grain 纹理<br>
+          • 居中浮层卡片（film-surface 底 + accent 边框微光）<br>
+          • 双头像（Owner 头像 + "?" 占位暗示配对关系）<br>
+          • 空间名称 + 邀请文案 + "加入空间"按钮<br>
+          • 底部小字过期倒计时<br>
+          • 异常态：过期（410）、已满员（409）、已是成员（409）各有对应 UI
+        </div>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <span class="label">Owner 邀请管理（warm-* 亮色，Settings 页内）</span>
+        <div style="margin-top: 4px;">
+          • 嵌入现有 Settings 页面作为独立 section<br>
+          • 显示当前邀请码 + 完整链接 + 一键复制<br>
+          • 有效期倒计时展示<br>
+          • "重新生成"按钮（旧码立即失效）<br>
+          • 无邀请码时展示"生成邀请链接"入口
+        </div>
+      </div>
+      <div>
+        <span class="label">路由结构</span>
+        <div style="margin-top: 4px;">
+          • 接受页：<code>/invite/[code]</code>（独立路由，不走 dashboard layout）<br>
+          • 管理 UI：<code>/(dashboard)/settings</code> 页面内新增 section
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top: 24px;">请在终端确认：这三个模块的设计方案是否 OK？有需要调整的地方吗？</p>

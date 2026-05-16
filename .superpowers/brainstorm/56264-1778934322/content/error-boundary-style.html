@@ -1,0 +1,52 @@
+<h2>错误页面 UI 风格</h2>
+<p class="subtitle">页面崩溃时用户看到的全屏错误界面</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 32px; background: #faf8f5; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 220px; text-align: center;">
+      <div style="width: 64px; height: 64px; border-radius: 50%; background: #ede8e3; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+        <span style="font-size: 28px; color: #9c8e82;">!</span>
+      </div>
+      <div style="font-family: 'DM Sans', sans-serif; font-size: 18px; color: #3d3530; font-weight: 600; margin-bottom: 8px;">出了点小问题</div>
+      <div style="font-size: 14px; color: #9c8e82; margin-bottom: 20px;">页面加载遇到了意外情况</div>
+      <div style="padding: 10px 24px; border-radius: 12px; background: #c4956a; color: white; font-size: 14px; font-weight: 500; cursor: pointer;">刷新页面</div>
+    </div>
+    <div class="card-body">
+      <h3>A. 极简居中</h3>
+      <p>图标 + 文案 + 按钮，居中对齐，温暖色调。克制、不突兀、与后台风格一致。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 32px; background: #faf8f5; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 220px; text-align: center;">
+      <div style="font-size: 72px; font-weight: 700; color: #ede8e3; font-family: 'DM Sans', sans-serif; line-height: 1; margin-bottom: 8px;">Oops</div>
+      <div style="font-size: 15px; color: #3d3530; margin-bottom: 4px; font-weight: 500;">页面开小差了</div>
+      <div style="font-size: 13px; color: #9c8e82; margin-bottom: 20px;">别担心，刷新一下通常就好了</div>
+      <div style="display: flex; gap: 12px;">
+        <div style="padding: 9px 20px; border-radius: 12px; background: #c4956a; color: white; font-size: 13px; font-weight: 500;">刷新页面</div>
+        <div style="padding: 9px 20px; border-radius: 12px; border: 1px solid #ede8e3; color: #9c8e82; font-size: 13px; font-weight: 500;">返回首页</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 大字排版</h3>
+      <p>巨型装饰文字 + 友好文案 + 双按钮。更有设计感，利用 DM Sans 大号字做视觉焦点。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 32px; background: #faf8f5; display: flex; align-items: center; justify-content: center; min-height: 220px;">
+      <div style="background: white; border: 1px solid #ede8e3; border-radius: 20px; padding: 28px 32px; max-width: 280px; width: 100%; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.04);">
+        <div style="width: 48px; height: 48px; border-radius: 12px; background: #fff3ea; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;">
+          <span style="font-size: 20px; color: #c4956a;">⚠</span>
+        </div>
+        <div style="font-size: 16px; color: #3d3530; font-weight: 600; margin-bottom: 6px;">页面加载失败</div>
+        <div style="font-size: 13px; color: #9c8e82; margin-bottom: 18px; line-height: 1.5;">我们已记录此问题，<br>请尝试刷新页面</div>
+        <div style="padding: 10px 24px; border-radius: 12px; background: #c4956a; color: white; font-size: 13px; font-weight: 500; display: inline-block;">重试</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 卡片浮层</h3>
+      <p>居中毛玻璃/白底卡片，与登录页设计语言一致（全屏背景 + 居中卡片）。更精致收敛。</p>
+    </div>
+  </div>
+</div>

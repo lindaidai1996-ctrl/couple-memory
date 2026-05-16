@@ -57,7 +57,7 @@ test('createRetryPhotoHandler maps FULL scope to MANUAL_RETRY and returns the qu
     } as never,
     processPhotoImpl: async (photoId, ossKey, clientExif, triggerType) => {
       processCalls.push({ photoId, ossKey, clientExif, triggerType })
-      return { runId: 'run_3' }
+      return { runId: 'run_3', photoStatus: 'READY' as const }
     },
   })
 
@@ -109,7 +109,7 @@ test('createRetryPhotoHandler maps CAPTION_ONLY scope to CAPTION_REGEN', async (
     } as never,
     processPhotoImpl: async (_photoId, _ossKey, _clientExif, triggerType) => {
       processCalls.push({ triggerType })
-      return { runId: 'run_4' }
+      return { runId: 'run_4', photoStatus: 'READY' as const }
     },
   })
 
@@ -148,7 +148,7 @@ test('createRetryPhotoHandler allows CAPTION_ONLY when the latest run is DEGRADE
     } as never,
     processPhotoImpl: async (_photoId, _ossKey, _clientExif, triggerType) => {
       processCalls.push({ triggerType })
-      return { runId: 'run_5' }
+      return { runId: 'run_5', photoStatus: 'READY' as const }
     },
   })
 
@@ -228,6 +228,7 @@ test('createRetryPhotoHandler aborts when another request already claimed the re
     } as never,
     processPhotoImpl: async (photoId, ossKey, clientExif) => {
       processCalls.push({ photoId, ossKey, clientExif })
+      return { runId: null, photoStatus: 'READY' as const }
     },
   })
 
@@ -264,7 +265,7 @@ test('createRetryPhotoHandler returns a unified not-found error', async () => {
         findFirst: async () => null,
       },
     } as never,
-    processPhotoImpl: async () => undefined,
+    processPhotoImpl: async () => ({ runId: null, photoStatus: 'READY' as const }),
   })
 
   const response = await handler(
@@ -303,6 +304,7 @@ test('createRetryPhotoHandler rejects retry while a pipeline run is still active
     } as never,
     processPhotoImpl: async (photoId, ossKey, clientExif) => {
       processCalls.push({ photoId, ossKey, clientExif })
+      return { runId: null, photoStatus: 'READY' as const }
     },
   })
 
