@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { SettingsFormSkeleton } from '@/components/skeleton/settings-form-skeleton'
 
 type CoverMode = 'NONE' | 'PHOTO' | 'UPLOAD'
 
@@ -215,7 +216,7 @@ export default function SettingsPage() {
   }
 
   if (loading) {
-    return <SettingsSkeleton />
+    return <SettingsFormSkeleton />
   }
 
   if (!couple) {
@@ -542,22 +543,4 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   )
 }
 
-function SettingsSkeleton() {
-  return (
-    <div className="max-w-2xl animate-pulse">
-      <div className="h-8 bg-warm-border rounded w-32 mb-6" />
-      <div className="space-y-4">
-        {[1, 2, 3].map(section => (
-          <div
-            key={section}
-            className="bg-warm-surface rounded-[var(--radius-lg)] p-5 border border-warm-border space-y-4"
-          >
-            <div className="h-4 bg-warm-border rounded w-20" />
-            <div className="h-10 bg-warm-border rounded" />
-            <div className="h-10 bg-warm-border rounded" />
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
+

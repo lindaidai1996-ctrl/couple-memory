@@ -6,6 +6,7 @@ import { PhotoUploader } from '@/components/photo-uploader'
 import { PhotoDetailModal } from '@/components/photo-detail-modal'
 import Link from 'next/link'
 import type { PhotoData } from '@/components/photo-card'
+import { PhotoGridSkeleton } from '@/components/skeleton/photo-grid-skeleton'
 
 type Photo = PhotoData
 
@@ -229,7 +230,7 @@ export default function AlbumDetailPage() {
     setActionError(data?.error?.message || '保存排序失败，请稍后再试')
   }
 
-  if (loading) return <DetailSkeleton />
+  if (loading) return <PhotoGridSkeleton />
   if (!album) return null
 
   return (
@@ -449,18 +450,4 @@ export default function AlbumDetailPage() {
   )
 }
 
-function DetailSkeleton() {
-  return (
-    <div className="animate-pulse">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-9 h-9 bg-warm-border rounded" />
-        <div className="h-8 bg-warm-border rounded w-32" />
-      </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="aspect-square bg-warm-border rounded-[var(--radius-md)]" />
-        ))}
-      </div>
-    </div>
-  )
-}
+
