@@ -9,8 +9,18 @@ When the user asks to commit code, always follow this sequence:
 1. Show current working tree status with `git status --short`.
 2. List exactly which files will be committed.
 3. Stage only those explicit files (never use broad staging by default).
-4. Commit with a clear message describing intent and scope.
-5. Report back commit hash and committed file list.
+4. Commit using Conventional Commits format: `type(scope): subject`.
+5. Push the commit to the current remote tracking branch by default.
+6. Report back commit hash, committed file list, and push result.
+
+## Commit Message Convention (Mandatory)
+
+Use Conventional Commits:
+
+1. Format: `type(scope): subject`
+2. Allowed `type` values include: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `build`, `ci`, `style`.
+3. `type` and `scope` must be in English.
+4. `subject` must be written in Chinese, concise and action-oriented.
 
 ## Safety Rules
 
