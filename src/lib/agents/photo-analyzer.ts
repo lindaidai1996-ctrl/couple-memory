@@ -1,5 +1,6 @@
 import type { Agent, PipelineInput, AgentOutput } from './engine/types'
-import { callDeepSeek } from './deepseek-client'
+import { callDeepSeek, callDeepSeekVision } from './deepseek-client'
+import { logger } from '@/lib/logger'
 
 const ANALYSIS_PROMPT = `你是一位专业摄影师兼情感分析师。请分析这张情侣照片的拍摄信息，以 JSON 格式输出：
 {
@@ -11,6 +12,7 @@ const ANALYSIS_PROMPT = `你是一位专业摄影师兼情感分析师。请分�
   "confidence": 0.0-1.0
 }
 只输出 JSON。`
+const TAG = 'agents/photo-analyzer'
 
 async function analyzeWithClaude(input: PipelineInput, contextParts: string[]): Promise<AgentOutput> {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -46,12 +48,24 @@ async function analyzeWithClaude(input: PipelineInput, contextParts: string[]): 
   return { data: JSON.parse(text), tokens, cost: tokens * 0.000015 }
 }
 
-async function analyzeWithDeepSeek(contextParts: string[]): Promise<AgentOutput> {
+async function analyzeWithDeepSeek(input: PipelineInput, contextParts: string[]): Promise<AgentOutput> {
   const userPrompt = contextParts.length
     ? `以下是一张照片的拍摄信息：\n${contextParts.join('\n')}\n\n请根据这些信息推断并分析这张照片。`
     : '这是一张情侣合照，请给出一个通用的温馨场景分析。'
 
-  const { text, tokens, cost } = await callDeepSeek(ANALYSIS_PROMPT, userPrompt)
+  let modelResult: { text: string; tokens: number; cost: number }
+  try {
+    logger.info(TAG, '尝试 DeepSeek 视觉分析', { photoId: input.photoId })
+    modelResult = await callDeepSeekVision(ANALYSIS_PROMPT, userPrompt, input.photoUrl, {
+      temperature: 0.2,
+      maxTokens: 500,
+    })
+  } catch {
+    logger.warn(TAG, '视觉分析失败，降级文本分析', { photoId: input.photoId })
+    modelResult = await callDeepSeek(ANALYSIS_PROMPT, userPrompt, { temperature: 0.2, maxTokens: 500 })
+  }
+
+  const { text, tokens, cost } = modelResult
   const cleaned = text.replace(/```json\s*|```/g, '').trim()
 
   return { data: JSON.parse(cleaned), tokens, cost }
@@ -68,8 +82,10 @@ export const photoAnalyzer: Agent = {
     }
 
     if (process.env.CLAUDE_API_KEY) {
+      logger.info(TAG, '使用 Claude 视觉分析', { photoId: input.photoId })
       return analyzeWithClaude(input, contextParts)
     }
-    return analyzeWithDeepSeek(contextParts)
+    logger.info(TAG, '未配置 Claude，使用 DeepSeek 分析', { photoId: input.photoId })
+    return analyzeWithDeepSeek(input, contextParts)
   },
 }
