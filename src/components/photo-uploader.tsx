@@ -62,7 +62,7 @@ export function PhotoUploader({
             updateItem(item.id, { status: 'done', photoId: result.id })
             onUploaded?.(result.id)
           } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : 'Upload failed'
+            const message = err instanceof Error ? err.message : String(err || '上传失败')
             updateItem(item.id, { status: 'error', error: message })
           }
         })

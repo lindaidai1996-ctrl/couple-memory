@@ -34,7 +34,7 @@ export const GET = withAuth(async (req, { coupleUser }) => {
 })
 
 export const POST = withAuth(async (req, { coupleUser }) => {
-  const { ossKey, fileName, fileSize, albumId } = await req.json()
+  const { ossKey, fileName, fileSize, albumId, exif } = await req.json()
   logger.info(TAG, '创建照片记录', { coupleId: coupleUser.coupleId, albumId, fileName })
 
   const album = await prisma.album.findFirst({
@@ -56,7 +56,7 @@ export const POST = withAuth(async (req, { coupleUser }) => {
     },
   })
 
-  processPhoto(photo.id, ossKey)
+  processPhoto(photo.id, ossKey, exif || null)
   logger.info(TAG, '照片处理已触发', { photoId: photo.id })
 
   return NextResponse.json({ id: photo.id, status: 'PROCESSING' }, { status: 201 })

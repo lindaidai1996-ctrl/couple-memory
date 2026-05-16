@@ -2,22 +2,64 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { downloadFromOSS } from '@/lib/oss'
 import { generateSizes } from './image-resize'
-import { extractExif } from './exif-extract'
+import { extractExif, type ExifData } from './exif-extract'
 import { reverseGeocode } from './geocode'
 import { runAIPipeline, applyPipelineResults } from '@/lib/agents/pipeline'
 
 const TAG = 'pipeline/photo'
 
-export async function processPhoto(photoId: string, ossKey: string) {
+type ClientExifData = {
+  takenAt: string | null
+  latitude: number | null
+  longitude: number | null
+  cameraMake: string | null
+  cameraModel: string | null
+  focalLength: string | null
+  aperture: string | null
+  shutterSpeed: string | null
+  iso: number | null
+}
+
+function mergeExif(clientExif: ClientExifData | null, serverExif: ExifData | null): ExifData | null {
+  if (!clientExif && !serverExif) return null
+  if (!clientExif) return serverExif
+  if (!serverExif) {
+    return {
+      takenAt: clientExif.takenAt ? new Date(clientExif.takenAt) : null,
+      latitude: clientExif.latitude,
+      longitude: clientExif.longitude,
+      cameraMake: clientExif.cameraMake,
+      cameraModel: clientExif.cameraModel,
+      focalLength: clientExif.focalLength,
+      aperture: clientExif.aperture,
+      shutterSpeed: clientExif.shutterSpeed,
+      iso: clientExif.iso,
+    }
+  }
+  return {
+    takenAt: serverExif.takenAt ?? (clientExif.takenAt ? new Date(clientExif.takenAt) : null),
+    latitude: serverExif.latitude ?? clientExif.latitude,
+    longitude: serverExif.longitude ?? clientExif.longitude,
+    cameraMake: serverExif.cameraMake ?? clientExif.cameraMake,
+    cameraModel: serverExif.cameraModel ?? clientExif.cameraModel,
+    focalLength: serverExif.focalLength ?? clientExif.focalLength,
+    aperture: serverExif.aperture ?? clientExif.aperture,
+    shutterSpeed: serverExif.shutterSpeed ?? clientExif.shutterSpeed,
+    iso: serverExif.iso ?? clientExif.iso,
+  }
+}
+
+export async function processPhoto(photoId: string, ossKey: string, clientExif?: ClientExifData | null) {
   logger.info(TAG, '开始处理', { photoId, ossKey })
   try {
     const buffer = await downloadFromOSS(ossKey)
     const basePath = ossKey.replace(/\/original\.\w+$/, '')
 
-    const [sizes, exif] = await Promise.all([
+    const [sizes, serverExif] = await Promise.all([
       generateSizes(buffer, basePath),
-      extractExif(buffer),
+      extractExif(buffer).catch(() => null),
     ])
+    const exif = mergeExif(clientExif ?? null, serverExif)
     logger.info(TAG, '图片缩放+EXIF完成', { photoId, width: sizes.width, height: sizes.height })
 
     let locationName: string | null = null
