@@ -22,13 +22,19 @@ export default function AlbumDetailPage() {
 
   const [coupleId, setCoupleId] = useState<string | null>(null)
   const [album, setAlbum] = useState<Album | null>(null)
+  const [allAlbums, setAllAlbums] = useState<Array<{ id: string; title: string }>>([])
   const [photos, setPhotos] = useState<Photo[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
-  const [mode, setMode] = useState<'browse' | 'select'>('browse')
+  const [mode, setMode] = useState<'browse' | 'select' | 'reorder'>('browse')
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<string[]>([])
   const [deleting, setDeleting] = useState(false)
+  const [moving, setMoving] = useState(false)
+  const [targetAlbumId, setTargetAlbumId] = useState<string>('')
+  const [reorderSnapshot, setReorderSnapshot] = useState<Photo[]>([])
+  const [draggingPhotoId, setDraggingPhotoId] = useState<string | null>(null)
+  const [savingOrder, setSavingOrder] = useState(false)
 
   useEffect(() => {
     async function fetchData() {
@@ -47,6 +53,16 @@ export default function AlbumDetailPage() {
         const data = await photosRes.json()
         setPhotos(data.photos)
       }
+      const albumsRes = await fetch(`/api/couples/${couple.id}/albums`)
+      if (albumsRes.ok) {
+        const albumsData = await albumsRes.json()
+        setAllAlbums(
+          (albumsData.albums ?? []).map((item: { id: string; title: string }) => ({
+            id: item.id,
+            title: item.title,
+          }))
+        )
+      }
       setLoading(false)
     }
     fetchData()
@@ -54,6 +70,7 @@ export default function AlbumDetailPage() {
 
   useEffect(() => {
     if (!coupleId) return
+    if (mode === 'reorder') return
     const processing = photos.filter(p => p.status === 'PROCESSING')
     if (processing.length === 0) return
 
@@ -66,7 +83,7 @@ export default function AlbumDetailPage() {
     }, 3000)
 
     return () => clearInterval(interval)
-  }, [coupleId, albumId, photos])
+  }, [coupleId, albumId, photos, mode])
 
   useEffect(() => {
     if (!loading && !album) router.push('/albums')
@@ -121,6 +138,76 @@ export default function AlbumDetailPage() {
     }
   }
 
+  async function handleBatchMove() {
+    if (!coupleId || selectedPhotoIds.length === 0 || !targetAlbumId || moving) return
+
+    setMoving(true)
+    const res = await fetch(`/api/couples/${coupleId}/photos/batch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'MOVE',
+        photoIds: selectedPhotoIds,
+        targetAlbumId,
+      }),
+    })
+    setMoving(false)
+
+    if (res.ok) {
+      setSelectedPhotoIds([])
+      setTargetAlbumId('')
+      setMode('browse')
+      setRefreshKey(key => key + 1)
+    }
+  }
+
+  function enterReorderMode() {
+    setReorderSnapshot(photos)
+    setMode('reorder')
+  }
+
+  function cancelReorderMode() {
+    setPhotos(reorderSnapshot)
+    setReorderSnapshot([])
+    setMode('browse')
+    setDraggingPhotoId(null)
+  }
+
+  function handleDropOnPhoto(targetPhotoId: string) {
+    if (!draggingPhotoId || draggingPhotoId === targetPhotoId) return
+
+    setPhotos(prev => {
+      const sourceIndex = prev.findIndex(photo => photo.id === draggingPhotoId)
+      const targetIndex = prev.findIndex(photo => photo.id === targetPhotoId)
+      if (sourceIndex === -1 || targetIndex === -1) return prev
+
+      const next = [...prev]
+      const [moved] = next.splice(sourceIndex, 1)
+      next.splice(targetIndex, 0, moved)
+      return next
+    })
+    setDraggingPhotoId(null)
+  }
+
+  async function saveReorder() {
+    if (!coupleId || savingOrder) return
+    setSavingOrder(true)
+    const res = await fetch(`/api/couples/${coupleId}/albums/${albumId}/photos/reorder`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        orderedPhotoIds: photos.map(photo => photo.id),
+      }),
+    })
+    setSavingOrder(false)
+
+    if (res.ok) {
+      setReorderSnapshot([])
+      setMode('browse')
+      setRefreshKey(key => key + 1)
+    }
+  }
+
   if (loading) return <DetailSkeleton />
   if (!album) return null
 
@@ -156,6 +243,28 @@ export default function AlbumDetailPage() {
               <span className="text-sm text-warm-muted">
                 已选 {selectedPhotoIds.length} 张
               </span>
+              <select
+                value={targetAlbumId}
+                onChange={e => setTargetAlbumId(e.target.value)}
+                className="px-3 py-2 text-sm rounded-[var(--radius-md)] border border-warm-border bg-warm-surface text-warm-text"
+              >
+                <option value="">选择目标相册</option>
+                {allAlbums
+                  .filter(item => item.id !== albumId)
+                  .map(item => (
+                    <option key={item.id} value={item.id}>
+                      {item.title}
+                    </option>
+                  ))}
+              </select>
+              <button
+                onClick={handleBatchMove}
+                disabled={selectedPhotoIds.length === 0 || !targetAlbumId || moving}
+                className="px-3 py-2 text-sm text-white bg-info rounded-[var(--radius-md)]
+                  disabled:opacity-50 transition-colors"
+              >
+                {moving ? '移动中...' : '移动已选'}
+              </button>
               <button
                 onClick={handleBatchDelete}
                 disabled={selectedPhotoIds.length === 0 || deleting}
@@ -168,6 +277,7 @@ export default function AlbumDetailPage() {
                 onClick={() => {
                   setMode('browse')
                   setSelectedPhotoIds([])
+                  setTargetAlbumId('')
                 }}
                 className="px-3 py-2 text-sm text-warm-muted border border-warm-border
                   rounded-[var(--radius-md)] hover:bg-warm-bg transition-colors"
@@ -175,14 +285,42 @@ export default function AlbumDetailPage() {
                 取消选择
               </button>
             </>
+          ) : mode === 'reorder' ? (
+            <>
+              <span className="text-sm text-warm-muted">拖拽照片调整顺序</span>
+              <button
+                onClick={saveReorder}
+                disabled={savingOrder}
+                className="px-3 py-2 text-sm text-white bg-warm-accent rounded-[var(--radius-md)]
+                  disabled:opacity-50 transition-colors"
+              >
+                {savingOrder ? '保存中...' : '保存排序'}
+              </button>
+              <button
+                onClick={cancelReorderMode}
+                className="px-3 py-2 text-sm text-warm-muted border border-warm-border
+                  rounded-[var(--radius-md)] hover:bg-warm-bg transition-colors"
+              >
+                取消排序
+              </button>
+            </>
           ) : (
-            <button
-              onClick={() => setMode('select')}
-              className="px-3 py-2 text-sm text-warm-accent border border-warm-accent
-                rounded-[var(--radius-md)] hover:bg-warm-accent/10 transition-colors"
-            >
-              选择照片
-            </button>
+            <>
+              <button
+                onClick={() => setMode('select')}
+                className="px-3 py-2 text-sm text-warm-accent border border-warm-accent
+                  rounded-[var(--radius-md)] hover:bg-warm-accent/10 transition-colors"
+              >
+                选择照片
+              </button>
+              <button
+                onClick={enterReorderMode}
+                className="px-3 py-2 text-sm text-warm-text border border-warm-border
+                  rounded-[var(--radius-md)] hover:bg-warm-bg transition-colors"
+              >
+                调整排序
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -215,6 +353,14 @@ export default function AlbumDetailPage() {
               }}
               className="relative cursor-pointer rounded-[var(--radius-md)] overflow-hidden group
                 bg-warm-border aspect-square"
+              draggable={mode === 'reorder'}
+              onDragStart={() => setDraggingPhotoId(photo.id)}
+              onDragOver={e => {
+                if (mode === 'reorder') e.preventDefault()
+              }}
+              onDrop={() => {
+                if (mode === 'reorder') handleDropOnPhoto(photo.id)
+              }}
             >
               {photo.thumbnailUrl ? (
                 <img
