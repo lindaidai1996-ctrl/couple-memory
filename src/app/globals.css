@@ -110,3 +110,13 @@ body {
 .dark::-webkit-scrollbar-thumb {
   background: #3d3530;
 }
+
+/* ─── Skeleton shimmer 动画 ─── */
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s infinite ease-in-out;
+}
