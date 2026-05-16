@@ -3,13 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "lint-staged": {
-    "*.{ts,tsx}": ["eslint"]
+    "*.{ts,tsx}": [
+      "eslint"
+    ]
   },
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --import tsx --test",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -42,6 +45,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.0.4",
     "tailwindcss": "^4",
+    "tsx": "^4.22.0",
     "typescript": "^5"
   }
 }

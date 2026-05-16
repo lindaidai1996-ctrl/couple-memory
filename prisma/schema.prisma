@@ -23,6 +23,18 @@ enum PipelineStatus {
   RUNNING
   COMPLETED
   FAILED
+  DEGRADED
+}
+
+enum AlbumCoverMode {
+  AUTO
+  MANUAL
+}
+
+enum CoupleCoverMode {
+  NONE
+  PHOTO
+  UPLOAD
 }
 
 model User {
@@ -42,6 +54,8 @@ model Couple {
   name            String
   startDate       DateTime?
   coverPhotoUrl   String?
+  coverMode       CoupleCoverMode @default(NONE)
+  coverPhotoId    String?
   bio             String?
   theme           String         @default("default")
   isPublic        Boolean        @default(false)
@@ -78,6 +92,8 @@ model Album {
   title         String
   description   String?
   coverPhotoUrl String?
+  coverMode     AlbumCoverMode @default(AUTO)
+  coverPhotoId  String?
   sortOrder     Int      @default(0)
   photos        Photo[]
   createdAt     DateTime @default(now())
@@ -152,6 +168,10 @@ model PipelineRun {
   photo       Photo          @relation(fields: [photoId], references: [id])
   photoId     String
   status      PipelineStatus @default(RUNNING)
+  triggerType String?
+  attemptNumber Int          @default(1)
+  errorCode   String?
+  summary     String?
   dag         Json
   nodeResults Json?
   totalTokens Int?

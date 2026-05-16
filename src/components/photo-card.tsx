@@ -19,6 +19,8 @@ export interface PhotoData {
   aperture: string | null
   shutterSpeed: string | null
   iso: number | null
+  isAlbumCover?: boolean
+  canBeCover?: boolean
 }
 
 export function PhotoCard({ photo, onClick }: { photo: PhotoData; onClick: () => void }) {

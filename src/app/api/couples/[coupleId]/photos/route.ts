@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withAuth } from '@/lib/api-middleware'
 import { processPhoto } from '@/lib/pipeline/process-photo'
+import { resolveAlbumCover } from '@/lib/covers/album-cover'
 import type { PhotoStatus } from '../../../../../../prisma/generated/prisma/enums'
 
 const TAG = 'photos'
@@ -20,17 +21,45 @@ export const GET = withAuth(async (req, { coupleUser }) => {
     ...(status && { status: status as PhotoStatus }),
   }
 
-  const [photos, total] = await Promise.all([
+  const [photos, total, album] = await Promise.all([
     prisma.photo.findMany({
       where,
-      orderBy: { takenAt: 'desc' },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
       skip: (page - 1) * limit,
       take: limit,
     }),
     prisma.photo.count({ where }),
+    albumId
+      ? prisma.album.findFirst({
+          where: { id: albumId, coupleId: coupleUser.coupleId },
+          select: { coverMode: true, coverPhotoId: true },
+        })
+      : Promise.resolve(null),
   ])
 
-  return NextResponse.json({ photos, total, page, limit })
+  const resolvedCover = album
+    ? resolveAlbumCover({
+        coverMode: album.coverMode,
+        coverPhotoId: album.coverPhotoId,
+        photos: photos.map(photo => ({
+          id: photo.id,
+          status: photo.status,
+          displayUrl: photo.displayUrl,
+          sortOrder: photo.sortOrder,
+        })),
+      })
+    : null
+
+  return NextResponse.json({
+    photos: photos.map(photo => ({
+      ...photo,
+      isAlbumCover: resolvedCover?.photoId === photo.id,
+      canBeCover: photo.status === 'READY' && Boolean(photo.displayUrl),
+    })),
+    total,
+    page,
+    limit,
+  })
 })
 
 export const POST = withAuth(async (req, { coupleUser }) => {
@@ -39,6 +68,15 @@ export const POST = withAuth(async (req, { coupleUser }) => {
 
   const album = await prisma.album.findFirst({
     where: { id: albumId, coupleId: coupleUser.coupleId },
+    select: {
+      id: true,
+      coverMode: true,
+      photos: {
+        select: { sortOrder: true },
+        orderBy: [{ sortOrder: 'desc' }],
+        take: 1,
+      },
+    },
   })
   if (!album) {
     logger.warn(TAG, '相册不存在', { albumId, coupleId: coupleUser.coupleId })
@@ -52,6 +90,7 @@ export const POST = withAuth(async (req, { coupleUser }) => {
       originalUrl: `https://${cdnDomain}/${ossKey}`,
       fileName,
       fileSize,
+      sortOrder: (album.photos[0]?.sortOrder ?? 0) + 1,
       status: 'PROCESSING',
     },
   })

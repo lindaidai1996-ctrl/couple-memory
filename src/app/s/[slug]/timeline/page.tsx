@@ -1,70 +1,69 @@
-'use client'
-
-import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
-import { TimelineView, type TimelineMilestone } from '@/components/timeline-view'
+import { notFound } from 'next/navigation'
+import { TimelineView } from '@/components/timeline-view'
+import {
+  getPublicSpacePageDataBySlug,
+  getPublicTimelineByCoupleId,
+  resolvePublicMetadata,
+} from '@/lib/public-metadata'
 
-export default function PublicTimelinePage() {
-  const { slug } = useParams<{ slug: string }>()
-  const [milestones, setMilestones] = useState<TimelineMilestone[]>([])
-  const [loading, setLoading] = useState(true)
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  return resolvePublicMetadata({ slug, page: 'timeline' })
+}
 
-  useEffect(() => {
-    fetch(`/api/public/${slug}/timeline`)
-      .then(res => res.json())
-      .then(data => setMilestones(data.milestones ?? []))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [slug])
+export default async function PublicTimelinePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  const space = await getPublicSpacePageDataBySlug(slug)
+
+  if (!space?.isPublic) {
+    notFound()
+  }
+
+  const milestones = await getPublicTimelineByCoupleId(space.id)
 
   return (
     <div className="min-h-screen px-6 py-12 md:py-20">
       <div className="max-w-4xl mx-auto">
-        {/* 顶部导航 */}
         <Link
           href={`/s/${slug}`}
           className="inline-flex items-center gap-1.5 text-sm text-film-muted hover:text-film-accent-light
             transition-colors mb-10"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
           返回
         </Link>
 
-        {/* 标题 */}
-        <motion.h1
+        <h1
           className="text-3xl md:text-4xl font-bold mb-12 md:mb-16 text-center"
           style={{ fontFamily: 'var(--font-display)' }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
         >
           时间轴
-        </motion.h1>
+        </h1>
 
-        {loading ? (
-          <LoadingSkeleton />
-        ) : milestones.length === 0 ? (
+        {milestones.length === 0 ? (
           <EmptyState />
         ) : (
           <TimelineView milestones={milestones} />
         )}
       </div>
-    </div>
-  )
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="flex justify-center py-20">
-      <motion.div
-        className="w-8 h-8 border-2 border-film-accent border-t-transparent rounded-full"
-        animate={{ rotate: 360 }}
-        transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-      />
     </div>
   )
 }

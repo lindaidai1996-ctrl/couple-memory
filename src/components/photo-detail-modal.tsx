@@ -16,17 +16,20 @@ export function PhotoDetailModal({
   coupleId,
   onClose,
   onUpdated,
+  onSetCover,
 }: {
   photo: PhotoData
   coupleId: string
   onClose: () => void
   onUpdated: () => void
+  onSetCover?: (photoId: string) => Promise<void> | void
 }) {
   const [tab, setTab] = useState<'info' | 'edit' | 'exif'>('info')
   const [caption, setCaption] = useState(photo.userCaption || photo.aiCaption || '')
   const [layout, setLayout] = useState(photo.aiLayout || 'side-by-side')
   const [saving, setSaving] = useState(false)
   const [retrying, setRetrying] = useState(false)
+  const [settingCover, setSettingCover] = useState(false)
 
   async function handleSave() {
     setSaving(true)
@@ -45,6 +48,14 @@ export function PhotoDetailModal({
       method: 'POST',
     })
     setRetrying(false)
+    onUpdated()
+  }
+
+  async function handleSetCover() {
+    if (!onSetCover) return
+    setSettingCover(true)
+    await onSetCover(photo.id)
+    setSettingCover(false)
     onUpdated()
   }
 
@@ -125,6 +136,17 @@ export function PhotoDetailModal({
                     hover:bg-warm-accent-hover disabled:opacity-50 transition-colors"
                 >
                   {retrying ? '重试中...' : '重新处理'}
+                </button>
+              )}
+
+              {photo.status === 'READY' && photo.canBeCover && onSetCover && (
+                <button
+                  onClick={handleSetCover}
+                  disabled={settingCover || photo.isAlbumCover}
+                  className="mt-2 px-4 py-2 text-sm text-white bg-warm-text rounded-[var(--radius-md)]
+                    hover:opacity-90 disabled:opacity-50 transition-colors"
+                >
+                  {photo.isAlbumCover ? '当前封面' : settingCover ? '设置中...' : '设为相册封面'}
                 </button>
               )}
             </div>

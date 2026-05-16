@@ -3,19 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { PhotoUploader } from '@/components/photo-uploader'
+import { PhotoDetailModal } from '@/components/photo-detail-modal'
 import Link from 'next/link'
+import type { PhotoData } from '@/components/photo-card'
 
-interface Photo {
-  id: string
-  fileName: string
-  thumbnailUrl: string | null
-  displayUrl: string | null
-  status: string
-  aiCaption: string | null
-  userCaption: string | null
-  takenAt: string | null
-  locationName: string | null
-}
+type Photo = PhotoData
 
 interface Album {
   id: string
@@ -34,6 +26,9 @@ export default function AlbumDetailPage() {
   const [loading, setLoading] = useState(true)
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [mode, setMode] = useState<'browse' | 'select'>('browse')
+  const [selectedPhotoIds, setSelectedPhotoIds] = useState<string[]>([])
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     async function fetchData() {
@@ -77,6 +72,55 @@ export default function AlbumDetailPage() {
     if (!loading && !album) router.push('/albums')
   }, [loading, album, router])
 
+  function togglePhotoSelection(photoId: string) {
+    setSelectedPhotoIds(prev =>
+      prev.includes(photoId)
+        ? prev.filter(id => id !== photoId)
+        : [...prev, photoId]
+    )
+  }
+
+  async function handleBatchDelete() {
+    if (!coupleId || selectedPhotoIds.length === 0 || deleting) return
+    if (!confirm(`确定删除已选的 ${selectedPhotoIds.length} 张照片吗？`)) return
+
+    setDeleting(true)
+
+    const res = await fetch(`/api/couples/${coupleId}/photos/batch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'DELETE',
+        photoIds: selectedPhotoIds,
+      }),
+    })
+
+    setDeleting(false)
+
+    if (res.ok) {
+      setSelectedPhotoIds([])
+      setMode('browse')
+      setRefreshKey(key => key + 1)
+    }
+  }
+
+  async function handleSetCover(photoId: string) {
+    if (!coupleId) return
+
+    const res = await fetch(`/api/couples/${coupleId}/albums/${albumId}/cover`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'MANUAL',
+        photoId,
+      }),
+    })
+
+    if (res.ok) {
+      setRefreshKey(key => key + 1)
+    }
+  }
+
   if (loading) return <DetailSkeleton />
   if (!album) return null
 
@@ -102,6 +146,47 @@ export default function AlbumDetailPage() {
         </div>
       </div>
 
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="text-sm text-warm-muted">
+          共 {photos.length} 张照片
+        </div>
+        <div className="flex items-center gap-2">
+          {mode === 'select' ? (
+            <>
+              <span className="text-sm text-warm-muted">
+                已选 {selectedPhotoIds.length} 张
+              </span>
+              <button
+                onClick={handleBatchDelete}
+                disabled={selectedPhotoIds.length === 0 || deleting}
+                className="px-3 py-2 text-sm text-white bg-error rounded-[var(--radius-md)]
+                  disabled:opacity-50 transition-colors"
+              >
+                {deleting ? '删除中...' : '删除已选'}
+              </button>
+              <button
+                onClick={() => {
+                  setMode('browse')
+                  setSelectedPhotoIds([])
+                }}
+                className="px-3 py-2 text-sm text-warm-muted border border-warm-border
+                  rounded-[var(--radius-md)] hover:bg-warm-bg transition-colors"
+              >
+                取消选择
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setMode('select')}
+              className="px-3 py-2 text-sm text-warm-accent border border-warm-accent
+                rounded-[var(--radius-md)] hover:bg-warm-accent/10 transition-colors"
+            >
+              选择照片
+            </button>
+          )}
+        </div>
+      </div>
+
       {coupleId && (
         <div className="mb-6">
           <PhotoUploader
@@ -121,7 +206,13 @@ export default function AlbumDetailPage() {
           {photos.map(photo => (
             <div
               key={photo.id}
-              onClick={() => setSelectedPhoto(photo)}
+              onClick={() => {
+                if (mode === 'select') {
+                  togglePhotoSelection(photo.id)
+                  return
+                }
+                setSelectedPhoto(photo)
+              }}
               className="relative cursor-pointer rounded-[var(--radius-md)] overflow-hidden group
                 bg-warm-border aspect-square"
             >
@@ -147,44 +238,39 @@ export default function AlbumDetailPage() {
                 </div>
               )}
 
+              {photo.isAlbumCover && (
+                <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-medium text-white bg-warm-text/80">
+                  封面
+                </div>
+              )}
+
+              {mode === 'select' && (
+                <div className="absolute left-2 bottom-2">
+                  <div className={`w-5 h-5 rounded-full border-2 transition-colors ${
+                    selectedPhotoIds.includes(photo.id)
+                      ? 'bg-warm-accent border-warm-accent'
+                      : 'bg-white/80 border-white'
+                  }`} />
+                </div>
+              )}
+
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200" />
             </div>
           ))}
         </div>
       )}
 
-      {/* 照片详情弹窗 — 简版，Task 25 会增强 */}
       {selectedPhoto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setSelectedPhoto(null)} />
-          <div className="relative bg-warm-surface rounded-[var(--radius-xl)] shadow-2xl max-w-2xl w-full mx-4 overflow-hidden">
-            {selectedPhoto.displayUrl ? (
-              <img
-                src={selectedPhoto.displayUrl}
-                alt={selectedPhoto.fileName}
-                className="w-full max-h-[60vh] object-contain bg-black"
-              />
-            ) : (
-              <div className="w-full h-64 bg-warm-bg flex items-center justify-center text-warm-muted">
-                暂无预览
-              </div>
-            )}
-            <div className="p-5 space-y-2">
-              <p className="text-warm-text font-medium">
-                {selectedPhoto.userCaption || selectedPhoto.aiCaption || selectedPhoto.fileName}
-              </p>
-              <div className="flex flex-wrap gap-3 text-xs text-warm-muted">
-                {selectedPhoto.locationName && <span>{selectedPhoto.locationName}</span>}
-                {selectedPhoto.takenAt && (
-                  <span>{new Date(selectedPhoto.takenAt).toLocaleDateString('zh-CN')}</span>
-                )}
-                <span className={selectedPhoto.status === 'READY' ? 'text-success' : selectedPhoto.status === 'FAILED' ? 'text-error' : 'text-info'}>
-                  {selectedPhoto.status === 'READY' ? '就绪' : selectedPhoto.status === 'PROCESSING' ? '处理中' : '失败'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <PhotoDetailModal
+          photo={selectedPhoto}
+          coupleId={coupleId ?? ''}
+          onClose={() => setSelectedPhoto(null)}
+          onUpdated={() => {
+            setSelectedPhoto(null)
+            setRefreshKey(key => key + 1)
+          }}
+          onSetCover={handleSetCover}
+        />
       )}
     </div>
   )

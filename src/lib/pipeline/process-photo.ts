@@ -20,6 +20,16 @@ type ClientExifData = {
   iso: number | null
 }
 
+export function extractOssKeyFromOriginalUrl(originalUrl: string): string | null {
+  try {
+    const pathname = new URL(originalUrl).pathname.replace(/^\/+/, '')
+    return pathname || null
+  } catch {
+    const pathname = originalUrl.replace(/^\/+/, '')
+    return pathname || null
+  }
+}
+
 function mergeExif(clientExif: ClientExifData | null, serverExif: ExifData | null): ExifData | null {
   if (!clientExif && !serverExif) return null
   if (!clientExif) return serverExif

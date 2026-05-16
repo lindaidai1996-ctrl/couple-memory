@@ -8,6 +8,7 @@ const navItems = [
   { href: '/dashboard', label: '概览', icon: DashboardIcon },
   { href: '/albums', label: '相册', icon: AlbumIcon },
   { href: '/timeline', label: '时间轴', icon: TimelineIcon },
+  { href: '/pipeline', label: 'Pipeline', icon: PipelineIcon },
   { href: '/settings', label: '设置', icon: SettingsIcon },
 ]
 
@@ -115,6 +116,22 @@ function SettingsIcon({ active }: { active: boolean }) {
       strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68 1.65 1.65 0 0 0 10 3.17V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  )
+}
+
+function PipelineIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="5" cy="12" r="2" />
+      <circle cx="12" cy="6" r="2" />
+      <circle cx="12" cy="18" r="2" />
+      <circle cx="19" cy="12" r="2" />
+      <path d="M7 12h4" />
+      <path d="M14 6h3" />
+      <path d="M14 18h3" />
+      <path d="M12 8v8" />
     </svg>
   )
 }

@@ -38,7 +38,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         logger.info(TAG, "登录成功", { userId: user.id, email })
-        return { id: user.id, email: user.email, name: user.name }
+        return { id: user.id, email: user.email, name: user.name, image: user.avatar }
       },
     }),
   ],
