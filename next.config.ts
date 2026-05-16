@@ -4,6 +4,7 @@ import type { NextConfig } from "next";
 const withNextIntl = createNextIntlPlugin()
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ['127.0.0.1'],
   output: 'standalone',
 };
 

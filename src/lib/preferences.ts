@@ -22,6 +22,26 @@ export function pickThemeMode(value: string | null | undefined): ThemeMode {
   return isThemeMode(value) ? value : DEFAULT_THEME
 }
 
+export function resolveThemeMode(theme: ThemeMode, prefersDark: boolean): Exclude<ThemeMode, 'system'> {
+  if (theme === 'system') {
+    return prefersDark ? 'dark' : 'light'
+  }
+
+  return theme
+}
+
+export function getNextThemeMode(theme: ThemeMode, prefersDark: boolean): ThemeMode {
+  if (theme === 'system') {
+    return resolveThemeMode(theme, prefersDark) === 'dark' ? 'light' : 'dark'
+  }
+
+  if (theme === 'dark') {
+    return 'light'
+  }
+
+  return 'system'
+}
+
 export function normalizeLocaleTag(value: string) {
   return value.toLowerCase()
 }

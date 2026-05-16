@@ -4,10 +4,12 @@ import test from 'node:test'
 import {
   DEFAULT_LOCALE,
   DEFAULT_THEME,
+  getNextThemeMode,
   isLocale,
   isThemeMode,
   pickLocale,
   pickThemeMode,
+  resolveThemeMode,
 } from '../../src/lib/preferences'
 
 test('pickThemeMode falls back to default theme for unknown values', () => {
@@ -43,4 +45,18 @@ test('locale and theme guards only accept supported values', () => {
   assert.equal(isThemeMode('dark'), true)
   assert.equal(isThemeMode('system'), true)
   assert.equal(isThemeMode('sepia'), false)
+})
+
+test('resolveThemeMode resolves system mode from preferred color scheme', () => {
+  assert.equal(resolveThemeMode('system', true), 'dark')
+  assert.equal(resolveThemeMode('system', false), 'light')
+  assert.equal(resolveThemeMode('dark', false), 'dark')
+  assert.equal(resolveThemeMode('light', true), 'light')
+})
+
+test('getNextThemeMode makes the first click from system visually change the theme', () => {
+  assert.equal(getNextThemeMode('system', false), 'dark')
+  assert.equal(getNextThemeMode('system', true), 'light')
+  assert.equal(getNextThemeMode('dark', true), 'light')
+  assert.equal(getNextThemeMode('light', false), 'system')
 })

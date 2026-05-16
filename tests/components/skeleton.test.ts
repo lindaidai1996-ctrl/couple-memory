@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { buildSkeletonGradient } from '../../src/components/skeleton/skeleton'
+import {
+  buildSkeletonBackgroundColor,
+  buildSkeletonGradient,
+} from '../../src/components/skeleton/skeleton'
 
 test('buildSkeletonGradient uses warm theme skeleton tokens', () => {
   assert.equal(
@@ -18,4 +21,15 @@ test('buildSkeletonGradient uses film theme skeleton tokens without hard-coded d
     'linear-gradient(90deg, var(--color-film-skeleton-base) 25%, var(--color-film-skeleton-highlight) 50%, var(--color-film-skeleton-base) 75%)'
   )
   assert.equal(gradient.includes('#2e2e2e'), false)
+})
+
+test('buildSkeletonBackgroundColor uses theme skeleton base tokens', () => {
+  assert.equal(
+    buildSkeletonBackgroundColor('warm'),
+    'var(--color-warm-skeleton-base)'
+  )
+  assert.equal(
+    buildSkeletonBackgroundColor('film'),
+    'var(--color-film-skeleton-base)'
+  )
 })

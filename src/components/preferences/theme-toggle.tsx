@@ -4,12 +4,12 @@ import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import {
   DEFAULT_THEME,
+  getNextThemeMode,
+  resolveThemeMode,
   THEME_COOKIE_NAME,
   type ThemeMode,
   pickThemeMode,
 } from '@/lib/preferences'
-
-const cycleOrder: ThemeMode[] = ['light', 'dark', 'system']
 
 function readThemePreference() {
   if (typeof document === 'undefined') {
@@ -28,9 +28,10 @@ function setThemeCookie(value: ThemeMode) {
 }
 
 function applyResolvedTheme(theme: ThemeMode) {
-  const resolved = theme === 'system'
-    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-    : theme
+  const resolved = resolveThemeMode(
+    theme,
+    window.matchMedia('(prefers-color-scheme: dark)').matches
+  )
 
   document.documentElement.classList.toggle('dark', resolved === 'dark')
   document.documentElement.dataset.theme = resolved
@@ -40,17 +41,19 @@ export function ThemeToggle() {
   const t = useTranslations('Common')
   const [theme, setTheme] = useState<ThemeMode>(readThemePreference)
 
-  useEffect(() => {
-    applyResolvedTheme(theme)
-  }, [theme])
-
-  const nextTheme = cycleOrder[(cycleOrder.indexOf(theme) + 1) % cycleOrder.length]
-
   function handleClick() {
+    const nextTheme = getNextThemeMode(
+      theme,
+      window.matchMedia('(prefers-color-scheme: dark)').matches
+    )
     setTheme(nextTheme)
     setThemeCookie(nextTheme)
     applyResolvedTheme(nextTheme)
   }
+
+  useEffect(() => {
+    applyResolvedTheme(theme)
+  }, [theme])
 
   const labelMap: Record<ThemeMode, string> = {
     light: t('themeLight'),

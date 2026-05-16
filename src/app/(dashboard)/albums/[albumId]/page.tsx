@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl'
 import { PhotoUploader } from '@/components/photo-uploader'
 import { PhotoDetailModal } from '@/components/photo-detail-modal'
 import Link from 'next/link'
-import type { PhotoData } from '@/components/photo-card'
+import { photoCardSurfaceClass, type PhotoData } from '@/components/photo-card'
 import { PhotoGridSkeleton } from '@/components/skeleton/photo-grid-skeleton'
 
 type Photo = PhotoData
@@ -394,8 +394,8 @@ export default function AlbumDetailPage() {
                 }
                 setSelectedPhoto(photo)
               }}
-              className="relative cursor-pointer rounded-[var(--radius-md)] overflow-hidden group
-                bg-warm-border aspect-square"
+              className={`relative cursor-pointer rounded-[var(--radius-md)] overflow-hidden group
+                ${photoCardSurfaceClass} aspect-square`}
               draggable={mode === 'reorder'}
               onDragStart={() => setDraggingPhotoId(photo.id)}
               onDragOver={e => {
@@ -464,4 +464,3 @@ export default function AlbumDetailPage() {
     </div>
   )
 }
-

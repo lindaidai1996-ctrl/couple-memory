@@ -20,6 +20,12 @@ export function buildSkeletonGradient(variant: NonNullable<SkeletonProps['varian
     : 'linear-gradient(90deg, var(--color-film-skeleton-base) 25%, var(--color-film-skeleton-highlight) 50%, var(--color-film-skeleton-base) 75%)'
 }
 
+export function buildSkeletonBackgroundColor(variant: NonNullable<SkeletonProps['variant']>) {
+  return variant === 'warm'
+    ? 'var(--color-warm-skeleton-base)'
+    : 'var(--color-film-skeleton-base)'
+}
+
 export function Skeleton({
   width,
   height,
@@ -34,6 +40,7 @@ export function Skeleton({
         width: typeof width === 'number' ? `${width}px` : width,
         height: typeof height === 'number' ? `${height}px` : height,
         borderRadius: radiusMap[radius],
+        backgroundColor: buildSkeletonBackgroundColor(variant),
         backgroundImage: buildSkeletonGradient(variant),
         backgroundSize: '200% 100%',
       }}

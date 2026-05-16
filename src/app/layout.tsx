@@ -24,7 +24,7 @@ export default async function RootLayout({
   const locale = await getLocale()
 
   return (
-    <html lang={locale} className={`${dmSans.variable} h-full antialiased`}>
+    <html lang={locale} className={`${dmSans.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col bg-warm-bg text-warm-text transition-colors">
         <ThemeScript />
         <NextIntlClientProvider>{children}</NextIntlClientProvider>

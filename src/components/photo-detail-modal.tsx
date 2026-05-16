@@ -6,6 +6,8 @@ import type { PhotoData } from './photo-card'
 
 type Translator = (key: string) => string
 
+export const photoDetailImageSurfaceClass = 'bg-warm-skeleton-base'
+
 export function buildPhotoDetailCopy(t: Translator) {
   return {
     tabs: {
@@ -81,7 +83,7 @@ export function PhotoDetailModal({
         max-w-3xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
 
         {/* 图片区 */}
-        <div className="relative bg-black flex-shrink-0">
+        <div className={`relative ${photoDetailImageSurfaceClass} flex-shrink-0`}>
           {photo.displayUrl ? (
             <img
               src={photo.displayUrl}

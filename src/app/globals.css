@@ -6,7 +6,7 @@
    后台: 温暖极简风 (warm light)
    ═══════════════════════════════════════════ */
 
-@theme inline {
+@theme {
   /* ─── 公开展示页 (Public/Film) ─── */
   --color-film-bg: #1a1a1a;
   --color-film-surface: #242424;
@@ -62,8 +62,8 @@ html.dark {
   --color-warm-accent-hover: #e2b387;
   --color-warm-border: #3a302b;
   --color-warm-sidebar: #181412;
-  --color-warm-skeleton-base: #2b221f;
-  --color-warm-skeleton-highlight: #3a2f2a;
+  --color-warm-skeleton-base: #4a3d36;
+  --color-warm-skeleton-highlight: #625149;
 
   --color-film-skeleton-base: #2c2522;
   --color-film-skeleton-highlight: #433731;

@@ -27,6 +27,8 @@ export interface PhotoData {
 
 type Translator = (key: string) => string
 
+export const photoCardSurfaceClass = 'bg-warm-skeleton-base'
+
 export function buildPhotoCardStatusCopy(t: Translator) {
   return {
     processing: t('processing'),
@@ -43,8 +45,8 @@ export function PhotoCard({ photo, onClick }: { photo: PhotoData; onClick: () =>
   return (
     <div
       onClick={onClick}
-      className="relative cursor-pointer rounded-[var(--radius-md)] overflow-hidden group
-        bg-warm-border aspect-square"
+      className={`relative cursor-pointer rounded-[var(--radius-md)] overflow-hidden group
+        ${photoCardSurfaceClass} aspect-square`}
     >
       {photo.thumbnailUrl ? (
         <img
