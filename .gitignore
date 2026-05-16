@@ -44,3 +44,6 @@ next-env.d.ts
 
 # superpowers brainstorm state (transient)
 .superpowers/brainstorm/*/state/
+
+# local git worktrees
+.worktrees/
