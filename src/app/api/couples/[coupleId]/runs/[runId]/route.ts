@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withAuth, type AuthContext } from '@/lib/api-middleware'
 
@@ -18,14 +17,22 @@ function createErrorResponse(
 }
 
 type RunDetailRouteDeps = {
-  prismaClient?: typeof prisma
+  prismaClient?: {
+    pipelineRun: {
+      findFirst: (args: Record<string, unknown>) => Promise<unknown | null>
+    }
+  }
+}
+
+async function loadPrismaClient() {
+  const { prisma } = await import('@/lib/prisma')
+  return prisma as unknown as NonNullable<RunDetailRouteDeps['prismaClient']>
 }
 
 export function createRunDetailHandler(deps: RunDetailRouteDeps = {}) {
-  const prismaClient = deps.prismaClient ?? prisma
-
   return async (_req: Request, { coupleUser }: AuthContext, params: Record<string, string>) => {
     try {
+      const prismaClient = deps.prismaClient ?? await loadPrismaClient()
       const run = await prismaClient.pipelineRun.findFirst({
         where: {
           id: params.runId,

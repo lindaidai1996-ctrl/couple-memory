@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
+import { createApiErrorResponse, createRequestId } from '@/lib/api-error'
 import { withAuth } from '@/lib/api-middleware'
-import { prisma } from '@/lib/prisma'
 
 type CoupleRouteDeps = {
   prisma: {
@@ -81,15 +81,15 @@ type CoupleAccessContext = {
 }
 
 export function createCoupleGetHandler(
-  deps: CoupleRouteDeps = {
-    prisma: prisma as unknown as CoupleRouteDeps['prisma'],
-  }
+  deps?: Partial<CoupleRouteDeps>
 ) {
   return async function GET(
     _req: Request,
     { coupleUser }: CoupleAccessContext
   ) {
-    const couple = await deps.prisma.couple.findUnique!({
+    const requestId = createRequestId()
+    const prisma = deps?.prisma ?? await loadPrisma()
+    const couple = await prisma.couple.findUnique!({
       where: { id: coupleUser.coupleId },
       include: {
         members: { select: { id: true, userId: true, role: true, nickname: true } },
@@ -98,10 +98,10 @@ export function createCoupleGetHandler(
     })
 
     if (!couple) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      return createApiErrorResponse(404, 'COUPLE_NOT_FOUND', 'Not found', false, requestId)
     }
 
-    const photoCount = await deps.prisma.photo?.count?.({
+    const photoCount = await prisma.photo?.count?.({
       where: { album: { coupleId: coupleUser.coupleId } },
     }) ?? 0
 
@@ -117,32 +117,37 @@ export function createCoupleGetHandler(
 }
 
 export function createCouplePatchHandler(
-  deps: CoupleRouteDeps = {
-    prisma: prisma as unknown as CoupleRouteDeps['prisma'],
-  }
+  deps?: Partial<CoupleRouteDeps>
 ) {
   return async function PATCH(
     req: Request,
     { coupleUser }: CoupleAccessContext
   ) {
+    const requestId = createRequestId()
+    const prisma = deps?.prisma ?? await loadPrisma()
     const body = await req.json() as CouplePatchBody
 
     if (body.slug) {
-      const existing = await deps.prisma.couple.findUnique!({
+      const existing = await prisma.couple.findUnique!({
         where: { slug: body.slug },
       })
       if (existing && existing.id !== coupleUser.coupleId) {
-        return NextResponse.json({ error: 'Slug already taken' }, { status: 409 })
+        return createApiErrorResponse(409, 'SLUG_ALREADY_TAKEN', 'Slug already taken', false, requestId)
       }
     }
 
-    const updated = await deps.prisma.couple.update!({
+    const updated = await prisma.couple.update!({
       where: { id: coupleUser.coupleId },
       data: buildCoupleUpdateData(body),
     })
 
     return NextResponse.json(updated)
   }
+}
+
+async function loadPrisma() {
+  const { prisma } = await import('@/lib/prisma')
+  return prisma as unknown as CoupleRouteDeps['prisma']
 }
 
 const coupleGetHandler = createCoupleGetHandler()

@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withAuth, type AuthContext } from '@/lib/api-middleware'
 
@@ -18,14 +17,23 @@ function createErrorResponse(
 }
 
 type CoupleRunsRouteDeps = {
-  prismaClient?: typeof prisma
+  prismaClient?: {
+    pipelineRun: {
+      findMany: (args: Record<string, unknown>) => Promise<unknown[]>
+      count: (args: Record<string, unknown>) => Promise<number>
+    }
+  }
+}
+
+async function loadPrismaClient() {
+  const { prisma } = await import('@/lib/prisma')
+  return prisma as unknown as NonNullable<CoupleRunsRouteDeps['prismaClient']>
 }
 
 export function createCoupleRunsHandler(deps: CoupleRunsRouteDeps = {}) {
-  const prismaClient = deps.prismaClient ?? prisma
-
   return async (req: Request, { coupleUser }: AuthContext) => {
     try {
+      const prismaClient = deps.prismaClient ?? await loadPrismaClient()
       const url = new URL(req.url)
       const status = url.searchParams.get('status')
       const photoId = url.searchParams.get('photoId')

@@ -4,19 +4,43 @@ import { withAuth } from '@/lib/api-middleware'
 import { createApiErrorResponse, createRequestId, logApiError } from '@/lib/api-error'
 import { syncAlbumCover } from '@/lib/covers/album-cover-server'
 import { reindexPhotoSortOrders } from '@/lib/photos/sort-order'
-import { prisma } from '@/lib/prisma'
 import type { AuthContext } from '@/lib/api-middleware'
 
 type BatchAction = 'DELETE' | 'MOVE'
 const TAG = 'photos/batch'
 
 type BatchPhotoRouteDeps = {
-  prismaClient?: typeof prisma
+  prismaClient?: {
+    photo: {
+      findMany: (args: Record<string, unknown>) => Promise<Array<{ id: string; albumId: string }>>
+      deleteMany?: (args: Record<string, unknown>) => Promise<unknown>
+      update?: (args: Record<string, unknown>) => Promise<unknown>
+    }
+    album: {
+      findFirst: (args: Record<string, unknown>) => Promise<{ id: string } | null>
+    }
+    $transaction: <T>(
+      callback: (tx: {
+        photo: {
+          deleteMany: (args: Record<string, unknown>) => Promise<unknown>
+          findMany: (args: Record<string, unknown>) => Promise<Array<{ id: string; sortOrder: number }>>
+          update: (args: Record<string, unknown>) => Promise<unknown>
+        }
+        album: {
+          update: (args: Record<string, unknown>) => Promise<unknown>
+          findUnique: (args: Record<string, unknown>) => Promise<unknown>
+        }
+      }) => Promise<T>
+    ) => Promise<T>
+  }
+}
+
+async function loadPrismaClient() {
+  const { prisma } = await import('@/lib/prisma')
+  return prisma as unknown as NonNullable<BatchPhotoRouteDeps['prismaClient']>
 }
 
 export function createBatchPhotoHandler(deps: BatchPhotoRouteDeps = {}) {
-  const prismaClient = deps.prismaClient ?? prisma
-
   return async (req: Request, { coupleUser }: AuthContext) => {
     const requestId = createRequestId()
 
@@ -34,6 +58,8 @@ export function createBatchPhotoHandler(deps: BatchPhotoRouteDeps = {}) {
       if (action === 'MOVE' && !targetAlbumId) {
         return createApiErrorResponse(400, 'TARGET_ALBUM_REQUIRED', 'targetAlbumId is required', false, requestId)
       }
+
+      const prismaClient = deps.prismaClient ?? await loadPrismaClient()
 
       const photos = await prismaClient.photo.findMany({
         where: {

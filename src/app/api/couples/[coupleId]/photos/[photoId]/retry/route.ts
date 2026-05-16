@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withAuth, type AuthContext } from '@/lib/api-middleware'
 import { extractOssKeyFromOriginalUrl, processPhoto } from '@/lib/pipeline/process-photo'
@@ -20,16 +19,43 @@ function createErrorResponse(
 }
 
 type RetryPhotoRouteDeps = {
-  prismaClient?: typeof prisma
+  prismaClient?: {
+    photo: {
+      findFirst: (args: Record<string, unknown>) => Promise<{
+        id: string
+        originalUrl: string
+        status: 'UPLOADING' | 'PROCESSING' | 'READY' | 'FAILED'
+        pipelineRuns?: Array<{ status: 'RUNNING' | 'COMPLETED' | 'FAILED' | 'DEGRADED' }>
+      } | null>
+      updateMany: (args: Record<string, unknown>) => Promise<{ count: number }>
+    }
+  }
   processPhotoImpl?: typeof processPhoto
 }
 
+type RetryScope = 'FULL' | 'CAPTION_ONLY'
+
+function resolveRetryTriggerType(scope: RetryScope) {
+  return scope === 'CAPTION_ONLY' ? 'CAPTION_REGEN' as const : 'MANUAL_RETRY' as const
+}
+
+async function loadPrismaClient() {
+  const { prisma } = await import('@/lib/prisma')
+  return prisma as unknown as NonNullable<RetryPhotoRouteDeps['prismaClient']>
+}
+
 export function createRetryPhotoHandler(deps: RetryPhotoRouteDeps = {}) {
-  const prismaClient = deps.prismaClient ?? prisma
   const processPhotoImpl = deps.processPhotoImpl ?? processPhoto
 
   return async (_req: Request, { coupleUser }: AuthContext, params: Record<string, string>) => {
     try {
+      const body = await _req.json().catch(() => ({}))
+      const scope = body?.scope
+      if (scope !== 'FULL' && scope !== 'CAPTION_ONLY') {
+        return createErrorResponse(400, 'INVALID_RETRY_SCOPE', 'scope must be FULL or CAPTION_ONLY')
+      }
+
+      const prismaClient = deps.prismaClient ?? await loadPrismaClient()
       const photo = await prismaClient.photo.findFirst({
         where: {
           id: params.photoId,
@@ -55,7 +81,12 @@ export function createRetryPhotoHandler(deps: RetryPhotoRouteDeps = {}) {
         return createErrorResponse(409, guard.code, 'Pipeline is already running for this photo')
       }
 
-      if (photo.status !== 'FAILED') {
+      const latestRunStatus = photo.pipelineRuns?.[0]?.status ?? null
+      const canRetryFailedPhoto = photo.status === 'FAILED'
+      const canRegenerateCaption =
+        scope === 'CAPTION_ONLY' && latestRunStatus === 'DEGRADED'
+
+      if (!canRetryFailedPhoto && !canRegenerateCaption) {
         return createErrorResponse(409, 'PHOTO_RETRY_NOT_ALLOWED', 'Photo is not eligible for retry')
       }
 
@@ -72,13 +103,12 @@ export function createRetryPhotoHandler(deps: RetryPhotoRouteDeps = {}) {
         return createErrorResponse(409, 'PIPELINE_ALREADY_RUNNING', 'Pipeline is already running for this photo')
       }
 
-      void processPhotoImpl(params.photoId, ossKey, undefined, 'RETRY').catch((error: unknown) => {
-        const message = error instanceof Error ? error.message : 'Unknown error'
-        logger.error(TAG, '重试处理启动失败', { photoId: params.photoId, error: message })
-      })
+      const triggerType = resolveRetryTriggerType(scope)
+      const result = await processPhotoImpl(params.photoId, ossKey, undefined, triggerType)
 
       return NextResponse.json({
         photoId: params.photoId,
+        runId: result?.runId ?? null,
         status: 'PROCESSING',
       })
     } catch (error: unknown) {

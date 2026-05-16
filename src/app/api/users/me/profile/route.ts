@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
-
-import { auth } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { createApiErrorResponse, createRequestId } from '@/lib/api-error'
 
 const profileSelect = {
   id: true,
@@ -48,25 +46,35 @@ function normalizeAvatarInput(avatar: unknown) {
   return trimmed.length > 0 ? trimmed : null
 }
 
+async function loadAuth() {
+  const { auth } = await import('@/lib/auth')
+  return auth as () => Promise<SessionLike>
+}
+
+async function loadPrisma() {
+  const { prisma } = await import('@/lib/prisma')
+  return prisma as unknown as ProfileRouteDeps['prisma']
+}
+
 export function createProfileGetHandler(
-  deps: ProfileRouteDeps = {
-    auth: auth as () => Promise<SessionLike>,
-    prisma: prisma as unknown as ProfileRouteDeps['prisma'],
-  }
+  deps?: Partial<ProfileRouteDeps>
 ) {
   return async function GET() {
-    const session = await deps.auth()
+    const requestId = createRequestId()
+    const auth = deps?.auth ?? await loadAuth()
+    const prisma = deps?.prisma ?? await loadPrisma()
+    const session = await auth()
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return createApiErrorResponse(401, 'UNAUTHORIZED', 'Unauthorized', false, requestId)
     }
 
-    const user = await deps.prisma.user.findUnique!({
+    const user = await prisma.user.findUnique!({
       where: { id: session.user.id },
       select: profileSelect,
     })
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return createApiErrorResponse(404, 'USER_NOT_FOUND', 'User not found', false, requestId)
     }
 
     return NextResponse.json(user)
@@ -74,28 +82,28 @@ export function createProfileGetHandler(
 }
 
 export function createProfilePatchHandler(
-  deps: ProfileRouteDeps = {
-    auth: auth as () => Promise<SessionLike>,
-    prisma: prisma as unknown as ProfileRouteDeps['prisma'],
-  }
+  deps?: Partial<ProfileRouteDeps>
 ) {
   return async function PATCH(req: Request) {
-    const session = await deps.auth()
+    const requestId = createRequestId()
+    const auth = deps?.auth ?? await loadAuth()
+    const prisma = deps?.prisma ?? await loadPrisma()
+    const session = await auth()
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return createApiErrorResponse(401, 'UNAUTHORIZED', 'Unauthorized', false, requestId)
     }
 
     const body = await req.json()
     if (!body || typeof body !== 'object' || !('avatar' in body)) {
-      return NextResponse.json({ error: 'avatar is required' }, { status: 400 })
+      return createApiErrorResponse(400, 'AVATAR_REQUIRED', 'avatar is required', false, requestId)
     }
 
     const avatar = normalizeAvatarInput(body?.avatar)
     if (avatar === undefined) {
-      return NextResponse.json({ error: 'Invalid avatar' }, { status: 400 })
+      return createApiErrorResponse(400, 'INVALID_AVATAR', 'Invalid avatar', false, requestId)
     }
 
-    const updated = await deps.prisma.user.update!({
+    const updated = await prisma.user.update!({
       where: { id: session.user.id },
       data: { avatar },
       select: profileSelect,

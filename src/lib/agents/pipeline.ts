@@ -1,17 +1,5 @@
 import { executePipeline } from './engine'
-import { photoAnalyzer } from './photo-analyzer'
-import { captionWriter } from './caption-writer'
-import { layoutAdvisor } from './layout-advisor'
-import { timelineBuilder } from './timeline-builder'
-import { prisma } from '@/lib/prisma'
 import type { DAGNode, PipelineInput, NodeResult } from './engine/types'
-
-const dagNodes: DAGNode[] = [
-  { id: 'photoAnalyzer', agent: photoAnalyzer, dependencies: [] },
-  { id: 'captionWriter', agent: captionWriter, dependencies: ['photoAnalyzer'] },
-  { id: 'layoutAdvisor', agent: layoutAdvisor, dependencies: ['photoAnalyzer'] },
-  { id: 'timelineBuilder', agent: timelineBuilder, dependencies: ['photoAnalyzer'] },
-]
 
 export type PipelineExecutionStatus = 'COMPLETED' | 'FAILED' | 'DEGRADED'
 
@@ -25,6 +13,32 @@ type PipelineExecutionResultLike = {
 
 function getFirstFailedNode(nodeResults: Record<string, NodeResult>) {
   return Object.values(nodeResults).find(node => node.status === 'FAILED')
+}
+
+async function loadPrisma() {
+  const { prisma } = await import('@/lib/prisma')
+  return prisma
+}
+
+async function loadDagNodes(): Promise<DAGNode[]> {
+  const [
+    { photoAnalyzer },
+    { captionWriter },
+    { layoutAdvisor },
+    { timelineBuilder },
+  ] = await Promise.all([
+    import('./photo-analyzer'),
+    import('./caption-writer'),
+    import('./layout-advisor'),
+    import('./timeline-builder'),
+  ])
+
+  return [
+    { id: 'photoAnalyzer', agent: photoAnalyzer, dependencies: [] },
+    { id: 'captionWriter', agent: captionWriter, dependencies: ['photoAnalyzer'] },
+    { id: 'layoutAdvisor', agent: layoutAdvisor, dependencies: ['photoAnalyzer'] },
+    { id: 'timelineBuilder', agent: timelineBuilder, dependencies: ['photoAnalyzer'] },
+  ]
 }
 
 export function buildPipelineRunUpdate({
@@ -64,6 +78,8 @@ export async function runAIPipeline(
   coupleId: string,
   options?: { triggerType?: string }
 ) {
+  const prisma = await loadPrisma()
+  const dagNodes = await loadDagNodes()
   const latestRun = await prisma.pipelineRun.findFirst({
     where: { photoId: input.photoId },
     orderBy: [{ attemptNumber: 'desc' }, { startedAt: 'desc' }],
@@ -95,6 +111,7 @@ export async function runAIPipeline(
   })
 
   return {
+    runId: run.id,
     ...result,
     status: update.status,
     errorCode: update.errorCode,
@@ -109,6 +126,7 @@ export async function applyPipelineResults(
   nodeResults: Record<string, NodeResult>,
   coupleId: string
 ) {
+  const prisma = await loadPrisma()
   const caption = nodeResults.captionWriter?.output as { caption?: string; keywords?: string[] } | undefined
   const layout = nodeResults.layoutAdvisor?.output as { layout?: string } | undefined
   const analysis = nodeResults.photoAnalyzer?.output as {

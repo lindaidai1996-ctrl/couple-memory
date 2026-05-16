@@ -5,6 +5,7 @@ import {
   buildAvatarUpdatePayload,
   buildCoupleUpdatePayload,
   buildPublicPreviewUrl,
+  extractApiErrorMessage,
 } from '../../../src/app/(dashboard)/settings/page'
 
 test('buildAvatarUpdatePayload keeps avatar url when provided', () => {
@@ -68,5 +69,21 @@ test('buildPublicPreviewUrl creates public preview link from origin and slug', (
   assert.equal(
     buildPublicPreviewUrl('https://example.com', 'our-space'),
     'https://example.com/s/our-space'
+  )
+})
+
+test('extractApiErrorMessage prefers unified error envelope message', () => {
+  assert.equal(
+    extractApiErrorMessage(
+      {
+        error: {
+          code: 'SLUG_ALREADY_TAKEN',
+          message: 'Slug already taken',
+          retryable: false,
+        },
+      },
+      '保存失败'
+    ),
+    'Slug already taken'
   )
 })

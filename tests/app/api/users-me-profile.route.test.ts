@@ -25,7 +25,12 @@ test('createProfileGetHandler returns unauthorized when session is missing', asy
   const response = await handler()
 
   assert.equal(response.status, 401)
-  assert.deepEqual(await response.json(), { error: 'Unauthorized' })
+  const payload = await response.json()
+  assert.equal(payload.error.code, 'UNAUTHORIZED')
+  assert.equal(payload.error.message, 'Unauthorized')
+  assert.equal(payload.error.retryable, false)
+  assert.equal(typeof payload.error.requestId, 'string')
+  assert.ok(payload.error.requestId.length > 0)
 })
 
 test('createProfilePatchHandler updates current user avatar', async () => {
@@ -90,5 +95,10 @@ test('createProfilePatchHandler rejects update when avatar is omitted', async ()
   }))
 
   assert.equal(response.status, 400)
-  assert.deepEqual(await response.json(), { error: 'avatar is required' })
+  const payload = await response.json()
+  assert.equal(payload.error.code, 'AVATAR_REQUIRED')
+  assert.equal(payload.error.message, 'avatar is required')
+  assert.equal(payload.error.retryable, false)
+  assert.equal(typeof payload.error.requestId, 'string')
+  assert.ok(payload.error.requestId.length > 0)
 })

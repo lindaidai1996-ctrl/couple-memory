@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withAuth, type AuthContext } from '@/lib/api-middleware'
 import { syncAlbumCover } from '@/lib/covers/album-cover-server'
@@ -19,14 +18,65 @@ function createErrorResponse(
 }
 
 type PhotoRouteDeps = {
-  prismaClient?: typeof prisma
+  prismaClient?: {
+    photo: {
+      findFirst: (
+        args: Record<string, unknown>
+      ) => Promise<
+        | {
+            id: string
+            albumId: string
+            status: string
+            processingError?: string | null
+            fileName?: string
+            originalUrl?: string
+            thumbnailUrl?: string | null
+            pipelineRuns: Array<{
+              id: string
+              status: string
+              triggerType: string | null
+              attemptNumber: number
+              summary: string | null
+              startedAt: unknown
+              completedAt?: unknown
+              duration: number | null
+              totalTokens?: number | null
+              totalCost?: number | null
+              errorCode?: string | null
+            }>
+            [key: string]: unknown
+          }
+        | null
+      >
+      update?: (args: Record<string, unknown>) => Promise<unknown>
+      delete?: (args: Record<string, unknown>) => Promise<unknown>
+      findMany?: (args: Record<string, unknown>) => Promise<Array<{ id: string; sortOrder: number }>>
+    }
+    $transaction?: <T>(
+      callback: (tx: {
+        photo: {
+          delete: (args: Record<string, unknown>) => Promise<unknown>
+          findMany: (args: Record<string, unknown>) => Promise<Array<{ id: string; sortOrder: number }>>
+          update: (args: Record<string, unknown>) => Promise<unknown>
+        }
+        album: {
+          findUnique: (args: Record<string, unknown>) => Promise<unknown>
+          update: (args: Record<string, unknown>) => Promise<unknown>
+        }
+      }) => Promise<T>
+    ) => Promise<T>
+  }
+}
+
+async function loadPrismaClient() {
+  const { prisma } = await import('@/lib/prisma')
+  return prisma as unknown as NonNullable<PhotoRouteDeps['prismaClient']>
 }
 
 export function createGetPhotoHandler(deps: PhotoRouteDeps = {}) {
-  const prismaClient = deps.prismaClient ?? prisma
-
   return async (_req: Request, { coupleUser }: AuthContext, params: Record<string, string>) => {
     try {
+      const prismaClient = deps.prismaClient ?? await loadPrismaClient()
       const photo = await prismaClient.photo.findFirst({
         where: { id: params.photoId, album: { coupleId: coupleUser.coupleId } },
         include: {
@@ -72,15 +122,16 @@ export const getPhotoHandler = createGetPhotoHandler()
 export const GET = withAuth(getPhotoHandler)
 
 export const PATCH = withAuth(async (req, { coupleUser }, params) => {
+  const prismaClient = await loadPrismaClient()
   const body = await req.json()
-  const photo = await prisma.photo.findFirst({
+  const photo = await prismaClient.photo.findFirst({
     where: { id: params.photoId, album: { coupleId: coupleUser.coupleId } },
   })
   if (!photo) {
     return createErrorResponse(404, 'PHOTO_NOT_FOUND', 'Photo not found')
   }
 
-  const updated = await prisma.photo.update({
+  const updated = await prismaClient.photo.update!({
     where: { id: params.photoId },
     data: body,
   })
@@ -88,7 +139,8 @@ export const PATCH = withAuth(async (req, { coupleUser }, params) => {
 })
 
 export const DELETE = withAuth(async (req, { coupleUser }, params) => {
-  const photo = await prisma.photo.findFirst({
+  const prismaClient = await loadPrismaClient()
+  const photo = await prismaClient.photo.findFirst({
     where: { id: params.photoId, album: { coupleId: coupleUser.coupleId } },
     select: { id: true, albumId: true },
   })
@@ -96,7 +148,7 @@ export const DELETE = withAuth(async (req, { coupleUser }, params) => {
     return createErrorResponse(404, 'PHOTO_NOT_FOUND', 'Photo not found')
   }
 
-  await prisma.$transaction(async tx => {
+  await prismaClient.$transaction!(async tx => {
     await tx.photo.delete({ where: { id: params.photoId } })
 
     const remainingPhotos = await tx.photo.findMany({

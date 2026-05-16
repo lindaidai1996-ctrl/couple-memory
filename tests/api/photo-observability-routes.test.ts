@@ -36,9 +36,9 @@ function createAuthContext(coupleId = 'couple_1') {
   } as never
 }
 
-test('createRetryPhotoHandler marks the photo as processing and triggers reprocessing', async () => {
+test('createRetryPhotoHandler maps FULL scope to MANUAL_RETRY and returns the queued run id', async () => {
   const updateCalls: Array<{ where: unknown; data: unknown }> = []
-  const processCalls: Array<{ photoId: string; ossKey: string; clientExif?: unknown }> = []
+  const processCalls: Array<{ photoId: string; ossKey: string; clientExif?: unknown; triggerType?: unknown }> = []
 
   const handler = createRetryPhotoHandler({
     prismaClient: {
@@ -55,8 +55,9 @@ test('createRetryPhotoHandler marks the photo as processing and triggers reproce
         },
       },
     } as never,
-    processPhotoImpl: async (photoId, ossKey, clientExif) => {
-      processCalls.push({ photoId, ossKey, clientExif })
+    processPhotoImpl: async (photoId, ossKey, clientExif, triggerType) => {
+      processCalls.push({ photoId, ossKey, clientExif, triggerType })
+      return { runId: 'run_3' }
     },
   })
 
@@ -72,6 +73,7 @@ test('createRetryPhotoHandler marks the photo as processing and triggers reproce
   assert.equal(response.status, 200)
   assert.deepEqual(await response.json(), {
     photoId: 'photo_1',
+    runId: 'run_3',
     status: 'PROCESSING',
   })
   assert.deepEqual(updateCalls, [
@@ -85,8 +87,124 @@ test('createRetryPhotoHandler marks the photo as processing and triggers reproce
       photoId: 'photo_1',
       ossKey: 'uploads/couple_1/photo_1/original.jpg',
       clientExif: undefined,
+      triggerType: 'MANUAL_RETRY',
     },
   ])
+})
+
+test('createRetryPhotoHandler maps CAPTION_ONLY scope to CAPTION_REGEN', async () => {
+  const processCalls: Array<{ triggerType?: unknown }> = []
+
+  const handler = createRetryPhotoHandler({
+    prismaClient: {
+      photo: {
+        findFirst: async () => ({
+          id: 'photo_1',
+          originalUrl: 'https://cdn.example.com/uploads/couple_1/photo_1/original.jpg',
+          status: 'FAILED',
+          pipelineRuns: [{ status: 'DEGRADED' }],
+        }),
+        updateMany: async () => ({ count: 1 }),
+      },
+    } as never,
+    processPhotoImpl: async (_photoId, _ossKey, _clientExif, triggerType) => {
+      processCalls.push({ triggerType })
+      return { runId: 'run_4' }
+    },
+  })
+
+  const response = await handler(
+    createJsonRequest('/api/couples/couple_1/photos/photo_1/retry', {
+      method: 'POST',
+      body: { scope: 'CAPTION_ONLY' },
+    }),
+    createAuthContext(),
+    { coupleId: 'couple_1', photoId: 'photo_1' }
+  )
+
+  assert.equal(response.status, 200)
+  assert.deepEqual(await response.json(), {
+    photoId: 'photo_1',
+    runId: 'run_4',
+    status: 'PROCESSING',
+  })
+  assert.deepEqual(processCalls, [{ triggerType: 'CAPTION_REGEN' }])
+})
+
+test('createRetryPhotoHandler allows CAPTION_ONLY when the latest run is DEGRADED', async () => {
+  const processCalls: Array<{ triggerType?: unknown }> = []
+
+  const handler = createRetryPhotoHandler({
+    prismaClient: {
+      photo: {
+        findFirst: async () => ({
+          id: 'photo_1',
+          originalUrl: 'https://cdn.example.com/uploads/couple_1/photo_1/original.jpg',
+          status: 'READY',
+          pipelineRuns: [{ status: 'DEGRADED' }],
+        }),
+        updateMany: async () => ({ count: 1 }),
+      },
+    } as never,
+    processPhotoImpl: async (_photoId, _ossKey, _clientExif, triggerType) => {
+      processCalls.push({ triggerType })
+      return { runId: 'run_5' }
+    },
+  })
+
+  const response = await handler(
+    createJsonRequest('/api/couples/couple_1/photos/photo_1/retry', {
+      method: 'POST',
+      body: { scope: 'CAPTION_ONLY' },
+    }),
+    createAuthContext(),
+    { coupleId: 'couple_1', photoId: 'photo_1' }
+  )
+
+  assert.equal(response.status, 200)
+  assert.deepEqual(await response.json(), {
+    photoId: 'photo_1',
+    runId: 'run_5',
+    status: 'PROCESSING',
+  })
+  assert.deepEqual(processCalls, [{ triggerType: 'CAPTION_REGEN' }])
+})
+
+test('createRetryPhotoHandler rejects unsupported retry scope', async () => {
+  const handler = createRetryPhotoHandler({
+    prismaClient: {
+      photo: {
+        findFirst: async () => ({
+          id: 'photo_1',
+          originalUrl: 'https://cdn.example.com/uploads/couple_1/photo_1/original.jpg',
+          status: 'FAILED',
+          pipelineRuns: [],
+        }),
+        updateMany: async () => ({ count: 1 }),
+      },
+    } as never,
+    processPhotoImpl: async () => {
+      throw new Error('processPhoto should not be called for invalid scope')
+    },
+  })
+
+  const response = await handler(
+    createJsonRequest('/api/couples/couple_1/photos/photo_1/retry', {
+      method: 'POST',
+      body: { scope: 'UNKNOWN' },
+    }),
+    createAuthContext(),
+    { coupleId: 'couple_1', photoId: 'photo_1' }
+  )
+
+  assert.equal(response.status, 400)
+  assert.deepEqual(await response.json(), {
+    error: {
+      code: 'INVALID_RETRY_SCOPE',
+      message: 'scope must be FULL or CAPTION_ONLY',
+      retryable: false,
+    },
+  })
 })
 
 test('createRetryPhotoHandler aborts when another request already claimed the retry', async () => {

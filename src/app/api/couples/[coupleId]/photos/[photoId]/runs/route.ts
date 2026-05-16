@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withAuth, type AuthContext } from '@/lib/api-middleware'
 
@@ -18,14 +17,25 @@ function createErrorResponse(
 }
 
 type PhotoRunsRouteDeps = {
-  prismaClient?: typeof prisma
+  prismaClient?: {
+    photo: {
+      findFirst: (args: Record<string, unknown>) => Promise<{ id: string } | null>
+    }
+    pipelineRun: {
+      findMany: (args: Record<string, unknown>) => Promise<unknown[]>
+    }
+  }
+}
+
+async function loadPrismaClient() {
+  const { prisma } = await import('@/lib/prisma')
+  return prisma as unknown as NonNullable<PhotoRunsRouteDeps['prismaClient']>
 }
 
 export function createPhotoRunsHandler(deps: PhotoRunsRouteDeps = {}) {
-  const prismaClient = deps.prismaClient ?? prisma
-
   return async (_req: Request, { coupleUser }: AuthContext, params: Record<string, string>) => {
     try {
+      const prismaClient = deps.prismaClient ?? await loadPrismaClient()
       const photo = await prismaClient.photo.findFirst({
         where: {
           id: params.photoId,

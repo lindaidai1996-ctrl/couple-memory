@@ -1,15 +1,56 @@
-import { auth } from './auth'
-import { prisma } from './prisma'
 import { logger } from './logger'
 import { NextResponse } from 'next/server'
-import type { CoupleUser, Couple, Role } from '../../prisma/generated/prisma/client'
+
+type Role = 'OWNER' | 'PARTNER'
+
+type SessionLike = {
+  user?: {
+    id?: string | null
+  } | null
+} | null
+
+type CoupleRecord = {
+  id: string
+  name: string
+  slug: string
+  startDate: Date | null
+  coverPhotoUrl: string | null
+  bio: string | null
+  theme: string
+  isPublic: boolean
+}
+
+type CoupleUserRecord = {
+  role: Role
+  coupleId: string
+  couple: CoupleRecord
+}
+
+type PrismaLike = {
+  coupleUser: {
+    findFirst: (args: Record<string, unknown>) => Promise<CoupleUserRecord | null>
+  }
+  couple: {
+    findUnique: (args: Record<string, unknown>) => Promise<CoupleRecord | null>
+  }
+}
 
 export type AuthContext = {
   userId: string
-  coupleUser: CoupleUser & { couple: Couple }
+  coupleUser: CoupleUserRecord
 }
 
 const TAG = 'middleware/auth'
+
+async function loadAuth() {
+  const { auth } = await import('./auth')
+  return auth as () => Promise<SessionLike>
+}
+
+async function loadPrisma() {
+  const { prisma } = await import('./prisma')
+  return prisma as unknown as PrismaLike
+}
 
 /**
  * 需要登录 + coupleId 权限校验的路由中间件
@@ -26,6 +67,7 @@ export function withAuth(
     req: Request,
     { params }: { params: Promise<Record<string, string>> }
   ) => {
+    const [auth, prisma] = await Promise.all([loadAuth(), loadPrisma()])
     const session = await auth()
     if (!session?.user?.id) {
       logger.warn(TAG, '未登录访问', { url: req.url })
@@ -65,7 +107,7 @@ export function withAuth(
 export function withPublicAccess(
   handler: (
     req: Request,
-    ctx: { couple: Couple },
+    ctx: { couple: CoupleRecord },
     params: Record<string, string>
   ) => Promise<Response>
 ) {
@@ -73,6 +115,7 @@ export function withPublicAccess(
     req: Request,
     { params }: { params: Promise<Record<string, string>> }
   ) => {
+    const prisma = await loadPrisma()
     const resolvedParams = await params
     const couple = await prisma.couple.findUnique({
       where: { slug: resolvedParams.slug },

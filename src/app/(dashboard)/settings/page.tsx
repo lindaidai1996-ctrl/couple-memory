@@ -86,6 +86,30 @@ export function buildPublicPreviewUrl(origin: string, slug: string) {
   return `${normalizedOrigin}/s/${slug}`
 }
 
+export function extractApiErrorMessage(
+  payload: unknown,
+  fallback: string
+) {
+  if (payload && typeof payload === 'object' && 'error' in payload) {
+    const error = (payload as { error?: unknown }).error
+    if (typeof error === 'string' && error.trim()) {
+      return error
+    }
+
+    if (
+      error &&
+      typeof error === 'object' &&
+      'message' in error &&
+      typeof (error as { message?: unknown }).message === 'string' &&
+      (error as { message: string }).message.trim()
+    ) {
+      return (error as { message: string }).message
+    }
+  }
+
+  return fallback
+}
+
 export default function SettingsPage() {
   const [couple, setCouple] = useState<CoupleData | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -139,7 +163,10 @@ export default function SettingsPage() {
       setMessage({ type: 'success', text: '头像已更新' })
     } else {
       const data = await res.json()
-      setMessage({ type: 'error', text: data.error || '头像更新失败' })
+      setMessage({
+        type: 'error',
+        text: extractApiErrorMessage(data, '头像更新失败'),
+      })
     }
 
     setAvatarSaving(false)
@@ -164,7 +191,10 @@ export default function SettingsPage() {
       setMessage({ type: 'success', text: '保存成功' })
     } else {
       const data = await res.json()
-      setMessage({ type: 'error', text: data.error || '保存失败' })
+      setMessage({
+        type: 'error',
+        text: extractApiErrorMessage(data, '保存失败'),
+      })
     }
 
     setSaving(false)

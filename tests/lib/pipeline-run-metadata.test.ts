@@ -3,7 +3,7 @@ import test from 'node:test'
 
 import { buildPipelineRunUpdate } from '../../src/lib/agents/pipeline'
 
-test('buildPipelineRunUpdate marks mixed node outcomes as DEGRADED and preserves retry metadata', () => {
+test('buildPipelineRunUpdate marks mixed node outcomes as DEGRADED and preserves manual retry metadata', () => {
   const update = buildPipelineRunUpdate({
     result: {
       status: 'FAILED',
@@ -31,12 +31,12 @@ test('buildPipelineRunUpdate marks mixed node outcomes as DEGRADED and preserves
       totalCost: 0.01,
       duration: 61,
     },
-    triggerType: 'RETRY',
+    triggerType: 'MANUAL_RETRY',
     attemptNumber: 3,
   })
 
   assert.equal(update.status, 'DEGRADED')
-  assert.equal(update.triggerType, 'RETRY')
+  assert.equal(update.triggerType, 'MANUAL_RETRY')
   assert.equal(update.attemptNumber, 3)
   assert.equal(update.errorCode, 'CAPTIONWRITER_FAILED')
   assert.equal(update.summary, 'captionWriter failed: timeout')

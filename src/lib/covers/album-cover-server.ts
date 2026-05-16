@@ -1,23 +1,45 @@
-import { Prisma } from '../../../prisma/generated/prisma/client'
-
 import { resolveAlbumCover } from './album-cover'
 import { logger } from '@/lib/logger'
 
 const TAG = 'covers/album-sync'
 
+type AlbumCoverRecord = {
+  id: string
+  coverMode: 'AUTO' | 'MANUAL'
+  coverPhotoId: string | null
+  photos: Array<{
+    id: string
+    status: 'UPLOADING' | 'PROCESSING' | 'READY' | 'FAILED'
+    displayUrl: string | null
+    sortOrder: number
+  }>
+}
+
+type AlbumCoverDelegate = {
+  findUnique: (args: Record<string, unknown>) => Promise<AlbumCoverRecord | null>
+  update: (args: Record<string, unknown>) => Promise<unknown>
+}
+
+type AlbumCoverTransaction = {
+  album: object
+}
+
 function isMissingAlbumCoverMetadata(error: unknown) {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === 'P2022'
+  return Boolean(
+    error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      (error as { code?: unknown }).code === 'P2022'
   )
 }
 
 export async function syncAlbumCover(
-  tx: Prisma.TransactionClient,
+  tx: AlbumCoverTransaction,
   albumId: string
 ) {
   try {
-    const album = await tx.album.findUnique({
+    const albumDelegate = tx.album as unknown as AlbumCoverDelegate
+    const album = await albumDelegate.findUnique({
       where: { id: albumId },
       select: {
         id: true,
@@ -48,7 +70,7 @@ export async function syncAlbumCover(
         ? 'AUTO'
         : album.coverMode
 
-    return await tx.album.update({
+    return await albumDelegate.update({
       where: { id: albumId },
       data: {
         coverMode: nextMode,

@@ -1,10 +1,8 @@
-import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { downloadFromOSS } from '@/lib/oss'
 import { generateSizes } from './image-resize'
 import { extractExif, type ExifData } from './exif-extract'
 import { reverseGeocode } from './geocode'
-import { runAIPipeline, applyPipelineResults } from '@/lib/agents/pipeline'
 import { resolvePipelineOutcome } from './run-status'
 
 const TAG = 'pipeline/photo'
@@ -22,8 +20,9 @@ type ClientExifData = {
 }
 
 type PipelineResultLike = {
+  runId?: string
   status: 'COMPLETED' | 'FAILED' | 'DEGRADED'
-  nodeResults: Awaited<ReturnType<typeof runAIPipeline>>['nodeResults']
+  nodeResults: Record<string, unknown>
   totalTokens: number
   totalCost: number
   duration: number
@@ -33,19 +32,46 @@ type PipelineResultLike = {
   attemptNumber?: number
 }
 
+type ProcessPhotoPrismaClient = {
+  photo: {
+    update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<unknown>
+    findUnique: (args: {
+      where: { id: string }
+      include: { album: true }
+    }) => Promise<{ album: { coupleId: string } } | null>
+  }
+}
+
+type RunAIPipelineInput = {
+  photoId: string
+  photoUrl: string
+  exif: Record<string, unknown> | null
+  width: number
+  height: number
+  locationName: string | null
+}
+
+type RunAIPipelineFn = (
+  input: RunAIPipelineInput,
+  coupleId: string,
+  options?: { triggerType?: string }
+) => Promise<PipelineResultLike>
+
+type ApplyPipelineResultsFn = (
+  photoId: string,
+  nodeResults: Record<string, unknown>,
+  coupleId: string
+) => Promise<void>
+
 type ProcessPhotoDeps = {
-  prismaClient?: typeof prisma
+  prismaClient?: ProcessPhotoPrismaClient
   loggerClient?: typeof logger
   downloadFromOSSImpl?: typeof downloadFromOSS
   generateSizesImpl?: typeof generateSizes
   extractExifImpl?: typeof extractExif
   reverseGeocodeImpl?: typeof reverseGeocode
-  runAIPipelineImpl?: (
-    input: Parameters<typeof runAIPipeline>[0],
-    coupleId: string,
-    options?: { triggerType?: string }
-  ) => Promise<PipelineResultLike>
-  applyPipelineResultsImpl?: typeof applyPipelineResults
+  runAIPipelineImpl?: RunAIPipelineFn
+  applyPipelineResultsImpl?: ApplyPipelineResultsFn
   cdnDomain?: string
 }
 
@@ -88,24 +114,41 @@ function mergeExif(clientExif: ClientExifData | null, serverExif: ExifData | nul
   }
 }
 
+async function loadPrismaClient() {
+  const { prisma } = await import('@/lib/prisma')
+  return prisma as unknown as ProcessPhotoPrismaClient
+}
+
+async function loadPipelineFns() {
+  const { runAIPipeline, applyPipelineResults } = await import('@/lib/agents/pipeline')
+  return {
+    runAIPipeline: runAIPipeline as RunAIPipelineFn,
+    applyPipelineResults: applyPipelineResults as ApplyPipelineResultsFn,
+  }
+}
+
 export function createProcessPhoto(deps: ProcessPhotoDeps = {}) {
-  const prismaClient = deps.prismaClient ?? prisma
   const loggerClient = deps.loggerClient ?? logger
   const downloadFromOSSImpl = deps.downloadFromOSSImpl ?? downloadFromOSS
   const generateSizesImpl = deps.generateSizesImpl ?? generateSizes
   const extractExifImpl = deps.extractExifImpl ?? extractExif
   const reverseGeocodeImpl = deps.reverseGeocodeImpl ?? reverseGeocode
-  const runAIPipelineImpl = deps.runAIPipelineImpl ?? runAIPipeline
-  const applyPipelineResultsImpl = deps.applyPipelineResultsImpl ?? applyPipelineResults
 
   return async function processPhoto(
     photoId: string,
     ossKey: string,
     clientExif?: ClientExifData | null,
-    triggerType: 'UPLOAD' | 'RETRY' = 'UPLOAD'
+    triggerType: 'UPLOAD' | 'MANUAL_RETRY' | 'CAPTION_REGEN' = 'UPLOAD'
   ) {
     loggerClient.info(TAG, '开始处理', { photoId, ossKey })
     try {
+      const prismaClient = deps.prismaClient ?? await loadPrismaClient()
+      const { runAIPipeline, applyPipelineResults } = deps.runAIPipelineImpl && deps.applyPipelineResultsImpl
+        ? {
+            runAIPipeline: deps.runAIPipelineImpl,
+            applyPipelineResults: deps.applyPipelineResultsImpl,
+          }
+        : await loadPipelineFns()
       const buffer = await downloadFromOSSImpl(ossKey)
       const basePath = ossKey.replace(/\/original\.\w+$/, '')
 
@@ -150,7 +193,7 @@ export function createProcessPhoto(deps: ProcessPhotoDeps = {}) {
       })
 
       loggerClient.info(TAG, 'AI Pipeline 开始', { photoId, triggerType })
-      const pipelineResult = await runAIPipelineImpl({
+      const pipelineResult = await runAIPipeline({
         photoId,
         photoUrl: `https://${cdnDomain}/${sizes.displayPath}`,
         exif: exif as Record<string, unknown> | null,
@@ -160,7 +203,7 @@ export function createProcessPhoto(deps: ProcessPhotoDeps = {}) {
       }, photo!.album.coupleId, { triggerType })
 
       if (pipelineResult.status === 'COMPLETED' || pipelineResult.status === 'DEGRADED') {
-        await applyPipelineResultsImpl(photoId, pipelineResult.nodeResults, photo!.album.coupleId)
+        await applyPipelineResults(photoId, pipelineResult.nodeResults, photo!.album.coupleId)
       }
 
       if (pipelineResult.status !== 'COMPLETED') {
@@ -182,13 +225,22 @@ export function createProcessPhoto(deps: ProcessPhotoDeps = {}) {
         },
       })
       loggerClient.info(TAG, '处理完成', { photoId, status: outcome.photoStatus })
+      return {
+        runId: pipelineResult.runId ?? null,
+        photoStatus: outcome.photoStatus,
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error'
       loggerClient.error(TAG, '处理失败', { photoId, error: message })
+      const prismaClient = deps.prismaClient ?? await loadPrismaClient()
       await prismaClient.photo.update({
         where: { id: photoId },
         data: { status: 'FAILED', processingError: message },
       })
+      return {
+        runId: null,
+        photoStatus: 'FAILED' as const,
+      }
     }
   }
 }
