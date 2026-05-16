@@ -35,6 +35,7 @@ export default function AlbumDetailPage() {
   const [reorderSnapshot, setReorderSnapshot] = useState<Photo[]>([])
   const [draggingPhotoId, setDraggingPhotoId] = useState<string | null>(null)
   const [savingOrder, setSavingOrder] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchData() {
@@ -101,6 +102,7 @@ export default function AlbumDetailPage() {
     if (!coupleId || selectedPhotoIds.length === 0 || deleting) return
     if (!confirm(`确定删除已选的 ${selectedPhotoIds.length} 张照片吗？`)) return
 
+    setActionError(null)
     setDeleting(true)
 
     const res = await fetch(`/api/couples/${coupleId}/photos/batch`, {
@@ -118,11 +120,16 @@ export default function AlbumDetailPage() {
       setSelectedPhotoIds([])
       setMode('browse')
       setRefreshKey(key => key + 1)
+      return
     }
+
+    const data = await res.json().catch(() => null)
+    setActionError(data?.error?.message || '删除照片失败，请稍后再试')
   }
 
   async function handleSetCover(photoId: string) {
     if (!coupleId) return
+    setActionError(null)
 
     const res = await fetch(`/api/couples/${coupleId}/albums/${albumId}/cover`, {
       method: 'PATCH',
@@ -135,12 +142,17 @@ export default function AlbumDetailPage() {
 
     if (res.ok) {
       setRefreshKey(key => key + 1)
+      return
     }
+
+    const data = await res.json().catch(() => null)
+    setActionError(data?.error?.message || '设置相册封面失败，请稍后再试')
   }
 
   async function handleBatchMove() {
     if (!coupleId || selectedPhotoIds.length === 0 || !targetAlbumId || moving) return
 
+    setActionError(null)
     setMoving(true)
     const res = await fetch(`/api/couples/${coupleId}/photos/batch`, {
       method: 'POST',
@@ -158,7 +170,11 @@ export default function AlbumDetailPage() {
       setTargetAlbumId('')
       setMode('browse')
       setRefreshKey(key => key + 1)
+      return
     }
+
+    const data = await res.json().catch(() => null)
+    setActionError(data?.error?.message || '移动照片失败，请稍后再试')
   }
 
   function enterReorderMode() {
@@ -191,6 +207,7 @@ export default function AlbumDetailPage() {
 
   async function saveReorder() {
     if (!coupleId || savingOrder) return
+    setActionError(null)
     setSavingOrder(true)
     const res = await fetch(`/api/couples/${coupleId}/albums/${albumId}/photos/reorder`, {
       method: 'POST',
@@ -205,7 +222,11 @@ export default function AlbumDetailPage() {
       setReorderSnapshot([])
       setMode('browse')
       setRefreshKey(key => key + 1)
+      return
     }
+
+    const data = await res.json().catch(() => null)
+    setActionError(data?.error?.message || '保存排序失败，请稍后再试')
   }
 
   if (loading) return <DetailSkeleton />
@@ -324,6 +345,12 @@ export default function AlbumDetailPage() {
           )}
         </div>
       </div>
+
+      {actionError && (
+        <div className="mb-4 rounded-[var(--radius-md)] border border-error/30 bg-error/5 px-4 py-3 text-sm text-error">
+          {actionError}
+        </div>
+      )}
 
       {coupleId && (
         <div className="mb-6">

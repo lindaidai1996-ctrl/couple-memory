@@ -4,6 +4,7 @@ import { logger } from '@/lib/logger'
 import { withAuth } from '@/lib/api-middleware'
 import { processPhoto } from '@/lib/pipeline/process-photo'
 import { resolveAlbumCover } from '@/lib/covers/album-cover'
+import { Prisma } from '../../../../../../prisma/generated/prisma/client'
 import type { PhotoStatus } from '../../../../../../prisma/generated/prisma/enums'
 
 const TAG = 'photos'
@@ -21,45 +22,78 @@ export const GET = withAuth(async (req, { coupleUser }) => {
     ...(status && { status: status as PhotoStatus }),
   }
 
-  const [photos, total, album] = await Promise.all([
-    prisma.photo.findMany({
-      where,
-      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-    prisma.photo.count({ where }),
-    albumId
-      ? prisma.album.findFirst({
+  try {
+    const [photos, total] = await Promise.all([
+      prisma.photo.findMany({
+        where,
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.photo.count({ where }),
+    ])
+
+    let album: { coverMode: 'AUTO' | 'MANUAL'; coverPhotoId: string | null } | null = null
+
+    if (albumId) {
+      try {
+        album = await prisma.album.findFirst({
           where: { id: albumId, coupleId: coupleUser.coupleId },
           select: { coverMode: true, coverPhotoId: true },
         })
-      : Promise.resolve(null),
-  ])
+      } catch (error) {
+        // Backward compatibility: older DBs may not have cover fields yet.
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          logger.warn(TAG, 'Album cover metadata unavailable; fallback without cover metadata', {
+            coupleId: coupleUser.coupleId,
+            albumId,
+            code: error.code,
+          })
+        } else {
+          logger.warn(TAG, 'Album cover metadata query failed; fallback without cover metadata', {
+            coupleId: coupleUser.coupleId,
+            albumId,
+          })
+        }
+        album = null
+      }
+    }
 
-  const resolvedCover = album
-    ? resolveAlbumCover({
-        coverMode: album.coverMode,
-        coverPhotoId: album.coverPhotoId,
-        photos: photos.map(photo => ({
-          id: photo.id,
-          status: photo.status,
-          displayUrl: photo.displayUrl,
-          sortOrder: photo.sortOrder,
-        })),
-      })
-    : null
+    const resolvedCover = album
+      ? resolveAlbumCover({
+          coverMode: album.coverMode,
+          coverPhotoId: album.coverPhotoId,
+          photos: photos.map(photo => ({
+            id: photo.id,
+            status: photo.status,
+            displayUrl: photo.displayUrl,
+            sortOrder: photo.sortOrder,
+          })),
+        })
+      : null
 
-  return NextResponse.json({
-    photos: photos.map(photo => ({
-      ...photo,
-      isAlbumCover: resolvedCover?.photoId === photo.id,
-      canBeCover: photo.status === 'READY' && Boolean(photo.displayUrl),
-    })),
-    total,
-    page,
-    limit,
-  })
+    return NextResponse.json({
+      photos: photos.map(photo => ({
+        ...photo,
+        isAlbumCover: resolvedCover?.photoId === photo.id,
+        canBeCover: photo.status === 'READY' && Boolean(photo.displayUrl),
+      })),
+      total,
+      page,
+      limit,
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    logger.error(TAG, '获取照片列表失败', {
+      coupleId: coupleUser.coupleId,
+      albumId,
+      status,
+      page,
+      limit,
+      error: message,
+    })
+    return NextResponse.json({ error: 'Failed to fetch photos' }, { status: 500 })
+  }
 })
 
 export const POST = withAuth(async (req, { coupleUser }) => {
@@ -70,7 +104,6 @@ export const POST = withAuth(async (req, { coupleUser }) => {
     where: { id: albumId, coupleId: coupleUser.coupleId },
     select: {
       id: true,
-      coverMode: true,
       photos: {
         select: { sortOrder: true },
         orderBy: [{ sortOrder: 'desc' }],
