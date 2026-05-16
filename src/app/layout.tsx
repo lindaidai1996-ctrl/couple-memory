@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale } from 'next-intl/server'
-import { ThemeScript } from '@/components/preferences/theme-script'
+import { ThemeScript } from '@/app/theme-script'
 import "./globals.css";
 
 const dmSans = DM_Sans({

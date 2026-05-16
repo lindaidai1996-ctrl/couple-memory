@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 import { useTranslations } from 'next-intl'
 import {
   DEFAULT_THEME,
@@ -10,6 +10,8 @@ import {
   type ThemeMode,
   pickThemeMode,
 } from '@/lib/preferences'
+
+const THEME_CHANGE_EVENT = 'cm-theme-change'
 
 function readThemePreference() {
   if (typeof document === 'undefined') {
@@ -27,6 +29,11 @@ function setThemeCookie(value: ThemeMode) {
   document.cookie = `${THEME_COOKIE_NAME}=${encodeURIComponent(value)}; path=/; max-age=31536000; samesite=lax`
 }
 
+function subscribeToThemePreference(onChange: () => void) {
+  window.addEventListener(THEME_CHANGE_EVENT, onChange)
+  return () => window.removeEventListener(THEME_CHANGE_EVENT, onChange)
+}
+
 function applyResolvedTheme(theme: ThemeMode) {
   const resolved = resolveThemeMode(
     theme,
@@ -39,16 +46,20 @@ function applyResolvedTheme(theme: ThemeMode) {
 
 export function ThemeToggle() {
   const t = useTranslations('Common')
-  const [theme, setTheme] = useState<ThemeMode>(readThemePreference)
+  const theme = useSyncExternalStore(
+    subscribeToThemePreference,
+    readThemePreference,
+    () => DEFAULT_THEME
+  )
 
   function handleClick() {
     const nextTheme = getNextThemeMode(
       theme,
       window.matchMedia('(prefers-color-scheme: dark)').matches
     )
-    setTheme(nextTheme)
     setThemeCookie(nextTheme)
     applyResolvedTheme(nextTheme)
+    window.dispatchEvent(new Event(THEME_CHANGE_EVENT))
   }
 
   useEffect(() => {

@@ -1,3 +1,7 @@
+'use client'
+
+import { useServerInsertedHTML } from 'next/navigation'
+
 import {
   DEFAULT_THEME,
   LOCALE_COOKIE_NAME,
@@ -19,7 +23,11 @@ const themeScript = `
 `
 
 export function ThemeScript() {
-  return <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+  useServerInsertedHTML(() => (
+    <script id="theme-script" dangerouslySetInnerHTML={{ __html: themeScript }} />
+  ))
+
+  return null
 }
 
 export const preferenceCookieNames = {
