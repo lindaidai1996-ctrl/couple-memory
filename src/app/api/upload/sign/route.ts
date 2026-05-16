@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import { generateSignedPutUrl } from '@/lib/oss'
 
+const TAG = 'upload/sign'
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic']
 
@@ -13,16 +15,19 @@ export async function POST(req: Request) {
   }
 
   const { fileName, fileType, fileSize } = await req.json()
+  logger.info(TAG, '签名请求', { userId: session.user.id, fileName, fileType, fileSize })
 
   if (!fileName || !fileType || !fileSize) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
   if (fileSize > MAX_FILE_SIZE) {
+    logger.warn(TAG, '文件过大', { fileName, fileSize })
     return NextResponse.json({ error: 'File too large (max 10MB)' }, { status: 413 })
   }
 
   if (!ALLOWED_TYPES.includes(fileType)) {
+    logger.warn(TAG, '不支持的文件类型', { fileName, fileType })
     return NextResponse.json({ error: 'Unsupported file type' }, { status: 415 })
   }
 
@@ -35,10 +40,11 @@ export async function POST(req: Request) {
 
   try {
     const result = generateSignedPutUrl(coupleUser.coupleId, fileName, fileType)
+    logger.info(TAG, '签名成功', { coupleId: coupleUser.coupleId, fileName })
     return NextResponse.json(result)
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Upload sign failed'
-    console.error('[upload/sign]', message)
+    logger.error(TAG, 'OSS签名失败', { error: message, fileName })
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

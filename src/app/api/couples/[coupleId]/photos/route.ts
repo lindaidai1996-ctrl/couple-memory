@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import { withAuth } from '@/lib/api-middleware'
 import { processPhoto } from '@/lib/pipeline/process-photo'
 import type { PhotoStatus } from '../../../../../../prisma/generated/prisma/enums'
+
+const TAG = 'photos'
 
 export const GET = withAuth(async (req, { coupleUser }) => {
   const url = new URL(req.url)
@@ -32,11 +35,13 @@ export const GET = withAuth(async (req, { coupleUser }) => {
 
 export const POST = withAuth(async (req, { coupleUser }) => {
   const { ossKey, fileName, fileSize, albumId } = await req.json()
+  logger.info(TAG, '创建照片记录', { coupleId: coupleUser.coupleId, albumId, fileName })
 
   const album = await prisma.album.findFirst({
     where: { id: albumId, coupleId: coupleUser.coupleId },
   })
   if (!album) {
+    logger.warn(TAG, '相册不存在', { albumId, coupleId: coupleUser.coupleId })
     return NextResponse.json({ error: 'Album not found' }, { status: 404 })
   }
 
@@ -51,8 +56,8 @@ export const POST = withAuth(async (req, { coupleUser }) => {
     },
   })
 
-  // 异步触发图片处理（不阻塞响应）
   processPhoto(photo.id, ossKey)
+  logger.info(TAG, '照片处理已触发', { photoId: photo.id })
 
   return NextResponse.json({ id: photo.id, status: 'PROCESSING' }, { status: 201 })
 })

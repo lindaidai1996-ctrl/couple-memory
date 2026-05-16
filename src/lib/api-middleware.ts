@@ -1,5 +1,6 @@
 import { auth } from './auth'
 import { prisma } from './prisma'
+import { logger } from './logger'
 import { NextResponse } from 'next/server'
 import type { CoupleUser, Couple, Role } from '../../prisma/generated/prisma/client'
 
@@ -7,6 +8,8 @@ export type AuthContext = {
   userId: string
   coupleUser: CoupleUser & { couple: Couple }
 }
+
+const TAG = 'middleware/auth'
 
 /**
  * 需要登录 + coupleId 权限校验的路由中间件
@@ -25,6 +28,7 @@ export function withAuth(
   ) => {
     const session = await auth()
     if (!session?.user?.id) {
+      logger.warn(TAG, '未登录访问', { url: req.url })
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -39,10 +43,12 @@ export function withAuth(
       include: { couple: true },
     })
     if (!coupleUser) {
+      logger.warn(TAG, '无权访问', { userId: session.user.id, coupleId })
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     if (options?.requiredRole === 'OWNER' && coupleUser.role !== 'OWNER') {
+      logger.warn(TAG, '需要OWNER权限', { userId: session.user.id, coupleId, role: coupleUser.role })
       return NextResponse.json(
         { error: 'Owner access required' },
         { status: 403 }

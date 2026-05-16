@@ -1,6 +1,9 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
+
+const TAG = 'couples/mine'
 
 export async function GET() {
   const session = await auth()
@@ -14,6 +17,7 @@ export async function GET() {
   })
 
   if (!coupleUser) {
+    logger.warn(TAG, '用户无关联空间', { userId: session.user.id })
     return NextResponse.json({ error: 'No couple found' }, { status: 404 })
   }
 
