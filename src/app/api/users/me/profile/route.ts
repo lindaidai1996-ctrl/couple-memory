@@ -54,7 +54,7 @@ export function createProfileGetHandler(
     prisma: prisma as unknown as ProfileRouteDeps['prisma'],
   }
 ) {
-  return async function GET(_req?: Request) {
+  return async function GET() {
     const session = await deps.auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -86,6 +86,10 @@ export function createProfilePatchHandler(
     }
 
     const body = await req.json()
+    if (!body || typeof body !== 'object' || !('avatar' in body)) {
+      return NextResponse.json({ error: 'avatar is required' }, { status: 400 })
+    }
+
     const avatar = normalizeAvatarInput(body?.avatar)
     if (avatar === undefined) {
       return NextResponse.json({ error: 'Invalid avatar' }, { status: 400 })

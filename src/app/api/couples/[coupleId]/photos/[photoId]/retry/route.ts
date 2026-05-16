@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withAuth, type AuthContext } from '@/lib/api-middleware'
 import { extractOssKeyFromOriginalUrl, processPhoto } from '@/lib/pipeline/process-photo'
+import { buildRetryGuard } from '@/lib/pipeline/run-status'
 
 const TAG = 'api/photo-retry'
 
@@ -33,11 +34,29 @@ export function createRetryPhotoHandler(deps: RetryPhotoRouteDeps = {}) {
         where: {
           id: params.photoId,
           album: { coupleId: coupleUser.coupleId },
-          status: 'FAILED',
+        },
+        include: {
+          pipelineRuns: {
+            orderBy: { startedAt: 'desc' },
+            take: 1,
+            select: { status: true },
+          },
         },
       })
       if (!photo) {
         return createErrorResponse(404, 'PHOTO_NOT_FOUND', 'Photo not found')
+      }
+
+      const guard = buildRetryGuard({
+        photoStatus: photo.status,
+        latestRunStatus: photo.pipelineRuns?.[0]?.status ?? null,
+      })
+      if (!guard.allowed) {
+        return createErrorResponse(409, guard.code, 'Pipeline is already running for this photo')
+      }
+
+      if (photo.status !== 'FAILED') {
+        return createErrorResponse(409, 'PHOTO_RETRY_NOT_ALLOWED', 'Photo is not eligible for retry')
       }
 
       const ossKey = extractOssKeyFromOriginalUrl(photo.originalUrl)
@@ -45,12 +64,15 @@ export function createRetryPhotoHandler(deps: RetryPhotoRouteDeps = {}) {
         return createErrorResponse(409, 'PHOTO_SOURCE_INVALID', 'Photo source is invalid')
       }
 
-      await prismaClient.photo.update({
-        where: { id: params.photoId },
+      const claimed = await prismaClient.photo.updateMany({
+        where: { id: params.photoId, status: 'FAILED' },
         data: { status: 'PROCESSING', processingError: null },
       })
+      if (claimed.count !== 1) {
+        return createErrorResponse(409, 'PIPELINE_ALREADY_RUNNING', 'Pipeline is already running for this photo')
+      }
 
-      void processPhotoImpl(params.photoId, ossKey).catch((error: unknown) => {
+      void processPhotoImpl(params.photoId, ossKey, undefined, 'RETRY').catch((error: unknown) => {
         const message = error instanceof Error ? error.message : 'Unknown error'
         logger.error(TAG, '重试处理启动失败', { photoId: params.photoId, error: message })
       })

@@ -4,26 +4,32 @@ import { withAuth } from '@/lib/api-middleware'
 import { prisma } from '@/lib/prisma'
 
 type CoupleRouteDeps = {
-  coupleRecord: {
-    id: string
-    _count: {
-      albums: number
-      milestones: number
-    }
-    [key: string]: unknown
-  }
   prisma: {
     couple: {
-      findUnique?: (args: Record<string, unknown>) => Promise<CoupleRouteDeps['coupleRecord'] | null>
+      findUnique?: (args: Record<string, unknown>) => Promise<CoupleRecord | null>
       update?: (args: {
         where: { id: string }
         data: Record<string, unknown>
-      }) => Promise<CoupleRouteDeps['coupleRecord']>
+      }) => Promise<CoupleUpdateRecord>
     }
     photo?: {
       count?: (args: Record<string, unknown>) => Promise<number>
     }
   }
+}
+
+type CoupleRecord = {
+  id: string
+  _count?: {
+    albums: number
+    milestones: number
+  }
+  [key: string]: unknown
+}
+
+type CoupleUpdateRecord = {
+  id: string
+  [key: string]: unknown
 }
 
 type CouplePatchBody = {
@@ -103,8 +109,8 @@ export function createCoupleGetHandler(
       ...couple,
       stats: {
         photoCount,
-        albumCount: couple._count.albums,
-        milestoneCount: couple._count.milestones,
+        albumCount: couple._count?.albums ?? 0,
+        milestoneCount: couple._count?.milestones ?? 0,
       },
     })
   }

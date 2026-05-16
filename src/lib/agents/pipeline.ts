@@ -13,30 +13,95 @@ const dagNodes: DAGNode[] = [
   { id: 'timelineBuilder', agent: timelineBuilder, dependencies: ['photoAnalyzer'] },
 ]
 
-export async function runAIPipeline(input: PipelineInput, coupleId: string) {
+export type PipelineExecutionStatus = 'COMPLETED' | 'FAILED' | 'DEGRADED'
+
+type PipelineExecutionResultLike = {
+  status: 'COMPLETED' | 'FAILED'
+  nodeResults: Record<string, NodeResult>
+  totalTokens: number
+  totalCost: number
+  duration: number
+}
+
+function getFirstFailedNode(nodeResults: Record<string, NodeResult>) {
+  return Object.values(nodeResults).find(node => node.status === 'FAILED')
+}
+
+export function buildPipelineRunUpdate({
+  result,
+  triggerType = 'UPLOAD',
+  attemptNumber = 1,
+}: {
+  result: PipelineExecutionResultLike
+  triggerType?: string
+  attemptNumber?: number
+}) {
+  const failedNode = getFirstFailedNode(result.nodeResults)
+  const hasCompletedNode = Object.values(result.nodeResults).some(node => node.status === 'COMPLETED')
+  const status: PipelineExecutionStatus =
+    result.status === 'COMPLETED'
+      ? 'COMPLETED'
+      : failedNode && hasCompletedNode
+        ? 'DEGRADED'
+        : 'FAILED'
+
+  return {
+    status,
+    triggerType,
+    attemptNumber,
+    nodeResults: JSON.parse(JSON.stringify(result.nodeResults)),
+    totalTokens: result.totalTokens,
+    totalCost: result.totalCost,
+    completedAt: new Date(),
+    duration: result.duration,
+    errorCode: failedNode ? `${failedNode.nodeId.toUpperCase()}_FAILED` : null,
+    summary: failedNode ? `${failedNode.nodeId} failed: ${failedNode.error ?? 'Unknown error'}` : null,
+  }
+}
+
+export async function runAIPipeline(
+  input: PipelineInput,
+  coupleId: string,
+  options?: { triggerType?: string }
+) {
+  const latestRun = await prisma.pipelineRun.findFirst({
+    where: { photoId: input.photoId },
+    orderBy: [{ attemptNumber: 'desc' }, { startedAt: 'desc' }],
+    select: { attemptNumber: true },
+  })
+  const attemptNumber = (latestRun?.attemptNumber ?? 0) + 1
+  const triggerType = options?.triggerType ?? 'UPLOAD'
+
   const run = await prisma.pipelineRun.create({
     data: {
       coupleId,
       photoId: input.photoId,
+      triggerType,
+      attemptNumber,
       dag: dagNodes.map(n => ({ id: n.id, dependencies: n.dependencies })),
     },
   })
 
   const result = await executePipeline(dagNodes, input)
+  const update = buildPipelineRunUpdate({
+    result,
+    triggerType,
+    attemptNumber,
+  })
 
   await prisma.pipelineRun.update({
     where: { id: run.id },
-    data: {
-      status: result.status === 'COMPLETED' ? 'COMPLETED' : 'FAILED',
-      nodeResults: JSON.parse(JSON.stringify(result.nodeResults)),
-      totalTokens: result.totalTokens,
-      totalCost: result.totalCost,
-      completedAt: new Date(),
-      duration: result.duration,
-    },
+    data: update,
   })
 
-  return result
+  return {
+    ...result,
+    status: update.status,
+    errorCode: update.errorCode,
+    summary: update.summary,
+    triggerType,
+    attemptNumber,
+  }
 }
 
 export async function applyPipelineResults(

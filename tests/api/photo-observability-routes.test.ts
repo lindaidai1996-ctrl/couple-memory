@@ -47,10 +47,11 @@ test('createRetryPhotoHandler marks the photo as processing and triggers reproce
           id: 'photo_1',
           originalUrl: 'https://cdn.example.com/uploads/couple_1/photo_1/original.jpg',
           status: 'FAILED',
+          pipelineRuns: [],
         }),
-        update: async (args: { where: unknown; data: unknown }) => {
+        updateMany: async (args: { where: unknown; data: unknown }) => {
           updateCalls.push(args)
-          return { id: 'photo_1', ...args.data }
+          return { count: 1 }
         },
       },
     } as never,
@@ -75,7 +76,7 @@ test('createRetryPhotoHandler marks the photo as processing and triggers reproce
   })
   assert.deepEqual(updateCalls, [
     {
-      where: { id: 'photo_1' },
+      where: { id: 'photo_1', status: 'FAILED' },
       data: { status: 'PROCESSING', processingError: null },
     },
   ])
@@ -86,6 +87,56 @@ test('createRetryPhotoHandler marks the photo as processing and triggers reproce
       clientExif: undefined,
     },
   ])
+})
+
+test('createRetryPhotoHandler aborts when another request already claimed the retry', async () => {
+  const updateCalls: Array<{ where: unknown; data: unknown }> = []
+  const processCalls: Array<{ photoId: string; ossKey: string; clientExif?: unknown }> = []
+
+  const handler = createRetryPhotoHandler({
+    prismaClient: {
+      photo: {
+        findFirst: async () => ({
+          id: 'photo_1',
+          originalUrl: 'https://cdn.example.com/uploads/couple_1/photo_1/original.jpg',
+          status: 'FAILED',
+          pipelineRuns: [],
+        }),
+        updateMany: async (args: { where: unknown; data: unknown }) => {
+          updateCalls.push(args)
+          return { count: 0 }
+        },
+      },
+    } as never,
+    processPhotoImpl: async (photoId, ossKey, clientExif) => {
+      processCalls.push({ photoId, ossKey, clientExif })
+    },
+  })
+
+  const response = await handler(
+    createJsonRequest('/api/couples/couple_1/photos/photo_1/retry', {
+      method: 'POST',
+      body: { scope: 'FULL' },
+    }),
+    createAuthContext(),
+    { coupleId: 'couple_1', photoId: 'photo_1' }
+  )
+
+  assert.equal(response.status, 409)
+  assert.deepEqual(await response.json(), {
+    error: {
+      code: 'PIPELINE_ALREADY_RUNNING',
+      message: 'Pipeline is already running for this photo',
+      retryable: false,
+    },
+  })
+  assert.deepEqual(updateCalls, [
+    {
+      where: { id: 'photo_1', status: 'FAILED' },
+      data: { status: 'PROCESSING', processingError: null },
+    },
+  ])
+  assert.deepEqual(processCalls, [])
 })
 
 test('createRetryPhotoHandler returns a unified not-found error', async () => {
@@ -115,6 +166,47 @@ test('createRetryPhotoHandler returns a unified not-found error', async () => {
       retryable: false,
     },
   })
+})
+
+test('createRetryPhotoHandler rejects retry while a pipeline run is still active', async () => {
+  const updateCalls: Array<{ where: unknown; data: unknown }> = []
+  const processCalls: Array<{ photoId: string; ossKey: string; clientExif?: unknown }> = []
+
+  const handler = createRetryPhotoHandler({
+    prismaClient: {
+      photo: {
+        findFirst: async () => ({
+          id: 'photo_1',
+          originalUrl: 'https://cdn.example.com/uploads/couple_1/photo_1/original.jpg',
+          status: 'PROCESSING',
+          pipelineRuns: [{ status: 'RUNNING' }],
+        }),
+      },
+    } as never,
+    processPhotoImpl: async (photoId, ossKey, clientExif) => {
+      processCalls.push({ photoId, ossKey, clientExif })
+    },
+  })
+
+  const response = await handler(
+    createJsonRequest('/api/couples/couple_1/photos/photo_1/retry', {
+      method: 'POST',
+      body: { scope: 'FULL' },
+    }),
+    createAuthContext(),
+    { coupleId: 'couple_1', photoId: 'photo_1' }
+  )
+
+  assert.equal(response.status, 409)
+  assert.deepEqual(await response.json(), {
+    error: {
+      code: 'PIPELINE_ALREADY_RUNNING',
+      message: 'Pipeline is already running for this photo',
+      retryable: false,
+    },
+  })
+  assert.deepEqual(updateCalls, [])
+  assert.deepEqual(processCalls, [])
 })
 
 test('createGetPhotoHandler returns the photo and its latest run', async () => {
@@ -257,8 +349,7 @@ test('createCoupleRunsHandler supports filters and pagination', async () => {
 
   const response = await handler(
     createJsonRequest('/api/couples/couple_1/runs?status=FAILED&photoId=photo_1&albumId=album_1&triggerType=RETRY&page=2&limit=5'),
-    createAuthContext(),
-    { coupleId: 'couple_1' }
+    createAuthContext()
   )
 
   assert.equal(response.status, 200)

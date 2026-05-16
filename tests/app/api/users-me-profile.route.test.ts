@@ -22,7 +22,7 @@ test('createProfileGetHandler returns unauthorized when session is missing', asy
     },
   })
 
-  const response = await handler(new Request('http://localhost/api/users/me/profile'))
+  const response = await handler()
 
   assert.equal(response.status, 401)
   assert.deepEqual(await response.json(), { error: 'Unauthorized' })
@@ -67,4 +67,28 @@ test('createProfilePatchHandler updates current user avatar', async () => {
     name: 'Alice',
     avatar: 'https://cdn.example.com/avatar.jpg',
   })
+})
+
+test('createProfilePatchHandler rejects update when avatar is omitted', async () => {
+  const { createProfilePatchHandler } = await loadProfileRoute()
+
+  const handler = createProfilePatchHandler({
+    auth: async () => ({ user: { id: 'user-1' } }),
+    prisma: {
+      user: {
+        update: async () => {
+          throw new Error('should not update when avatar is omitted')
+        },
+      },
+    },
+  })
+
+  const response = await handler(new Request('http://localhost/api/users/me/profile', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  }))
+
+  assert.equal(response.status, 400)
+  assert.deepEqual(await response.json(), { error: 'avatar is required' })
 })
