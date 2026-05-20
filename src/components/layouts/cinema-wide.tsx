@@ -39,6 +39,7 @@ export function CinemaWide({ photo, caption }: LayoutProps) {
 
       <div className="relative w-full aspect-[2.39/1] overflow-hidden">
         {src ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={src}
             alt={caption || ''}

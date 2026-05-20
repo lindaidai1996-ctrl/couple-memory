@@ -198,6 +198,7 @@ test('applyCoverPhotoSelection updates both photo id and preview url', () => {
   assert.deepEqual(
     applyCoverPhotoSelection(
       {
+        id: 'couple_1',
         name: 'Our Space',
         slug: 'our-space',
         startDate: null,
@@ -206,6 +207,11 @@ test('applyCoverPhotoSelection updates both photo id and preview url', () => {
         coverMode: 'PHOTO',
         coverPhotoId: null,
         coverPhotoUrl: null,
+        captionStylePreference: null,
+        tonePreference: null,
+        blockedPhrases: [],
+        inviteCode: null,
+        inviteExpiresAt: null,
       },
       {
         id: 'photo_9',
@@ -215,6 +221,7 @@ test('applyCoverPhotoSelection updates both photo id and preview url', () => {
       }
     ),
     {
+      id: 'couple_1',
       name: 'Our Space',
       slug: 'our-space',
       startDate: null,
@@ -223,6 +230,11 @@ test('applyCoverPhotoSelection updates both photo id and preview url', () => {
       coverMode: 'PHOTO',
       coverPhotoId: 'photo_9',
       coverPhotoUrl: 'https://cdn.example.com/cover.jpg',
+      captionStylePreference: null,
+      tonePreference: null,
+      blockedPhrases: [],
+      inviteCode: null,
+      inviteExpiresAt: null,
     }
   )
 })

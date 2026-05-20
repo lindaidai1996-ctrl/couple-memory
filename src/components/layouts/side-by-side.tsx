@@ -13,6 +13,7 @@ export function SideBySide({ photo, caption, index = 0 }: LayoutProps) {
     <div className="relative aspect-[4/3] md:aspect-auto md:flex-1 overflow-hidden
       rounded-[var(--radius-md)]">
       {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={src}
           alt={caption || ''}

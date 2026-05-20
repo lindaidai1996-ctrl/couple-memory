@@ -115,6 +115,7 @@ export default function AlbumsPage() {
             >
               <div className="aspect-[4/3] bg-warm-bg relative overflow-hidden">
                 {album.coverPhotoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={album.coverPhotoUrl}
                     alt={album.title}

@@ -11,6 +11,7 @@ export function GridSquare({ photo, caption }: LayoutProps) {
     <div className="relative aspect-square overflow-hidden rounded-[var(--radius-md)]
       bg-film-surface group">
       {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={src}
           alt={caption || ''}

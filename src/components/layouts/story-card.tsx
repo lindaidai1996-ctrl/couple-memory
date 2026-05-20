@@ -14,6 +14,7 @@ export function StoryCard({ photo, caption }: LayoutProps) {
       {/* 图片区域 */}
       <div className="relative aspect-[4/5] overflow-hidden">
         {src ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={src}
             alt={caption || ''}

@@ -12,6 +12,7 @@ export function PortraitHero({ photo, caption }: LayoutProps) {
     <div className="relative w-full max-w-2xl mx-auto aspect-[3/4] overflow-hidden
       rounded-[var(--radius-lg)]">
       {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={src}
           alt={caption || ''}
