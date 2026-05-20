@@ -194,6 +194,8 @@ test('AlbumChapterCard renders one edit action and one refresh action inside the
         editChapter: '编辑章节',
         refreshSummary: '刷新摘要',
         generateSummary: '生成摘要',
+        refreshingSummary: '刷新中...',
+        generatingSummary: '生成中...',
       },
       onOpenPhoto: () => {},
       onEditChapter: () => {},
