@@ -2,11 +2,17 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
-import { generateSignedPutUrl } from '@/lib/oss'
+import {
+  buildAssetUrl,
+  generateAvatarOSSKey,
+  generateSignedPutUrl,
+  generateSignedPutUrlForKey,
+} from '@/lib/oss'
 
 const TAG = 'upload/sign'
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic']
+const AVATAR_SIGN_PURPOSE = 'avatar'
 
 export async function POST(req: Request) {
   const session = await auth()
@@ -14,8 +20,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { fileName, fileType, fileSize } = await req.json()
-  logger.info(TAG, '签名请求', { userId: session.user.id, fileName, fileType, fileSize })
+  const { fileName, fileType, fileSize, purpose } = await req.json()
+  logger.info(TAG, '签名请求', { userId: session.user.id, fileName, fileType, fileSize, purpose })
 
   if (!fileName || !fileType || !fileSize) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -31,14 +37,33 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unsupported file type' }, { status: 415 })
   }
 
-  const coupleUser = await prisma.coupleUser.findFirst({
-    where: { userId: session.user.id },
-  })
-  if (!coupleUser) {
-    return NextResponse.json({ error: 'No couple space found' }, { status: 400 })
-  }
-
   try {
+    const publicHost = process.env.OSS_CDN_DOMAIN || `${process.env.OSS_BUCKET}.${process.env.OSS_REGION}.aliyuncs.com`
+
+    if (purpose === AVATAR_SIGN_PURPOSE) {
+      const coupleUser = await prisma.coupleUser.findFirst({
+        where: { userId: session.user.id },
+      })
+      if (!coupleUser) {
+        return NextResponse.json({ error: 'No couple space found' }, { status: 400 })
+      }
+
+      const avatarKey = generateAvatarOSSKey(coupleUser.coupleId, session.user.id, fileName)
+      const result = generateSignedPutUrlForKey(avatarKey, fileType)
+      logger.info(TAG, '头像签名成功', { userId: session.user.id, coupleId: coupleUser.coupleId, fileName })
+      return NextResponse.json({
+        ...result,
+        assetUrl: buildAssetUrl(publicHost, result.ossKey),
+      })
+    }
+
+    const coupleUser = await prisma.coupleUser.findFirst({
+      where: { userId: session.user.id },
+    })
+    if (!coupleUser) {
+      return NextResponse.json({ error: 'No couple space found' }, { status: 400 })
+    }
+
     const result = generateSignedPutUrl(coupleUser.coupleId, fileName, fileType)
     logger.info(TAG, '签名成功', { coupleId: coupleUser.coupleId, fileName })
     return NextResponse.json(result)

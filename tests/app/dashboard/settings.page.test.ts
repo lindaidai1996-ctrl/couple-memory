@@ -2,11 +2,15 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  applyCoverPhotoSelection,
+  buildAvatarInputInitialValue,
+  buildRecentCoverPhotoOptions,
   buildAvatarUpdatePayload,
   buildBlockedPhrasesDraft,
   buildCoupleUpdatePayload,
   buildPublicPreviewUrl,
   extractApiErrorMessage,
+  normalizeCoverModeForSettings,
   parseBlockedPhrasesDraft,
 } from '../../../src/app/(dashboard)/settings/page'
 
@@ -15,6 +19,17 @@ test('buildAvatarUpdatePayload keeps avatar url when provided', () => {
     buildAvatarUpdatePayload('https://cdn.example.com/avatar.jpg'),
     { avatar: 'https://cdn.example.com/avatar.jpg' }
   )
+})
+
+test('buildAvatarUpdatePayload clears avatar when input is blank', () => {
+  assert.deepEqual(
+    buildAvatarUpdatePayload('   '),
+    { avatar: null }
+  )
+})
+
+test('buildAvatarInputInitialValue keeps manual avatar url field blank by default', () => {
+  assert.equal(buildAvatarInputInitialValue(), '')
 })
 
 test('buildCoupleUpdatePayload clears manual cover fields in NONE mode', () => {
@@ -122,6 +137,92 @@ test('buildCoupleUpdatePayload preserves explicit AI preference clears and valid
       captionStylePreference: null,
       tonePreference: null,
       blockedPhrases: ['soulmate', 'meant to be'],
+    }
+  )
+})
+
+test('normalizeCoverModeForSettings folds legacy upload mode into current settings options', () => {
+  assert.equal(normalizeCoverModeForSettings('UPLOAD', 'https://cdn.example.com/cover.jpg'), 'PHOTO')
+  assert.equal(normalizeCoverModeForSettings('UPLOAD', null), 'NONE')
+})
+
+test('buildRecentCoverPhotoOptions keeps the newest cover-ready photos first', () => {
+  assert.deepEqual(
+    buildRecentCoverPhotoOptions([
+      {
+        id: 'photo_old_ready',
+        fileName: 'old-ready.jpg',
+        status: 'READY',
+        sortOrder: 1,
+        createdAt: '2026-05-01T00:00:00.000Z',
+        thumbnailUrl: 'https://cdn.example.com/old-thumb.jpg',
+        displayUrl: 'https://cdn.example.com/old.jpg',
+      },
+      {
+        id: 'photo_processing',
+        fileName: 'processing.jpg',
+        status: 'PROCESSING',
+        sortOrder: 99,
+        createdAt: '2026-05-20T00:00:00.000Z',
+        thumbnailUrl: 'https://cdn.example.com/processing-thumb.jpg',
+        displayUrl: null,
+      },
+      {
+        id: 'photo_new_ready',
+        fileName: 'new-ready.jpg',
+        status: 'READY',
+        sortOrder: 5,
+        createdAt: '2026-05-10T00:00:00.000Z',
+        thumbnailUrl: null,
+        displayUrl: 'https://cdn.example.com/new.jpg',
+      },
+    ], 2),
+    [
+      {
+        id: 'photo_new_ready',
+        fileName: 'new-ready.jpg',
+        previewUrl: 'https://cdn.example.com/new.jpg',
+        coverUrl: 'https://cdn.example.com/new.jpg',
+      },
+      {
+        id: 'photo_old_ready',
+        fileName: 'old-ready.jpg',
+        previewUrl: 'https://cdn.example.com/old-thumb.jpg',
+        coverUrl: 'https://cdn.example.com/old.jpg',
+      },
+    ]
+  )
+})
+
+test('applyCoverPhotoSelection updates both photo id and preview url', () => {
+  assert.deepEqual(
+    applyCoverPhotoSelection(
+      {
+        name: 'Our Space',
+        slug: 'our-space',
+        startDate: null,
+        bio: null,
+        isPublic: true,
+        coverMode: 'PHOTO',
+        coverPhotoId: null,
+        coverPhotoUrl: null,
+      },
+      {
+        id: 'photo_9',
+        fileName: 'cover.jpg',
+        previewUrl: 'https://cdn.example.com/cover-thumb.jpg',
+        coverUrl: 'https://cdn.example.com/cover.jpg',
+      }
+    ),
+    {
+      name: 'Our Space',
+      slug: 'our-space',
+      startDate: null,
+      bio: null,
+      isPublic: true,
+      coverMode: 'PHOTO',
+      coverPhotoId: 'photo_9',
+      coverPhotoUrl: 'https://cdn.example.com/cover.jpg',
     }
   )
 })

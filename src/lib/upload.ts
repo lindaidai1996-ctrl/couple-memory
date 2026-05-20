@@ -12,6 +12,7 @@ const COMPRESS_OPTIONS = {
 }
 
 export type UploadStage = 'compressing' | 'uploading' | 'confirming'
+type UploadPurpose = 'photo' | 'avatar'
 
 type ClientExifData = {
   takenAt: string | null
@@ -73,29 +74,7 @@ export async function compressAndUpload(
   ])
   onProgress?.('compressing', 100)
 
-  onProgress?.('uploading', 0)
-  const signRes = await fetch('/api/upload/sign', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      fileName: file.name,
-      fileType: 'image/jpeg',
-      fileSize: compressed.size,
-    }),
-  })
-  if (!signRes.ok) {
-    const err = await signRes.json()
-    throw new Error(err.error || 'Failed to get upload signature')
-  }
-  const { ossKey, signedUrl } = await signRes.json()
-
-  const uploadRes = await fetch(signedUrl, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'image/jpeg' },
-    body: compressed,
-  })
-  if (!uploadRes.ok) throw new Error('Failed to upload to OSS')
-  onProgress?.('uploading', 100)
+  const { ossKey } = await signAndUploadCompressedFile(file.name, compressed, 'photo', onProgress)
 
   onProgress?.('confirming', 0)
   const confirmRes = await fetch(`/api/couples/${coupleId}/photos`, {
@@ -113,6 +92,65 @@ export async function compressAndUpload(
   onProgress?.('confirming', 100)
 
   return confirmRes.json()
+}
+
+export async function compressAndUploadAvatar(
+  file: File,
+  onProgress?: (stage: UploadStage, percent: number) => void
+) {
+  if (file.size > MAX_ORIGINAL_SIZE) {
+    throw new Error(`文件过大（${(file.size / 1024 / 1024).toFixed(1)}MB），最大支持 10MB`)
+  }
+
+  onProgress?.('compressing', 0)
+  const compressed = await compressImage(file)
+  onProgress?.('compressing', 100)
+
+  const { assetUrl } = await signAndUploadCompressedFile(file.name, compressed, 'avatar', onProgress)
+  if (!assetUrl) throw new Error('Failed to resolve avatar URL')
+
+  onProgress?.('confirming', 0)
+  onProgress?.('confirming', 100)
+
+  return { avatarUrl: assetUrl }
+}
+
+async function signAndUploadCompressedFile(
+  fileName: string,
+  compressed: File,
+  purpose: UploadPurpose,
+  onProgress?: (stage: UploadStage, percent: number) => void
+) {
+  onProgress?.('uploading', 0)
+  const signRes = await fetch('/api/upload/sign', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      fileName,
+      fileType: 'image/jpeg',
+      fileSize: compressed.size,
+      purpose,
+    }),
+  })
+  if (!signRes.ok) {
+    const err = await signRes.json()
+    throw new Error(err.error || 'Failed to get upload signature')
+  }
+
+  const { ossKey, signedUrl, assetUrl } = await signRes.json()
+
+  const uploadRes = await fetch(signedUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'image/jpeg' },
+    body: compressed,
+  })
+  if (!uploadRes.ok) throw new Error('Failed to upload to OSS')
+  onProgress?.('uploading', 100)
+
+  return {
+    ossKey: String(ossKey),
+    assetUrl: typeof assetUrl === 'string' ? assetUrl : null,
+  }
 }
 
 async function compressImage(file: File): Promise<File> {

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { SettingsFormSkeleton } from '@/components/skeleton/settings-form-skeleton'
+import { compressAndUploadAvatar, type UploadStage } from '@/lib/upload'
 import {
   CAPTION_STYLE_OPTIONS,
   normalizeBlockedPhrases,
@@ -40,6 +41,23 @@ interface UserProfile {
   avatar: string | null
 }
 
+interface CoverPhotoCandidate {
+  id: string
+  fileName: string
+  status: string
+  sortOrder: number | null
+  createdAt: string
+  thumbnailUrl: string | null
+  displayUrl: string | null
+}
+
+interface CoverPhotoOption {
+  id: string
+  fileName: string
+  previewUrl: string
+  coverUrl: string
+}
+
 type CoupleUpdateInput = {
   name: string
   slug: string
@@ -54,15 +72,28 @@ type CoupleUpdateInput = {
   blockedPhrases?: string[]
 }
 
+export function normalizeCoverModeForSettings(
+  coverMode: CoverMode | undefined,
+  coverPhotoUrl: string | null
+): CoverMode {
+  if (coverMode === 'UPLOAD') {
+    return coverPhotoUrl ? 'PHOTO' : 'NONE'
+  }
+
+  return coverMode ?? 'NONE'
+}
+
 function normalizeCoupleResponse(data: Partial<CoupleData> & Record<string, unknown>): CoupleData {
+  const coverPhotoUrl = typeof data.coverPhotoUrl === 'string' ? data.coverPhotoUrl : null
+
   return {
     id: String(data.id ?? ''),
     name: String(data.name ?? ''),
     slug: String(data.slug ?? ''),
     startDate: typeof data.startDate === 'string' ? data.startDate : null,
-    coverMode: (data.coverMode as CoverMode | undefined) ?? 'NONE',
+    coverMode: normalizeCoverModeForSettings(data.coverMode as CoverMode | undefined, coverPhotoUrl),
     coverPhotoId: typeof data.coverPhotoId === 'string' ? data.coverPhotoId : null,
-    coverPhotoUrl: typeof data.coverPhotoUrl === 'string' ? data.coverPhotoUrl : null,
+    coverPhotoUrl,
     bio: typeof data.bio === 'string' ? data.bio : null,
     captionStylePreference: pickCaptionStylePreference(
       typeof data.captionStylePreference === 'string' ? data.captionStylePreference : null
@@ -80,6 +111,10 @@ function normalizeCoupleResponse(data: Partial<CoupleData> & Record<string, unkn
 export function buildAvatarUpdatePayload(avatar: string) {
   const trimmed = avatar.trim()
   return { avatar: trimmed || null }
+}
+
+export function buildAvatarInputInitialValue() {
+  return ''
 }
 
 export function buildBlockedPhrasesDraft(blockedPhrases: string[]) {
@@ -142,6 +177,37 @@ export function buildPublicPreviewUrl(origin: string, slug: string) {
   return `${normalizedOrigin}/s/${slug}`
 }
 
+export function buildRecentCoverPhotoOptions(
+  photos: CoverPhotoCandidate[],
+  limit = 8
+): CoverPhotoOption[] {
+  return photos
+    .filter(photo => photo.status === 'READY' && Boolean(photo.displayUrl))
+    .sort((a, b) => {
+      const sortOrderDiff = (b.sortOrder ?? 0) - (a.sortOrder ?? 0)
+      if (sortOrderDiff !== 0) return sortOrderDiff
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    })
+    .slice(0, limit)
+    .map(photo => ({
+      id: photo.id,
+      fileName: photo.fileName,
+      previewUrl: photo.thumbnailUrl || photo.displayUrl || '',
+      coverUrl: photo.displayUrl || '',
+    }))
+}
+
+export function applyCoverPhotoSelection(
+  couple: CoupleData,
+  option: CoverPhotoOption
+): CoupleData {
+  return {
+    ...couple,
+    coverPhotoId: option.id,
+    coverPhotoUrl: option.coverUrl,
+  }
+}
+
 export function extractApiErrorMessage(
   payload: unknown,
   fallback: string
@@ -166,15 +232,27 @@ export function extractApiErrorMessage(
   return fallback
 }
 
+function buildAvatarUploadStageLabels(t: ReturnType<typeof useTranslations<'SettingsPage'>>) {
+  return {
+    compressing: t('avatarUploadCompressing'),
+    uploading: t('avatarUploadUploading'),
+    confirming: t('avatarUploadConfirming'),
+  } satisfies Record<UploadStage, string>
+}
+
 export default function SettingsPage() {
   const t = useTranslations('SettingsPage')
+  const avatarStageLabels = useMemo(() => buildAvatarUploadStageLabels(t), [t])
   const [couple, setCouple] = useState<CoupleData | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [avatarInput, setAvatarInput] = useState('')
   const [blockedPhrasesDraft, setBlockedPhrasesDraft] = useState('')
+  const [recentCoverPhotos, setRecentCoverPhotos] = useState<CoverPhotoOption[]>([])
+  const [recentCoverPhotosLoading, setRecentCoverPhotosLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [avatarSaving, setAvatarSaving] = useState(false)
+  const [avatarUploadStage, setAvatarUploadStage] = useState<UploadStage | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
@@ -194,7 +272,7 @@ export default function SettingsPage() {
       if (profileRes.ok) {
         const data = await profileRes.json()
         setProfile(data)
-        setAvatarInput(data.avatar ?? '')
+        setAvatarInput(buildAvatarInputInitialValue())
       }
 
       setLoading(false)
@@ -203,23 +281,55 @@ export default function SettingsPage() {
     fetchSettingsData()
   }, [])
 
-  async function handleAvatarSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    if (!profile) return
+  useEffect(() => {
+    if (!couple?.id) return
+    const coupleId = couple.id
 
+    let cancelled = false
+
+    async function fetchRecentCoverPhotos() {
+      setRecentCoverPhotosLoading(true)
+
+      try {
+        const res = await fetch(`/api/couples/${coupleId}/photos?status=READY&sort=desc&limit=12`)
+        if (!res.ok) return
+
+        const data = await res.json()
+        const nextOptions = buildRecentCoverPhotoOptions(
+          Array.isArray(data.photos) ? data.photos as CoverPhotoCandidate[] : [],
+          8
+        )
+
+        if (!cancelled) {
+          setRecentCoverPhotos(nextOptions)
+        }
+      } finally {
+        if (!cancelled) {
+          setRecentCoverPhotosLoading(false)
+        }
+      }
+    }
+
+    void fetchRecentCoverPhotos()
+
+    return () => {
+      cancelled = true
+    }
+  }, [couple?.id])
+
+  async function saveAvatar(nextAvatar: string | null) {
     setAvatarSaving(true)
     setMessage(null)
 
     const res = await fetch('/api/users/me/profile', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(buildAvatarUpdatePayload(avatarInput)),
+      body: JSON.stringify({ avatar: nextAvatar }),
     })
 
     if (res.ok) {
       const updated = await res.json()
       setProfile(updated)
-      setAvatarInput(updated.avatar ?? '')
       setMessage({ type: 'success', text: t('avatarUpdated') })
     } else {
       const data = await res.json()
@@ -230,6 +340,34 @@ export default function SettingsPage() {
     }
 
     setAvatarSaving(false)
+  }
+
+  async function handleAvatarSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    if (!profile) return
+
+    await saveAvatar(buildAvatarUpdatePayload(avatarInput).avatar)
+  }
+
+  async function handleAvatarFileChange(file: File | null) {
+    if (!file) return
+
+    setAvatarSaving(true)
+    setAvatarUploadStage('compressing')
+    setMessage(null)
+
+    try {
+      const { avatarUrl } = await compressAndUploadAvatar(file, stage => {
+        setAvatarUploadStage(stage)
+      })
+      await saveAvatar(avatarUrl)
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : t('avatarFailed')
+      setMessage({ type: 'error', text: errorMessage })
+      setAvatarSaving(false)
+    } finally {
+      setAvatarUploadStage(null)
+    }
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -345,6 +483,24 @@ export default function SettingsPage() {
               )}
             </div>
             <div className="flex-1 space-y-3">
+              <Field label={t('avatarUploadField')} hint={t('avatarUploadHint')}>
+                <label className="flex cursor-pointer items-center justify-center rounded-[var(--radius-md)] border border-dashed border-warm-border bg-warm-bg px-4 py-4 text-sm text-warm-text transition-colors hover:border-warm-accent hover:bg-white">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/heic"
+                    className="hidden"
+                    disabled={avatarSaving}
+                    onChange={e => {
+                      const file = e.target.files?.[0] ?? null
+                      void handleAvatarFileChange(file)
+                      e.currentTarget.value = ''
+                    }}
+                  />
+                  {avatarSaving && avatarUploadStage
+                    ? avatarStageLabels[avatarUploadStage]
+                    : t('uploadAvatar')}
+                </label>
+              </Field>
               <Field label={t('avatarField')} hint={t('avatarHint')}>
                 <input
                   value={avatarInput}
@@ -507,66 +663,63 @@ export default function SettingsPage() {
             >
               <option value="NONE">{t('coverNone')}</option>
               <option value="PHOTO">{t('coverPhoto')}</option>
-              <option value="UPLOAD">{t('coverUpload')}</option>
             </select>
           </Field>
 
           {couple.coverMode === 'PHOTO' && (
             <>
-              <Field label={t('coverPhotoId')} hint={t('coverPhotoIdHint')}>
-                <input
-                  value={couple.coverPhotoId || ''}
-                  onChange={e => setCouple(prev => prev ? {
-                    ...prev,
-                    coverPhotoId: e.target.value || null,
-                  } : prev)}
-                  className={inputClass}
-                  placeholder="photo_123"
-                />
-              </Field>
-              <Field label={t('coverPreviewUrl')} hint={t('coverPreviewUrlHint')}>
-                <input
-                  value={couple.coverPhotoUrl || ''}
-                  onChange={e => setCouple(prev => prev ? {
-                    ...prev,
-                    coverPhotoUrl: e.target.value || null,
-                  } : prev)}
-                  className={inputClass}
-                  placeholder="https://cdn.example.com/cover.jpg"
-                />
+              <Field label={t('coverRecentPhotos')} hint={t('coverRecentPhotosHint')}>
+                {recentCoverPhotosLoading ? (
+                  <div className="grid grid-cols-4 gap-3">
+                    {Array.from({ length: 4 }).map((_, index) => (
+                      <div
+                        key={index}
+                        className="aspect-square rounded-[var(--radius-md)] border border-warm-border bg-warm-bg animate-pulse"
+                      />
+                    ))}
+                  </div>
+                ) : recentCoverPhotos.length > 0 ? (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                    {recentCoverPhotos.map(photo => {
+                      const selected = couple.coverPhotoId === photo.id
+
+                      return (
+                        <button
+                          key={photo.id}
+                          type="button"
+                          onClick={() => setCouple(prev => prev ? applyCoverPhotoSelection(prev, photo) : prev)}
+                          className={`group relative aspect-square overflow-hidden rounded-[var(--radius-md)] border transition-all ${
+                            selected
+                              ? 'border-warm-accent ring-2 ring-warm-accent/20'
+                              : 'border-warm-border hover:border-warm-accent/60'
+                          }`}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={photo.previewUrl}
+                            alt={photo.fileName}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                          {selected ? (
+                            <div className="absolute left-2 top-2 rounded-full bg-warm-accent px-2 py-1 text-[10px] font-medium text-white shadow-sm">
+                              {t('coverSelected')}
+                            </div>
+                          ) : null}
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                            <p className="truncate text-[11px] text-white">{photo.fileName}</p>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-[var(--radius-md)] border border-dashed border-warm-border bg-warm-bg px-4 py-6 text-sm text-warm-muted">
+                    {t('coverRecentPhotosEmpty')}
+                  </div>
+                )}
               </Field>
             </>
-          )}
-
-          {couple.coverMode === 'UPLOAD' && (
-            <Field label={t('coverUploadUrl')} hint={t('coverUploadUrlHint')}>
-              <input
-                value={couple.coverPhotoUrl || ''}
-                onChange={e => setCouple(prev => prev ? {
-                  ...prev,
-                  coverPhotoUrl: e.target.value || null,
-                } : prev)}
-                className={inputClass}
-                placeholder="https://cdn.example.com/cover.jpg"
-              />
-            </Field>
-          )}
-
-          {couple.coverMode !== 'NONE' && (
-            <div className="rounded-[var(--radius-md)] border border-warm-border overflow-hidden bg-warm-bg">
-              {couple.coverPhotoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={couple.coverPhotoUrl}
-                  alt={t('coverPreviewAlt')}
-                  className="w-full h-44 object-cover"
-                />
-              ) : (
-                <div className="h-44 flex items-center justify-center text-sm text-warm-muted">
-                  {t('coverPreviewEmpty')}
-                </div>
-              )}
-            </div>
           )}
         </Section>
 

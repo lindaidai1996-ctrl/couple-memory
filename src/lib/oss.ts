@@ -6,6 +6,16 @@ export function generateOSSKey(coupleId: string, fileName: string): string {
   return `couples/${coupleId}/photos/${uuid}/original.${ext}`
 }
 
+export function generateAvatarOSSKey(coupleId: string, userId: string, fileName: string): string {
+  const uuid = crypto.randomUUID()
+  const ext = fileName.split('.').pop() || 'jpg'
+  return `couples/${coupleId}/avatars/${userId}/${uuid}/original.${ext}`
+}
+
+export function buildAssetUrl(cdnDomain: string, ossKey: string): string {
+  return `https://${cdnDomain.replace(/^https?:\/\//, '').replace(/\/+$/, '')}/${ossKey}`
+}
+
 function signOSSRequest(
   method: string,
   ossKey: string,
@@ -43,6 +53,13 @@ export function generateSignedPutUrl(
   contentType: string
 ): { ossKey: string; signedUrl: string } {
   const ossKey = generateOSSKey(coupleId, fileName)
+  return generateSignedPutUrlForKey(ossKey, contentType)
+}
+
+export function generateSignedPutUrlForKey(
+  ossKey: string,
+  contentType: string
+): { ossKey: string; signedUrl: string } {
   const bucket = process.env.OSS_BUCKET!
   const region = process.env.OSS_REGION!
   const accessKeyId = process.env.OSS_ACCESS_KEY_ID!

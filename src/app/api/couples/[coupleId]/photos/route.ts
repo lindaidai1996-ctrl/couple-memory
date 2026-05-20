@@ -9,92 +9,104 @@ import type { PhotoStatus } from '../../../../../../prisma/generated/prisma/enum
 
 const TAG = 'photos'
 
-export const GET = withAuth(async (req, { coupleUser }) => {
-  const url = new URL(req.url)
-  const albumId = url.searchParams.get('albumId')
-  const status = url.searchParams.get('status')
-  const page = parseInt(url.searchParams.get('page') || '1')
-  const limit = parseInt(url.searchParams.get('limit') || '20')
+type PhotosRouteDeps = {
+  prismaClient: typeof prisma
+  logger: Pick<typeof logger, 'warn' | 'error'>
+}
 
-  const where = {
-    album: { coupleId: coupleUser.coupleId },
-    ...(albumId && { albumId }),
-    ...(status && { status: status as PhotoStatus }),
-  }
+export function createGetPhotosHandler(deps?: Partial<PhotosRouteDeps>) {
+  return async function GET(req: Request, { coupleUser }: { coupleUser: { coupleId: string } }) {
+    const prismaClient = deps?.prismaClient ?? prisma
+    const routeLogger = deps?.logger ?? logger
+    const url = new URL(req.url)
+    const albumId = url.searchParams.get('albumId')
+    const status = url.searchParams.get('status')
+    const page = parseInt(url.searchParams.get('page') || '1')
+    const limit = parseInt(url.searchParams.get('limit') || '20')
+    const sort = url.searchParams.get('sort') === 'desc' ? 'desc' : 'asc'
 
-  try {
-    const [photos, total] = await Promise.all([
-      prisma.photo.findMany({
-        where,
-        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      prisma.photo.count({ where }),
-    ])
-
-    let album: { coverMode: 'AUTO' | 'MANUAL'; coverPhotoId: string | null } | null = null
-
-    if (albumId) {
-      try {
-        album = await prisma.album.findFirst({
-          where: { id: albumId, coupleId: coupleUser.coupleId },
-          select: { coverMode: true, coverPhotoId: true },
-        })
-      } catch (error) {
-        // Backward compatibility: older DBs may not have cover fields yet.
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-          logger.warn(TAG, 'Album cover metadata unavailable; fallback without cover metadata', {
-            coupleId: coupleUser.coupleId,
-            albumId,
-            code: error.code,
-          })
-        } else {
-          logger.warn(TAG, 'Album cover metadata query failed; fallback without cover metadata', {
-            coupleId: coupleUser.coupleId,
-            albumId,
-          })
-        }
-        album = null
-      }
+    const where = {
+      album: { coupleId: coupleUser.coupleId },
+      ...(albumId && { albumId }),
+      ...(status && { status: status as PhotoStatus }),
     }
 
-    const resolvedCover = album
-      ? resolveAlbumCover({
-          coverMode: album.coverMode,
-          coverPhotoId: album.coverPhotoId,
-          photos: photos.map(photo => ({
-            id: photo.id,
-            status: photo.status,
-            displayUrl: photo.displayUrl,
-            sortOrder: photo.sortOrder,
-          })),
-        })
-      : null
+    try {
+      const [photos, total] = await Promise.all([
+        prismaClient.photo.findMany({
+          where,
+          orderBy: [{ sortOrder: sort }, { createdAt: sort }],
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prismaClient.photo.count({ where }),
+      ])
 
-    return NextResponse.json({
-      photos: photos.map(photo => ({
-        ...photo,
-        isAlbumCover: resolvedCover?.photoId === photo.id,
-        canBeCover: photo.status === 'READY' && Boolean(photo.displayUrl),
-      })),
-      total,
-      page,
-      limit,
-    })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error'
-    logger.error(TAG, '获取照片列表失败', {
-      coupleId: coupleUser.coupleId,
-      albumId,
-      status,
-      page,
-      limit,
-      error: message,
-    })
-    return NextResponse.json({ error: 'Failed to fetch photos' }, { status: 500 })
+      let album: { coverMode: 'AUTO' | 'MANUAL'; coverPhotoId: string | null } | null = null
+
+      if (albumId) {
+        try {
+          album = await prismaClient.album.findFirst({
+            where: { id: albumId, coupleId: coupleUser.coupleId },
+            select: { coverMode: true, coverPhotoId: true },
+          })
+        } catch (error) {
+          // Backward compatibility: older DBs may not have cover fields yet.
+          if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            routeLogger.warn(TAG, 'Album cover metadata unavailable; fallback without cover metadata', {
+              coupleId: coupleUser.coupleId,
+              albumId,
+              code: error.code,
+            })
+          } else {
+            routeLogger.warn(TAG, 'Album cover metadata query failed; fallback without cover metadata', {
+              coupleId: coupleUser.coupleId,
+              albumId,
+            })
+          }
+          album = null
+        }
+      }
+
+      const resolvedCover = album
+        ? resolveAlbumCover({
+            coverMode: album.coverMode,
+            coverPhotoId: album.coverPhotoId,
+            photos: photos.map(photo => ({
+              id: photo.id,
+              status: photo.status,
+              displayUrl: photo.displayUrl,
+              sortOrder: photo.sortOrder,
+            })),
+          })
+        : null
+
+      return NextResponse.json({
+        photos: photos.map(photo => ({
+          ...photo,
+          isAlbumCover: resolvedCover?.photoId === photo.id,
+          canBeCover: photo.status === 'READY' && Boolean(photo.displayUrl),
+        })),
+        total,
+        page,
+        limit,
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      routeLogger.error(TAG, '获取照片列表失败', {
+        coupleId: coupleUser.coupleId,
+        albumId,
+        status,
+        page,
+        limit,
+        error: message,
+      })
+      return NextResponse.json({ error: 'Failed to fetch photos' }, { status: 500 })
+    }
   }
-})
+}
+
+export const GET = withAuth(createGetPhotosHandler())
 
 export const POST = withAuth(async (req, { coupleUser }) => {
   const { ossKey, fileName, fileSize, albumId, exif } = await req.json()
