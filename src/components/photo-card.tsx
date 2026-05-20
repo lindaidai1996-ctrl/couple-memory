@@ -13,6 +13,9 @@ export interface PhotoData {
   takenAt: string | null
   locationName: string | null
   aiLayout: string | null
+  chapterId?: string | null
+  momentContext?: string | null
+  momentPromptAnswer?: string | null
   selectedCaptionSource?: string | null
   selectedLayoutSource?: string | null
   captionVariants?: Array<{
@@ -63,6 +66,7 @@ export function PhotoCard({ photo, onClick }: { photo: PhotoData; onClick: () =>
         ${photoCardSurfaceClass} aspect-square`}
     >
       {photo.thumbnailUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={photo.thumbnailUrl}
           alt={photo.fileName}

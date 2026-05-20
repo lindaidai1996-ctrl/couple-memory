@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import type { PhotoData } from './photo-card'
+import { PhotoContextForm } from './photo-context-form'
 
 type Translator = (key: string) => string
 
@@ -26,21 +27,59 @@ export function buildPhotoDetailCopy(t: Translator) {
   return {
     tabs: {
       info: t('infoTab'),
-      edit: t('editTab'),
+      assist: t('editTab'),
       exif: t('exifTab'),
     },
+  }
+}
+
+export function buildPhotoAssistMeta({
+  chapterId,
+}: {
+  chapterId: string | null | undefined
+}) {
+  return {
+    isGrouped: Boolean(chapterId),
+    assistTabKey: 'assist' as const,
+    showLayoutEditorAsSecondary: true,
+  }
+}
+
+export function buildPhotoPreviewNavigationState({
+  currentPhotoId,
+  chapterPhotoIds,
+}: {
+  currentPhotoId: string
+  chapterPhotoIds: string[]
+}) {
+  const currentIndex = chapterPhotoIds.indexOf(currentPhotoId)
+  const previousPhotoId = currentIndex > 0 ? chapterPhotoIds[currentIndex - 1] : null
+  const nextPhotoId =
+    currentIndex >= 0 && currentIndex < chapterPhotoIds.length - 1
+      ? chapterPhotoIds[currentIndex + 1]
+      : null
+
+  return {
+    hasPrevious: previousPhotoId !== null,
+    hasNext: nextPhotoId !== null,
+    previousPhotoId,
+    nextPhotoId,
   }
 }
 
 export function PhotoDetailModal({
   photo,
   coupleId,
+  chapterPhotoIds = [],
+  onNavigate,
   onClose,
   onUpdated,
   onSetCover,
 }: {
   photo: PhotoData
   coupleId: string
+  chapterPhotoIds?: string[]
+  onNavigate?: (photoId: string) => void
   onClose: () => void
   onUpdated: () => void
   onSetCover?: (photoId: string) => Promise<void> | void
@@ -48,6 +87,11 @@ export function PhotoDetailModal({
   const t = useTranslations('PhotoDetail')
   const locale = useLocale()
   const copy = buildPhotoDetailCopy(t)
+  const assistMeta = buildPhotoAssistMeta({ chapterId: photo.chapterId })
+  const navigation = buildPhotoPreviewNavigationState({
+    currentPhotoId: photo.id,
+    chapterPhotoIds,
+  })
   const layoutOptions = [
     { value: 'cinema-wide', label: t('layoutCinemaWide') },
     { value: 'side-by-side', label: t('layoutSideBySide') },
@@ -55,19 +99,43 @@ export function PhotoDetailModal({
     { value: 'grid-square', label: t('layoutGridSquare') },
     { value: 'story-card', label: t('layoutStoryCard') },
   ] as const
-  const [tab, setTab] = useState<'info' | 'edit' | 'exif'>('info')
+  const [tab, setTab] = useState<'info' | 'assist' | 'exif'>('info')
   const [caption, setCaption] = useState(photo.userCaption || photo.aiCaption || '')
   const [layout, setLayout] = useState(photo.aiLayout || 'side-by-side')
+  const [momentContext, setMomentContext] = useState(photo.momentContext || '')
+  const [momentPromptAnswer, setMomentPromptAnswer] = useState(photo.momentPromptAnswer || '')
   const [saving, setSaving] = useState(false)
   const [retrying, setRetrying] = useState(false)
   const [settingCover, setSettingCover] = useState(false)
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'ArrowLeft' && navigation.previousPhotoId && onNavigate) {
+        event.preventDefault()
+        onNavigate(navigation.previousPhotoId)
+      }
+
+      if (event.key === 'ArrowRight' && navigation.nextPhotoId && onNavigate) {
+        event.preventDefault()
+        onNavigate(navigation.nextPhotoId)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [navigation.nextPhotoId, navigation.previousPhotoId, onNavigate])
 
   async function handleSave() {
     setSaving(true)
     await fetch(`/api/couples/${coupleId}/photos/${photo.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userCaption: caption, aiLayout: layout }),
+      body: JSON.stringify({
+        userCaption: caption,
+        aiLayout: layout,
+        momentContext,
+        momentPromptAnswer,
+      }),
     })
     setSaving(false)
     onUpdated()
@@ -98,7 +166,36 @@ export function PhotoDetailModal({
 
         {/* 图片区 */}
         <div className={`relative ${photoDetailImageSurfaceClass} flex-shrink-0`}>
+          {navigation.hasPrevious && onNavigate ? (
+            <button
+              type="button"
+              onClick={() => onNavigate(navigation.previousPhotoId!)}
+              aria-label={t('previousPhoto')}
+              className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/40 p-2 text-white transition-colors hover:bg-black/60"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+          ) : null}
+
+          {navigation.hasNext && onNavigate ? (
+            <button
+              type="button"
+              onClick={() => onNavigate(navigation.nextPhotoId!)}
+              aria-label={t('nextPhoto')}
+              className="absolute right-14 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/40 p-2 text-white transition-colors hover:bg-black/60"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
+          ) : null}
+
           {photo.displayUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={photo.displayUrl}
               alt={photo.fileName}
@@ -126,7 +223,7 @@ export function PhotoDetailModal({
         <div className="flex border-b border-warm-border px-5">
           {([
             ['info', copy.tabs.info],
-            ['edit', copy.tabs.edit],
+            ['assist', copy.tabs.assist],
             ['exif', copy.tabs.exif],
           ] as const).map(([key, label]) => (
             <button
@@ -185,8 +282,21 @@ export function PhotoDetailModal({
             </div>
           )}
 
-          {tab === 'edit' && (
+          {tab === 'assist' && (
             <div className="space-y-4">
+              <p className="text-sm text-warm-muted">
+                {assistMeta.isGrouped
+                  ? '这张照片已经属于某个章节。这里更适合补充它在这段回忆里的具体意义。'
+                  : '这张照片还没有整理进章节。你可以先补一句背景，让 AI 帮你留住这个瞬间。'}
+              </p>
+
+              <PhotoContextForm
+                momentContext={momentContext}
+                momentPromptAnswer={momentPromptAnswer}
+                onMomentContextChange={setMomentContext}
+                onMomentPromptAnswerChange={setMomentPromptAnswer}
+              />
+
               <div>
                 <label className="block text-sm font-medium text-warm-text mb-1.5">{t('caption')}</label>
                 <textarea
@@ -200,24 +310,26 @@ export function PhotoDetailModal({
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-warm-text mb-1.5">{t('layoutTemplate')}</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {layoutOptions.map(opt => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setLayout(opt.value)}
-                      className={`px-3 py-2 text-sm rounded-[var(--radius-md)] border transition-colors
-                        ${layout === opt.value
-                          ? 'border-warm-accent bg-warm-accent/10 text-warm-accent'
-                          : 'border-warm-border text-warm-muted hover:border-warm-accent/50'
-                        }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {assistMeta.showLayoutEditorAsSecondary ? (
+                <details className="rounded-[var(--radius-md)] border border-warm-border bg-warm-bg p-3">
+                  <summary className="cursor-pointer text-sm font-medium text-warm-text">{t('layoutTemplate')}</summary>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
+                    {layoutOptions.map(opt => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setLayout(opt.value)}
+                        className={`px-3 py-2 text-sm rounded-[var(--radius-md)] border transition-colors
+                          ${layout === opt.value
+                            ? 'border-warm-accent bg-warm-accent/10 text-warm-accent'
+                            : 'border-warm-border text-warm-muted hover:border-warm-accent/50'
+                          }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </details>
+              ) : null}
 
               <button
                 onClick={handleSave}

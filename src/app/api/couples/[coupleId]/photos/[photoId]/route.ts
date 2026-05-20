@@ -52,6 +52,9 @@ type PhotoRouteDeps = {
             reason?: string | null
             isSelected?: boolean
           }>
+          chapter?: {
+            title?: string | null
+          } | null
             [key: string]: unknown
           }
         | null
@@ -175,6 +178,8 @@ type PhotoPatchBody = {
   aiLayout?: unknown
   selectedCaptionVariantId?: unknown
   selectedLayoutVariantId?: unknown
+  momentContext?: unknown
+  momentPromptAnswer?: unknown
 }
 
 function buildPhotoUpdateData(body: PhotoPatchBody) {
@@ -188,6 +193,14 @@ function buildPhotoUpdateData(body: PhotoPatchBody) {
   if (typeof body.aiLayout === 'string') {
     data.aiLayout = body.aiLayout
     data.selectedLayoutSource = 'MANUAL'
+  }
+
+  if (typeof body.momentContext === 'string') {
+    data.momentContext = body.momentContext.trim() || null
+  }
+
+  if (typeof body.momentPromptAnswer === 'string') {
+    data.momentPromptAnswer = body.momentPromptAnswer.trim() || null
   }
 
   return data

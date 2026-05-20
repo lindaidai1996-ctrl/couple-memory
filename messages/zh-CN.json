@@ -169,6 +169,8 @@
     "coverSet": "设为相册封面",
     "captionPlaceholder": "写点什么...",
     "layoutTemplate": "排版模板",
+    "previousPhoto": "上一张照片",
+    "nextPhoto": "下一张照片",
     "saving": "保存中...",
     "save": "保存",
     "camera": "相机",

@@ -43,7 +43,7 @@ test('photo detail copy exposes translated tab labels', () => {
     })[key] ?? key
 
   assert.equal(buildPhotoDetailCopy(t).tabs.info, 'Info')
-  assert.equal(buildPhotoDetailCopy(t).tabs.edit, 'Edit')
+  assert.equal(buildPhotoDetailCopy(t).tabs.assist, 'Edit')
   assert.equal(buildPhotoDetailCopy(t).tabs.exif, 'EXIF')
 })
 

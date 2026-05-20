@@ -41,6 +41,7 @@ type RetryPhotoRouteDeps = {
 type RetryScope = 'FULL' | 'CAPTION_ONLY' | 'LAYOUT_ONLY'
 
 function resolveRetryTriggerType(scope: RetryScope) {
+  // Phase 3: single-photo retry remains available, but it is now a secondary assist capability.
   if (scope === 'CAPTION_ONLY') return 'CAPTION_REGEN' as const
   if (scope === 'LAYOUT_ONLY') return 'LAYOUT_REGEN' as const
   return 'MANUAL_RETRY' as const

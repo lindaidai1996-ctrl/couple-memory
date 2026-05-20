@@ -169,6 +169,8 @@
     "coverSet": "Set as album cover",
     "captionPlaceholder": "Write something...",
     "layoutTemplate": "Layout template",
+    "previousPhoto": "Previous photo",
+    "nextPhoto": "Next photo",
     "saving": "Saving...",
     "save": "Save",
     "camera": "Camera",

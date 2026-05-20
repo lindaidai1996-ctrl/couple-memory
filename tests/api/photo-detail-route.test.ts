@@ -370,3 +370,49 @@ test('createPatchPhotoHandler marks manual edits with MANUAL sources', async () 
     },
   ])
 })
+
+test('createPatchPhotoHandler stores optional moment context for a single photo', async () => {
+  const updateCalls: Array<{ where: unknown; data: unknown }> = []
+
+  const handler = createPatchPhotoHandler({
+    prismaClient: {
+      photo: {
+        findFirst: async () => ({
+          id: 'photo_1',
+          albumId: 'album_1',
+        }),
+        update: async (args: { where: unknown; data: unknown }) => {
+          updateCalls.push(args)
+          return {
+            id: 'photo_1',
+            momentContext: '想留住她回头笑的时候',
+            momentPromptAnswer: '这是他偷拍我的',
+          }
+        },
+      },
+    } as never,
+  })
+
+  const response = await handler(
+    createJsonRequest('/api/couples/couple_1/photos/photo_1', {
+      method: 'PATCH',
+      body: {
+        momentContext: '想留住她回头笑的时候',
+        momentPromptAnswer: '这是他偷拍我的',
+      },
+    }),
+    createAuthContext(),
+    { coupleId: 'couple_1', photoId: 'photo_1' }
+  )
+
+  assert.equal(response.status, 200)
+  assert.deepEqual(updateCalls, [
+    {
+      where: { id: 'photo_1' },
+      data: {
+        momentContext: '想留住她回头笑的时候',
+        momentPromptAnswer: '这是他偷拍我的',
+      },
+    },
+  ])
+})

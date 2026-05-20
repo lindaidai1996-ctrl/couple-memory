@@ -261,6 +261,8 @@ export function createApplyPipelineResults({ prisma }: { prisma: PipelinePrismaC
     }
 
     if (hasCaptionOutput) {
+      // Phase 3: aiCaption stays available for ungrouped-photo assist,
+      // but chapter-level collaboration is now the primary frontstage flow.
       photoData.aiCaption = caption?.caption
       photoData.aiKeywords = caption?.keywords || []
       photoData.selectedCaptionSource = 'AI'
