@@ -8,6 +8,20 @@ type Translator = (key: string) => string
 
 export const photoDetailImageSurfaceClass = 'bg-warm-skeleton-base'
 
+export function formatPhotoTakenAt(takenAt: string | null, locale: string) {
+  if (!takenAt) return '-'
+
+  const date = new Date(takenAt)
+  if (Number.isNaN(date.getTime())) return '-'
+  if (date.getTime() > Date.now()) return '-'
+
+  return date.toLocaleDateString(locale, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+}
+
 export function buildPhotoDetailCopy(t: Translator) {
   return {
     tabs: {
@@ -140,9 +154,7 @@ export function PhotoDetailModal({
               <InfoRow label={t('location')} value={photo.locationName || '-'} />
               <InfoRow
                 label={t('time')}
-                value={photo.takenAt ? new Date(photo.takenAt).toLocaleDateString(locale, {
-                  year: 'numeric', month: 'long', day: 'numeric',
-                }) : '-'}
+                value={formatPhotoTakenAt(photo.takenAt, locale)}
               />
               <InfoRow label={t('status')} value={
                 photo.status === 'READY' ? t('ready') :

@@ -75,6 +75,14 @@ type ProcessPhotoDeps = {
   cdnDomain?: string
 }
 
+const MAX_FUTURE_EXIF_MS = 24 * 60 * 60 * 1000
+
+function sanitizeTakenAt(takenAt: Date | null): Date | null {
+  if (!takenAt || Number.isNaN(takenAt.getTime())) return null
+  if (takenAt.getTime() > Date.now() + MAX_FUTURE_EXIF_MS) return null
+  return takenAt
+}
+
 export function extractOssKeyFromOriginalUrl(originalUrl: string): string | null {
   try {
     const pathname = new URL(originalUrl).pathname.replace(/^\/+/, '')
@@ -87,10 +95,17 @@ export function extractOssKeyFromOriginalUrl(originalUrl: string): string | null
 
 function mergeExif(clientExif: ClientExifData | null, serverExif: ExifData | null): ExifData | null {
   if (!clientExif && !serverExif) return null
-  if (!clientExif) return serverExif
+  if (!clientExif) {
+    return serverExif
+      ? {
+          ...serverExif,
+          takenAt: sanitizeTakenAt(serverExif.takenAt),
+        }
+      : null
+  }
   if (!serverExif) {
     return {
-      takenAt: clientExif.takenAt ? new Date(clientExif.takenAt) : null,
+      takenAt: sanitizeTakenAt(clientExif.takenAt ? new Date(clientExif.takenAt) : null),
       latitude: clientExif.latitude,
       longitude: clientExif.longitude,
       cameraMake: clientExif.cameraMake,
@@ -102,7 +117,9 @@ function mergeExif(clientExif: ClientExifData | null, serverExif: ExifData | nul
     }
   }
   return {
-    takenAt: serverExif.takenAt ?? (clientExif.takenAt ? new Date(clientExif.takenAt) : null),
+    takenAt: sanitizeTakenAt(
+      serverExif.takenAt ?? (clientExif.takenAt ? new Date(clientExif.takenAt) : null)
+    ),
     latitude: serverExif.latitude ?? clientExif.latitude,
     longitude: serverExif.longitude ?? clientExif.longitude,
     cameraMake: serverExif.cameraMake ?? clientExif.cameraMake,

@@ -139,3 +139,59 @@ test('createProcessPhoto keeps degraded runs usable and applies partial AI resul
   assert.equal(photoUpdates[1]?.data.processingError, null)
   assert.deepEqual(appliedResults, [{ photoId: 'photo_1', coupleId: 'couple_1' }])
 })
+
+test('createProcessPhoto ignores EXIF takenAt values that are in the future', async () => {
+  const photoUpdates: Array<{ where: unknown; data: Record<string, unknown> }> = []
+
+  const processPhoto = createProcessPhoto({
+    cdnDomain: 'cdn.example.com',
+    loggerClient: {
+      info: () => undefined,
+      warn: () => undefined,
+      error: () => undefined,
+    },
+    prismaClient: {
+      photo: {
+        update: async (args: { where: unknown; data: Record<string, unknown> }) => {
+          photoUpdates.push(args)
+          return { id: 'photo_1', ...args.data }
+        },
+        findUnique: async () => ({
+          id: 'photo_1',
+          album: { coupleId: 'couple_1' },
+        }),
+      },
+    } as never,
+    downloadFromOSSImpl: async () => Buffer.from('image'),
+    generateSizesImpl: async () => ({
+      thumbnailPath: 'uploads/couple_1/photo_1/thumbnail.jpg',
+      displayPath: 'uploads/couple_1/photo_1/display.jpg',
+      width: 1200,
+      height: 800,
+    }),
+    extractExifImpl: async () => ({
+      takenAt: new Date('2100-01-01T08:00:00.000Z'),
+      latitude: null,
+      longitude: null,
+      cameraMake: null,
+      cameraModel: null,
+      focalLength: null,
+      aperture: null,
+      shutterSpeed: null,
+      iso: null,
+    }),
+    reverseGeocodeImpl: async () => null,
+    runAIPipelineImpl: async () => ({
+      status: 'COMPLETED',
+      nodeResults: {},
+      totalTokens: 0,
+      totalCost: 0,
+      duration: 20,
+    }),
+    applyPipelineResultsImpl: async () => undefined,
+  })
+
+  await processPhoto('photo_1', 'uploads/couple_1/photo_1/original.jpg')
+
+  assert.equal(photoUpdates[0]?.data.takenAt, null)
+})
