@@ -69,6 +69,11 @@ services:
       - OSS_BUCKET=${OSS_BUCKET}
       - OSS_REGION=${OSS_REGION}
       - OSS_CDN_DOMAIN=${OSS_CDN_DOMAIN}
+      - QWEN_API_KEY=${QWEN_API_KEY}
+      - QWEN_VISION_MODEL=${QWEN_VISION_MODEL}
+      - QWEN_BASE_URL=${QWEN_BASE_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_VISION_MODEL=${OPENAI_VISION_MODEL}
       - CLAUDE_API_KEY=${CLAUDE_API_KEY}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
       - AMAP_API_KEY=${AMAP_API_KEY}
@@ -372,12 +377,23 @@ OSS_REGION=oss-cn-guangzhou
 OSS_CDN_DOMAIN=cdn.your-domain.com
 
 # AI 服务
+QWEN_API_KEY=sk-aliyun-xxx
+QWEN_VISION_MODEL=qwen-vl-plus
+QWEN_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+OPENAI_API_KEY=sk-proj-xxx
+OPENAI_VISION_MODEL=gpt-4.1-mini
 CLAUDE_API_KEY=sk-ant-xxx
 DEEPSEEK_API_KEY=sk-xxx
 
 # 高德地图
 AMAP_API_KEY=xxx
 ```
+
+当前视觉模型 provider 优先级：
+1. `QWEN_API_KEY`
+2. `OPENAI_API_KEY`
+3. `CLAUDE_API_KEY`
+4. 无视觉 provider 时降级为保守元数据分析
 
 提供 `.env.example` 模板纳入 Git，列出所有需要的变量名（无值）。
 
