@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server'
 
 import { createApiErrorResponse, createRequestId } from '@/lib/api-error'
 import { withAuth } from '@/lib/api-middleware'
+import {
+  normalizeBlockedPhrasesUpdate,
+  parseCaptionStylePreferenceUpdate,
+  parseTonePreferenceUpdate,
+} from '@/lib/preferences'
 
 type CoupleRouteDeps = {
   prisma: {
@@ -42,6 +47,9 @@ type CouplePatchBody = {
   coverMode?: 'NONE' | 'PHOTO' | 'UPLOAD'
   coverPhotoId?: string | null
   coverPhotoUrl?: string | null
+  captionStylePreference?: string | null
+  tonePreference?: string | null
+  blockedPhrases?: string[]
 }
 
 function normalizeOptionalString(value: unknown) {
@@ -69,6 +77,18 @@ export function buildCoupleUpdateData(body: CouplePatchBody) {
   }
   if (body.coverPhotoUrl !== undefined) {
     data.coverPhotoUrl = normalizeOptionalString(body.coverPhotoUrl)
+  }
+  const captionStylePreference = parseCaptionStylePreferenceUpdate(body.captionStylePreference)
+  if (captionStylePreference !== undefined) {
+    data.captionStylePreference = captionStylePreference
+  }
+  const tonePreference = parseTonePreferenceUpdate(body.tonePreference)
+  if (tonePreference !== undefined) {
+    data.tonePreference = tonePreference
+  }
+  const blockedPhrases = normalizeBlockedPhrasesUpdate(body.blockedPhrases)
+  if (blockedPhrases !== undefined) {
+    data.blockedPhrases = blockedPhrases
   }
 
   return data

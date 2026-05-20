@@ -3,21 +3,32 @@ import { prisma } from '@/lib/prisma'
 import { getTranslations } from 'next-intl/server'
 import { redirect } from 'next/navigation'
 
+export function buildDashboardCoupleUserQuery(userId: string) {
+  return {
+    where: { userId },
+    select: {
+      couple: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          isPublic: true,
+          startDate: true,
+          _count: { select: { albums: true } },
+        },
+      },
+    },
+  } as const
+}
+
 export default async function DashboardPage() {
   const t = await getTranslations('DashboardPage')
   const session = await auth()
   if (!session) redirect('/login')
 
-  const coupleUser = await prisma.coupleUser.findFirst({
-    where: { userId: session.user.id },
-    include: {
-      couple: {
-        include: {
-          _count: { select: { albums: true } },
-        },
-      },
-    },
-  })
+  const coupleUser = await prisma.coupleUser.findFirst(
+    buildDashboardCoupleUserQuery(session.user.id)
+  )
 
   if (!coupleUser) {
     return (

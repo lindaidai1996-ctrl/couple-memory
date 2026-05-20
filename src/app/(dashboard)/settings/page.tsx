@@ -3,6 +3,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { SettingsFormSkeleton } from '@/components/skeleton/settings-form-skeleton'
+import {
+  CAPTION_STYLE_OPTIONS,
+  normalizeBlockedPhrases,
+  normalizeBlockedPhrasesUpdate,
+  parseCaptionStylePreferenceUpdate,
+  parseTonePreferenceUpdate,
+  pickCaptionStylePreference,
+  TONE_OPTIONS,
+  pickTonePreference,
+} from '@/lib/preferences'
 
 type CoverMode = 'NONE' | 'PHOTO' | 'UPLOAD'
 
@@ -15,6 +25,9 @@ interface CoupleData {
   coverPhotoId: string | null
   coverPhotoUrl: string | null
   bio: string | null
+  captionStylePreference: string | null
+  tonePreference: string | null
+  blockedPhrases: string[]
   isPublic: boolean
   inviteCode: string | null
   inviteExpiresAt: string | null
@@ -36,6 +49,9 @@ type CoupleUpdateInput = {
   coverMode: CoverMode
   coverPhotoId: string | null
   coverPhotoUrl: string | null
+  captionStylePreference?: string | null
+  tonePreference?: string | null
+  blockedPhrases?: string[]
 }
 
 function normalizeCoupleResponse(data: Partial<CoupleData> & Record<string, unknown>): CoupleData {
@@ -48,6 +64,13 @@ function normalizeCoupleResponse(data: Partial<CoupleData> & Record<string, unkn
     coverPhotoId: typeof data.coverPhotoId === 'string' ? data.coverPhotoId : null,
     coverPhotoUrl: typeof data.coverPhotoUrl === 'string' ? data.coverPhotoUrl : null,
     bio: typeof data.bio === 'string' ? data.bio : null,
+    captionStylePreference: pickCaptionStylePreference(
+      typeof data.captionStylePreference === 'string' ? data.captionStylePreference : null
+    ),
+    tonePreference: pickTonePreference(
+      typeof data.tonePreference === 'string' ? data.tonePreference : null
+    ),
+    blockedPhrases: normalizeBlockedPhrases(data.blockedPhrases),
     isPublic: Boolean(data.isPublic),
     inviteCode: typeof data.inviteCode === 'string' ? data.inviteCode : null,
     inviteExpiresAt: typeof data.inviteExpiresAt === 'string' ? data.inviteExpiresAt : null,
@@ -59,10 +82,41 @@ export function buildAvatarUpdatePayload(avatar: string) {
   return { avatar: trimmed || null }
 }
 
+export function buildBlockedPhrasesDraft(blockedPhrases: string[]) {
+  return blockedPhrases.join('\n')
+}
+
+export function parseBlockedPhrasesDraft(draft: string) {
+  return normalizeBlockedPhrases(draft.split('\n'))
+}
+
 export function buildCoupleUpdatePayload(input: CoupleUpdateInput) {
+  const normalizedInput: CoupleUpdateInput = { ...input }
+  const captionStylePreference = parseCaptionStylePreferenceUpdate(input.captionStylePreference)
+  const tonePreference = parseTonePreferenceUpdate(input.tonePreference)
+  const blockedPhrases = normalizeBlockedPhrasesUpdate(input.blockedPhrases)
+
+  if (captionStylePreference !== undefined) {
+    normalizedInput.captionStylePreference = captionStylePreference
+  } else {
+    delete normalizedInput.captionStylePreference
+  }
+
+  if (tonePreference !== undefined) {
+    normalizedInput.tonePreference = tonePreference
+  } else {
+    delete normalizedInput.tonePreference
+  }
+
+  if (blockedPhrases !== undefined) {
+    normalizedInput.blockedPhrases = blockedPhrases
+  } else {
+    delete normalizedInput.blockedPhrases
+  }
+
   if (input.coverMode === 'NONE') {
     return {
-      ...input,
+      ...normalizedInput,
       coverPhotoId: null,
       coverPhotoUrl: null,
     }
@@ -70,14 +124,14 @@ export function buildCoupleUpdatePayload(input: CoupleUpdateInput) {
 
   if (input.coverMode === 'UPLOAD') {
     return {
-      ...input,
+      ...normalizedInput,
       coverPhotoId: null,
       coverPhotoUrl: input.coverPhotoUrl?.trim() || null,
     }
   }
 
   return {
-    ...input,
+    ...normalizedInput,
     coverPhotoId: input.coverPhotoId?.trim() || null,
     coverPhotoUrl: input.coverPhotoUrl?.trim() || null,
   }
@@ -117,6 +171,7 @@ export default function SettingsPage() {
   const [couple, setCouple] = useState<CoupleData | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [avatarInput, setAvatarInput] = useState('')
+  const [blockedPhrasesDraft, setBlockedPhrasesDraft] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [avatarSaving, setAvatarSaving] = useState(false)
@@ -131,7 +186,9 @@ export default function SettingsPage() {
 
       if (coupleRes.ok) {
         const data = await coupleRes.json()
-        setCouple(normalizeCoupleResponse(data))
+        const normalizedCouple = normalizeCoupleResponse(data)
+        setCouple(normalizedCouple)
+        setBlockedPhrasesDraft(buildBlockedPhrasesDraft(normalizedCouple.blockedPhrases))
       }
 
       if (profileRes.ok) {
@@ -182,15 +239,25 @@ export default function SettingsPage() {
     setSaving(true)
     setMessage(null)
 
+    const normalizedBlockedPhrases = parseBlockedPhrasesDraft(blockedPhrasesDraft)
+    const nextCouple = {
+      ...couple,
+      blockedPhrases: normalizedBlockedPhrases,
+    }
+
+    setCouple(nextCouple)
+
     const res = await fetch(`/api/couples/${couple.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(buildCoupleUpdatePayload(couple)),
+      body: JSON.stringify(buildCoupleUpdatePayload(nextCouple)),
     })
 
     if (res.ok) {
       const data = await res.json()
-      setCouple(normalizeCoupleResponse(data))
+      const normalizedCouple = normalizeCoupleResponse(data)
+      setCouple(normalizedCouple)
+      setBlockedPhrasesDraft(buildBlockedPhrasesDraft(normalizedCouple.blockedPhrases))
       setMessage({ type: 'success', text: t('saved') })
     } else {
       const data = await res.json()
@@ -369,6 +436,63 @@ export default function SettingsPage() {
           <p className="text-xs text-warm-muted mt-1 ml-8">
             {t('visibilityDescription')}
           </p>
+        </Section>
+
+        <Section title={t('aiPreferencesTitle')}>
+          <Field
+            label={t('captionStyleLabel')}
+            hint={t('captionStyleHint')}
+          >
+            <select
+              value={couple.captionStylePreference || ''}
+              onChange={e => setCouple(prev => prev ? {
+                ...prev,
+                captionStylePreference: e.target.value || null,
+              } : prev)}
+              className={inputClass}
+            >
+              <option value="">{t('useSystemDefault')}</option>
+              {CAPTION_STYLE_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
+              ))}
+            </select>
+          </Field>
+
+          <Field
+            label={t('toneLabel')}
+            hint={t('toneHint')}
+          >
+            <select
+              value={couple.tonePreference || ''}
+              onChange={e => setCouple(prev => prev ? {
+                ...prev,
+                tonePreference: e.target.value || null,
+              } : prev)}
+              className={inputClass}
+            >
+              <option value="">{t('useSystemDefault')}</option>
+              {TONE_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
+              ))}
+            </select>
+          </Field>
+
+          <Field
+            label={t('blockedPhrasesLabel')}
+            hint={t('blockedPhrasesHint')}
+          >
+            <textarea
+              value={blockedPhrasesDraft}
+              onChange={e => setBlockedPhrasesDraft(e.target.value)}
+              onBlur={() => setCouple(prev => prev ? {
+                ...prev,
+                blockedPhrases: parseBlockedPhrasesDraft(blockedPhrasesDraft),
+              } : prev)}
+              rows={4}
+              className={inputClass + ' resize-none'}
+              placeholder={t('blockedPhrasesPlaceholder')}
+            />
+          </Field>
         </Section>
 
         <Section title={t('cover')}>

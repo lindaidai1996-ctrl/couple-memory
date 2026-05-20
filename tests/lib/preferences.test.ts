@@ -2,11 +2,15 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  CAPTION_STYLE_OPTIONS,
   DEFAULT_LOCALE,
   DEFAULT_THEME,
   getNextThemeMode,
   isLocale,
   isThemeMode,
+  normalizeBlockedPhrasesUpdate,
+  parseCaptionStylePreferenceUpdate,
+  parseTonePreferenceUpdate,
   pickLocale,
   pickThemeMode,
   resolveThemeMode,
@@ -21,6 +25,42 @@ test('pickThemeMode keeps supported explicit modes', () => {
   assert.equal(pickThemeMode('light'), 'light')
   assert.equal(pickThemeMode('dark'), 'dark')
   assert.equal(pickThemeMode('system'), 'system')
+})
+
+test('caption style options match the caption writer contract', () => {
+  assert.deepEqual(
+    CAPTION_STYLE_OPTIONS.map(option => option.value),
+    ['romantic', 'poetic', 'diary', 'photography-note']
+  )
+})
+
+test('parseCaptionStylePreferenceUpdate keeps valid values, allows explicit clear, and omits invalid input', () => {
+  assert.equal(parseCaptionStylePreferenceUpdate('poetic'), 'poetic')
+  assert.equal(parseCaptionStylePreferenceUpdate('   '), null)
+  assert.equal(parseCaptionStylePreferenceUpdate(null), null)
+  assert.equal(parseCaptionStylePreferenceUpdate('playful'), undefined)
+  assert.equal(parseCaptionStylePreferenceUpdate(42), undefined)
+  assert.equal(parseCaptionStylePreferenceUpdate(undefined), undefined)
+})
+
+test('parseTonePreferenceUpdate keeps valid values, allows explicit clear, and omits invalid input', () => {
+  assert.equal(parseTonePreferenceUpdate('warm'), 'warm')
+  assert.equal(parseTonePreferenceUpdate('   '), null)
+  assert.equal(parseTonePreferenceUpdate(null), null)
+  assert.equal(parseTonePreferenceUpdate('dramatic'), undefined)
+  assert.equal(parseTonePreferenceUpdate({ value: 'warm' }), undefined)
+  assert.equal(parseTonePreferenceUpdate(undefined), undefined)
+})
+
+test('normalizeBlockedPhrasesUpdate omits malformed input without clearing saved phrases', () => {
+  assert.deepEqual(normalizeBlockedPhrasesUpdate([' soulmate ', '', 'meant to be']), [
+    'soulmate',
+    'meant to be',
+  ])
+  assert.deepEqual(normalizeBlockedPhrasesUpdate([]), [])
+  assert.equal(normalizeBlockedPhrasesUpdate('soulmate'), undefined)
+  assert.equal(normalizeBlockedPhrasesUpdate(['valid', 123]), undefined)
+  assert.equal(normalizeBlockedPhrasesUpdate(undefined), undefined)
 })
 
 test('pickLocale prefers supported cookie locale', () => {
