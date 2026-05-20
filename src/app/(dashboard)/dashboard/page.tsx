@@ -1,5 +1,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { ReadinessCard } from '@/components/readiness-card'
+import { buildOrganizationReadiness } from '@/lib/readiness/organization-readiness'
 import { getTranslations } from 'next-intl/server'
 import { redirect } from 'next/navigation'
 
@@ -19,6 +21,20 @@ export function buildDashboardCoupleUserQuery(userId: string) {
       },
     },
   } as const
+}
+
+export function buildDashboardReadinessCard({
+  score,
+  suggestions,
+}: {
+  score: number
+  suggestions: string[]
+}) {
+  return {
+    score,
+    hasSuggestions: suggestions.length > 0,
+    suggestionCount: suggestions.length,
+  }
 }
 
 export default async function DashboardPage() {
@@ -55,6 +71,12 @@ export default async function DashboardPage() {
   const milestoneCount = await prisma.milestone.count({
     where: { coupleId: couple.id },
   })
+  const chapterCount = await prisma.albumChapter.count({
+    where: { album: { coupleId: couple.id } },
+  })
+  const chapterPhotoCount = await prisma.photo.count({
+    where: { album: { coupleId: couple.id }, chapterId: { not: null } },
+  })
 
   const now = new Date()
   const daysTogether = couple.startDate
@@ -64,9 +86,15 @@ export default async function DashboardPage() {
   const stats = [
     { label: t('photos'), value: photoCount, suffix: t('photoSuffix') },
     { label: t('albums'), value: couple._count.albums, suffix: t('albumSuffix') },
+    { label: '章节', value: chapterCount, suffix: '个' },
     { label: t('milestones'), value: milestoneCount, suffix: t('milestoneSuffix') },
     ...(daysTogether !== null ? [{ label: t('daysTogether'), value: daysTogether, suffix: t('daySuffix') }] : []),
   ]
+  const readiness = buildOrganizationReadiness({
+    totalPhotos: photoCount,
+    chapterPhotoCount,
+    chapterCount,
+  })
 
   return (
     <div>
@@ -105,6 +133,8 @@ export default async function DashboardPage() {
           </p>
         </div>
       )}
+
+      <ReadinessCard score={readiness.score} suggestions={readiness.suggestions} />
     </div>
   )
 }
