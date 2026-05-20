@@ -49,25 +49,28 @@ model User {
 }
 
 model Couple {
-  id              String         @id @default(cuid())
-  slug            String         @unique
-  name            String
-  startDate       DateTime?
-  coverPhotoUrl   String?
-  coverMode       CoupleCoverMode @default(NONE)
-  coverPhotoId    String?
-  bio             String?
-  theme           String         @default("default")
-  isPublic        Boolean        @default(false)
-  plan            String         @default("free")
-  inviteCode      String?        @unique
-  inviteExpiresAt DateTime?
-  members         CoupleUser[]
-  albums          Album[]
-  milestones      Milestone[]
-  pipelineRuns    PipelineRun[]
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id                     String          @id @default(cuid())
+  slug                   String          @unique
+  name                   String
+  startDate              DateTime?
+  coverPhotoUrl          String?
+  coverMode              CoupleCoverMode @default(NONE)
+  coverPhotoId           String?
+  bio                    String?
+  theme                  String          @default("default")
+  captionStylePreference String?         @default("romantic")
+  tonePreference         String?         @default("warm")
+  blockedPhrases         String[]        @default([])
+  isPublic               Boolean         @default(false)
+  plan                   String          @default("free")
+  inviteCode             String?         @unique
+  inviteExpiresAt        DateTime?
+  members                CoupleUser[]
+  albums                 Album[]
+  milestones             Milestone[]
+  pipelineRuns           PipelineRun[]
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
 }
 
 model CoupleUser {
@@ -86,62 +89,80 @@ model CoupleUser {
 }
 
 model Album {
-  id            String   @id @default(cuid())
-  couple        Couple   @relation(fields: [coupleId], references: [id])
+  id            String         @id @default(cuid())
+  couple        Couple         @relation(fields: [coupleId], references: [id])
   coupleId      String
   title         String
   description   String?
   coverPhotoUrl String?
   coverMode     AlbumCoverMode @default(AUTO)
   coverPhotoId  String?
-  sortOrder     Int      @default(0)
+  sortOrder     Int            @default(0)
   photos        Photo[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   @@index([coupleId, sortOrder])
 }
 
 model Photo {
-  id              String        @id @default(cuid())
-  album           Album         @relation(fields: [albumId], references: [id])
-  albumId         String
-  originalUrl     String
-  thumbnailUrl    String?
-  displayUrl      String?
-  fileName        String
-  fileSize        Int
-  width           Int?
-  height          Int?
-  sortOrder       Int           @default(0)
-  takenAt         DateTime?
-  latitude        Float?
-  longitude       Float?
-  locationName    String?
-  cameraMake      String?
-  cameraModel     String?
-  focalLength     String?
-  aperture        String?
-  shutterSpeed    String?
-  iso             Int?
-  aiCaption       String?
-  userCaption     String?
-  aiScene         String?
-  aiMood          String?
-  aiComposition   String?
-  aiColorTone     String?
-  aiLayout        String        @default("side-by-side")
-  aiKeywords      String[]
-  status          PhotoStatus   @default(UPLOADING)
-  processingError String?
-  milestones      Milestone[]
-  pipelineRuns    PipelineRun[]
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                    String           @id @default(cuid())
+  album                 Album            @relation(fields: [albumId], references: [id])
+  albumId               String
+  originalUrl           String
+  thumbnailUrl          String?
+  displayUrl            String?
+  fileName              String
+  fileSize              Int
+  width                 Int?
+  height                Int?
+  sortOrder             Int              @default(0)
+  takenAt               DateTime?
+  latitude              Float?
+  longitude             Float?
+  locationName          String?
+  cameraMake            String?
+  cameraModel           String?
+  focalLength           String?
+  aperture              String?
+  shutterSpeed          String?
+  iso                   Int?
+  aiCaption             String?
+  userCaption           String?
+  aiScene               String?
+  aiMood                String?
+  aiComposition         String?
+  aiColorTone           String?
+  aiLayout              String           @default("side-by-side")
+  selectedCaptionSource String?          @default("AI")
+  selectedLayoutSource  String?          @default("AI")
+  aiKeywords            String[]
+  aiVariants            PhotoAIVariant[]
+  status                PhotoStatus      @default(UPLOADING)
+  processingError       String?
+  milestones            Milestone[]
+  pipelineRuns          PipelineRun[]
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
 
   @@index([albumId, sortOrder])
   @@index([albumId, takenAt])
   @@index([status])
+}
+
+model PhotoAIVariant {
+  id         String   @id @default(cuid())
+  photo      Photo    @relation(fields: [photoId], references: [id])
+  photoId    String
+  type       String
+  content    String
+  style      String?
+  reason     String?
+  isSelected Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([photoId, type, createdAt])
 }
 
 model Milestone {
@@ -162,23 +183,23 @@ model Milestone {
 }
 
 model PipelineRun {
-  id          String         @id @default(cuid())
-  couple      Couple         @relation(fields: [coupleId], references: [id])
-  coupleId    String
-  photo       Photo          @relation(fields: [photoId], references: [id])
-  photoId     String
-  status      PipelineStatus @default(RUNNING)
-  triggerType String?
-  attemptNumber Int          @default(1)
-  errorCode   String?
-  summary     String?
-  dag         Json
-  nodeResults Json?
-  totalTokens Int?
-  totalCost   Float?
-  startedAt   DateTime       @default(now())
-  completedAt DateTime?
-  duration    Int?
+  id            String         @id @default(cuid())
+  couple        Couple         @relation(fields: [coupleId], references: [id])
+  coupleId      String
+  photo         Photo          @relation(fields: [photoId], references: [id])
+  photoId       String
+  status        PipelineStatus @default(RUNNING)
+  triggerType   String?
+  attemptNumber Int            @default(1)
+  errorCode     String?
+  summary       String?
+  dag           Json
+  nodeResults   Json?
+  totalTokens   Int?
+  totalCost     Float?
+  startedAt     DateTime       @default(now())
+  completedAt   DateTime?
+  duration      Int?
 
   @@index([photoId])
   @@index([coupleId, startedAt])
