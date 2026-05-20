@@ -99,6 +99,7 @@ model Album {
   coverPhotoId  String?
   sortOrder     Int            @default(0)
   photos        Photo[]
+  chapters      AlbumChapter[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
@@ -109,6 +110,8 @@ model Photo {
   id                    String           @id @default(cuid())
   album                 Album            @relation(fields: [albumId], references: [id])
   albumId               String
+  chapter               AlbumChapter?    @relation(fields: [chapterId], references: [id])
+  chapterId             String?
   originalUrl           String
   thumbnailUrl          String?
   displayUrl            String?
@@ -147,7 +150,23 @@ model Photo {
 
   @@index([albumId, sortOrder])
   @@index([albumId, takenAt])
+  @@index([albumId, chapterId, sortOrder])
   @@index([status])
+}
+
+model AlbumChapter {
+  id             String   @id @default(cuid())
+  album          Album    @relation(fields: [albumId], references: [id])
+  albumId        String
+  title          String
+  backgroundNote String?
+  aiSummary      String?
+  sortOrder      Int      @default(0)
+  photos         Photo[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([albumId, sortOrder])
 }
 
 model PhotoAIVariant {

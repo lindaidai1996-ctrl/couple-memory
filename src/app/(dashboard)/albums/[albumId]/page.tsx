@@ -1,20 +1,33 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { PhotoUploader } from '@/components/photo-uploader'
+import {
+  AlbumChapterCard,
+  buildSummaryActionState,
+  type AlbumChapterCardData,
+} from '@/components/album-chapter-card'
+import { AlbumEmptyChapters } from '@/components/album-empty-chapters'
+import { ChapterComposerDrawer } from '@/components/chapter-composer-drawer'
+import { ChapterDetailDrawer } from '@/components/chapter-detail-drawer'
+import { ChapterSelectionToolbar } from '@/components/chapter-selection-toolbar'
+import { MoveToChapterDialog } from '@/components/move-to-chapter-dialog'
 import { PhotoDetailModal } from '@/components/photo-detail-modal'
-import Link from 'next/link'
-import { photoCardSurfaceClass, type PhotoData } from '@/components/photo-card'
+import { PhotoSelectionGrid } from '@/components/photo-selection-grid'
+import { type PhotoData } from '@/components/photo-card'
+import { PhotoUploader } from '@/components/photo-uploader'
 import { PhotoGridSkeleton } from '@/components/skeleton/photo-grid-skeleton'
 
 type Photo = PhotoData
 
-interface Album {
+interface AlbumDetailResponse {
   id: string
   title: string
   description: string | null
+  chapters: AlbumChapterCardData[]
+  ungroupedPhotos: Photo[]
 }
 
 type Translator = (key: string, values?: Record<string, string | number>) => string
@@ -22,10 +35,116 @@ type Translator = (key: string, values?: Record<string, string | number>) => str
 export function buildAlbumDetailUiText(t: Translator) {
   return {
     photoCount: (count: number) => t('photoCount', { count }),
-    selectedCount: (count: number) => t('selectedCount', { count }),
-    moveSelected: t('moveSelected'),
-    deleteSelected: t('deleteSelected'),
-    reorder: t('reorder'),
+    selectionCount: (count: number) => t('selectionCount', { count }),
+    chapterSectionTitle: t('chapterSectionTitle'),
+    chapterSectionDescription: t('chapterSectionDescription'),
+    organizeAllPhotos: t('organizeAllPhotos'),
+    ungroupedSectionTitle: t('ungroupedSectionTitle'),
+    ungroupedSectionDescription: t('ungroupedSectionDescription'),
+    ungroupedEmpty: t('ungroupedEmpty'),
+    createChapter: t('createChapter'),
+    cancel: t('cancel'),
+    createChapterFailed: t('createChapterFailed'),
+    ungroupFailed: t('ungroupFailed'),
+    movePhotoFailed: t('movePhotoFailed'),
+    saveChapterFailed: t('saveChapterFailed'),
+    generateSummaryFailed: t('generateSummaryFailed'),
+    summaryUpdated: t('summaryUpdated'),
+    chapterCard: {
+      editChapter: t('chapterCardEditChapter'),
+      refreshSummary: t('chapterCardRefreshSummary'),
+      generateSummary: t('chapterCardGenerateSummary'),
+      refreshingSummary: t('chapterCardRefreshingSummary'),
+      generatingSummary: t('chapterCardGeneratingSummary'),
+    },
+    chapterEmpty: {
+      title: t('chapterEmptyTitle'),
+      description: t('chapterEmptyDescription'),
+      action: t('chapterEmptyAction'),
+    },
+    selectionToolbar: {
+      createChapter: t('selectionToolbarCreateChapter'),
+      moveToChapter: t('selectionToolbarMoveToChapter'),
+      ungroupPhotos: t('selectionToolbarUngroupPhotos'),
+      cancel: t('selectionToolbarCancel'),
+    },
+    composer: {
+      title: t('composerTitle'),
+      description: t('composerDescription'),
+      selectedPhotos: t('composerSelectedPhotos'),
+      suggestedTitles: t('composerSuggestedTitles'),
+      chapterTitle: t('composerChapterTitle'),
+      backgroundNote: t('composerBackgroundNote'),
+      cancel: t('composerCancel'),
+      createChapter: t('composerCreateChapter'),
+    },
+    moveDialog: {
+      title: t('moveDialogTitle'),
+      description: t('moveDialogDescription'),
+    },
+    detailDrawer: {
+      title: t('detailDrawerTitle'),
+      description: t('detailDrawerDescription'),
+      cancel: t('detailDrawerCancel'),
+      save: t('detailDrawerSave'),
+    },
+  }
+}
+
+export function buildChapterSummaryActionState(args: {
+  hasSummary: boolean
+  isRefreshing: boolean
+  copy: {
+    refreshSummary: string
+    generateSummary: string
+    refreshingSummary: string
+    generatingSummary: string
+  }
+}) {
+  return buildSummaryActionState(args)
+}
+
+export function buildAlbumDetailSections({
+  chapters,
+  ungroupedPhotos,
+}: {
+  chapters: Array<{ id: string; title: string }>
+  ungroupedPhotos: Array<{ id: string }>
+}) {
+  return {
+    chapterCount: chapters.length,
+    hasEmptyChapters: chapters.length === 0,
+    ungroupedCount: ungroupedPhotos.length,
+    order: ['chapters', 'ungrouped'] as const,
+  }
+}
+
+export function buildAlbumSelectionState({
+  selectionMode,
+  selectedPhotoIds,
+}: {
+  selectionMode: boolean
+  selectedPhotoIds: string[]
+}) {
+  if (!selectionMode) {
+    return {
+      active: false,
+      count: 0,
+      canCreateChapter: false,
+      canMove: false,
+      canUngroup: false,
+    }
+  }
+
+  const count = selectedPhotoIds.length
+  const hasSelection = count > 0
+
+  return {
+    active: true,
+    count,
+    canCreateChapter: hasSelection,
+    canMove: hasSelection,
+    canUngroup: hasSelection,
   }
 }
 
@@ -36,21 +155,24 @@ export default function AlbumDetailPage() {
   const albumId = params.albumId as string
 
   const [coupleId, setCoupleId] = useState<string | null>(null)
-  const [album, setAlbum] = useState<Album | null>(null)
-  const [allAlbums, setAllAlbums] = useState<Array<{ id: string; title: string }>>([])
-  const [photos, setPhotos] = useState<Photo[]>([])
+  const [album, setAlbum] = useState<AlbumDetailResponse | null>(null)
   const [loading, setLoading] = useState(true)
-  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<{
+    photoId: string
+    chapterPhotoIds: string[]
+  } | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
-  const [mode, setMode] = useState<'browse' | 'select' | 'reorder'>('browse')
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [albumSelectionMode, setAlbumSelectionMode] = useState(false)
+  const [selectedUngroupedIds, setSelectedUngroupedIds] = useState<string[]>([])
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<string[]>([])
-  const [deleting, setDeleting] = useState(false)
-  const [moving, setMoving] = useState(false)
-  const [targetAlbumId, setTargetAlbumId] = useState<string>('')
-  const [reorderSnapshot, setReorderSnapshot] = useState<Photo[]>([])
-  const [draggingPhotoId, setDraggingPhotoId] = useState<string | null>(null)
-  const [savingOrder, setSavingOrder] = useState(false)
+  const [chapterComposerOpen, setChapterComposerOpen] = useState(false)
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false)
+  const [editingChapter, setEditingChapter] = useState<AlbumChapterCardData | null>(null)
+  const [titleSuggestions, setTitleSuggestions] = useState<string[]>([])
   const [actionError, setActionError] = useState<string | null>(null)
+  const [actionMessage, setActionMessage] = useState<string | null>(null)
+  const [summaryActionChapterId, setSummaryActionChapterId] = useState<string | null>(null)
   const uiText = buildAlbumDetailUiText(t)
 
   useEffect(() => {
@@ -60,53 +182,60 @@ export default function AlbumDetailPage() {
       const couple = await coupleRes.json()
       setCoupleId(couple.id)
 
-      const [albumRes, photosRes] = await Promise.all([
-        fetch(`/api/couples/${couple.id}/albums/${albumId}`),
-        fetch(`/api/couples/${couple.id}/photos?albumId=${albumId}&limit=100`),
-      ])
+      const albumRes = await fetch(`/api/couples/${couple.id}/albums/${albumId}`)
+      if (albumRes.ok) {
+        const data = await albumRes.json()
+        setAlbum(data)
+      }
 
-      if (albumRes.ok) setAlbum(await albumRes.json())
-      if (photosRes.ok) {
-        const data = await photosRes.json()
-        setPhotos(data.photos)
-      }
-      const albumsRes = await fetch(`/api/couples/${couple.id}/albums`)
-      if (albumsRes.ok) {
-        const albumsData = await albumsRes.json()
-        setAllAlbums(
-          (albumsData.albums ?? []).map((item: { id: string; title: string }) => ({
-            id: item.id,
-            title: item.title,
-          }))
-        )
-      }
       setLoading(false)
     }
+
     fetchData()
   }, [albumId, refreshKey])
 
+  const allVisiblePhotos = useMemo(() => {
+    if (!album) return []
+    return [
+      ...album.ungroupedPhotos,
+      ...album.chapters.flatMap(chapter => chapter.photos),
+    ]
+  }, [album])
+
+  const selectedPhoto = useMemo(() => {
+    if (!photoPreview) return null
+    return allVisiblePhotos.find(photo => photo.id === photoPreview.photoId) ?? null
+  }, [allVisiblePhotos, photoPreview])
+
   useEffect(() => {
-    if (!coupleId) return
-    if (mode === 'reorder') return
-    const processing = photos.filter(p => p.status === 'PROCESSING')
-    if (processing.length === 0) return
+    if (!coupleId || !album) return
+    const hasProcessing = allVisiblePhotos.some(photo => photo.status === 'PROCESSING')
+    if (!hasProcessing) return
 
     const interval = setInterval(async () => {
-      const res = await fetch(`/api/couples/${coupleId}/photos?albumId=${albumId}&limit=100`)
+      const res = await fetch(`/api/couples/${coupleId}/albums/${albumId}`)
       if (res.ok) {
         const data = await res.json()
-        setPhotos(data.photos)
+        setAlbum(data)
       }
     }, 3000)
 
     return () => clearInterval(interval)
-  }, [coupleId, albumId, photos, mode])
+  }, [album, albumId, allVisiblePhotos, coupleId])
 
   useEffect(() => {
     if (!loading && !album) router.push('/albums')
   }, [loading, album, router])
 
-  function togglePhotoSelection(photoId: string) {
+  function toggleUngroupedSelection(photoId: string) {
+    setSelectedUngroupedIds(prev =>
+      prev.includes(photoId)
+        ? prev.filter(id => id !== photoId)
+        : [...prev, photoId]
+    )
+  }
+
+  function toggleAlbumSelection(photoId: string) {
     setSelectedPhotoIds(prev =>
       prev.includes(photoId)
         ? prev.filter(id => id !== photoId)
@@ -114,33 +243,11 @@ export default function AlbumDetailPage() {
     )
   }
 
-  async function handleBatchDelete() {
-    if (!coupleId || selectedPhotoIds.length === 0 || deleting) return
-    if (!confirm(t('deleteSelectedConfirm', { count: selectedPhotoIds.length }))) return
-
-    setActionError(null)
-    setDeleting(true)
-
-    const res = await fetch(`/api/couples/${coupleId}/photos/batch`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'DELETE',
-        photoIds: selectedPhotoIds,
-      }),
+  function openChapterPhotoPreview(photoId: string, chapterPhotoIds: string[]) {
+    setPhotoPreview({
+      photoId,
+      chapterPhotoIds,
     })
-
-    setDeleting(false)
-
-    if (res.ok) {
-      setSelectedPhotoIds([])
-      setMode('browse')
-      setRefreshKey(key => key + 1)
-      return
-    }
-
-    const data = await res.json().catch(() => null)
-    setActionError(data?.error?.message || t('deleteFailed'))
   }
 
   async function handleSetCover(photoId: string) {
@@ -165,92 +272,158 @@ export default function AlbumDetailPage() {
     setActionError(data?.error?.message || t('setCoverFailed'))
   }
 
-  async function handleBatchMove() {
-    if (!coupleId || selectedPhotoIds.length === 0 || !targetAlbumId || moving) return
+  async function openComposerForPhotoIds(photoIds: string[]) {
+    if (!coupleId || photoIds.length === 0) return
+
+    const res = await fetch(`/api/couples/${coupleId}/albums/${albumId}/chapters/suggestions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        photoIds,
+      }),
+    })
+
+    const data = await res.json().catch(() => ({ suggestions: [] }))
+    setTitleSuggestions(Array.isArray(data.suggestions) ? data.suggestions : [])
+    setChapterComposerOpen(true)
+  }
+
+  async function openComposerFromUngrouped() {
+    await openComposerForPhotoIds(selectedUngroupedIds)
+  }
+
+  async function handleCreateChapter(payload: { title: string; backgroundNote: string }) {
+    if (!coupleId) return
 
     setActionError(null)
-    setMoving(true)
-    const res = await fetch(`/api/couples/${coupleId}/photos/batch`, {
+
+    const res = await fetch(`/api/couples/${coupleId}/albums/${albumId}/chapters`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...payload,
+        photoIds: selectedUngroupedIds,
+      }),
+    })
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => null)
+      setActionError(data?.error?.message || uiText.createChapterFailed)
+      return
+    }
+
+    setSelectionMode(false)
+    setSelectedUngroupedIds([])
+    setChapterComposerOpen(false)
+    setTitleSuggestions([])
+    setRefreshKey(key => key + 1)
+  }
+
+  async function handleUngroupSelected() {
+    if (!coupleId || selectedPhotoIds.length === 0) return
+
+    const res = await fetch(`/api/couples/${coupleId}/albums/${albumId}/chapters/move`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'UNGROUP',
+        photoIds: selectedPhotoIds,
+      }),
+    })
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => null)
+      setActionError(data?.error?.message || uiText.ungroupFailed)
+      return
+    }
+
+    setAlbumSelectionMode(false)
+    setSelectedPhotoIds([])
+    setRefreshKey(key => key + 1)
+  }
+
+  async function handleMoveSelected(targetChapterId: string) {
+    if (!coupleId || selectedPhotoIds.length === 0) return
+
+    const res = await fetch(`/api/couples/${coupleId}/albums/${albumId}/chapters/move`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'MOVE',
+        targetChapterId,
         photoIds: selectedPhotoIds,
-        targetAlbumId,
       }),
     })
-    setMoving(false)
 
-    if (res.ok) {
-      setSelectedPhotoIds([])
-      setTargetAlbumId('')
-      setMode('browse')
-      setRefreshKey(key => key + 1)
+    if (!res.ok) {
+      const data = await res.json().catch(() => null)
+      setActionError(data?.error?.message || uiText.movePhotoFailed)
       return
     }
 
-    const data = await res.json().catch(() => null)
-    setActionError(data?.error?.message || t('moveFailed'))
+    setMoveDialogOpen(false)
+    setAlbumSelectionMode(false)
+    setSelectedPhotoIds([])
+    setRefreshKey(key => key + 1)
   }
 
-  function enterReorderMode() {
-    setReorderSnapshot(photos)
-    setMode('reorder')
-  }
+  async function handleSaveChapter(payload: { title: string; backgroundNote: string }) {
+    if (!coupleId || !editingChapter) return
 
-  function cancelReorderMode() {
-    setPhotos(reorderSnapshot)
-    setReorderSnapshot([])
-    setMode('browse')
-    setDraggingPhotoId(null)
-  }
-
-  function handleDropOnPhoto(targetPhotoId: string) {
-    if (!draggingPhotoId || draggingPhotoId === targetPhotoId) return
-
-    setPhotos(prev => {
-      const sourceIndex = prev.findIndex(photo => photo.id === draggingPhotoId)
-      const targetIndex = prev.findIndex(photo => photo.id === targetPhotoId)
-      if (sourceIndex === -1 || targetIndex === -1) return prev
-
-      const next = [...prev]
-      const [moved] = next.splice(sourceIndex, 1)
-      next.splice(targetIndex, 0, moved)
-      return next
-    })
-    setDraggingPhotoId(null)
-  }
-
-  async function saveReorder() {
-    if (!coupleId || savingOrder) return
-    setActionError(null)
-    setSavingOrder(true)
-    const res = await fetch(`/api/couples/${coupleId}/albums/${albumId}/photos/reorder`, {
-      method: 'POST',
+    const res = await fetch(`/api/couples/${coupleId}/albums/${albumId}/chapters/${editingChapter.id}`, {
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        orderedPhotoIds: photos.map(photo => photo.id),
-      }),
+      body: JSON.stringify(payload),
     })
-    setSavingOrder(false)
 
-    if (res.ok) {
-      setReorderSnapshot([])
-      setMode('browse')
-      setRefreshKey(key => key + 1)
+    if (!res.ok) {
+      const data = await res.json().catch(() => null)
+      setActionError(data?.error?.message || uiText.saveChapterFailed)
       return
     }
 
-    const data = await res.json().catch(() => null)
-    setActionError(data?.error?.message || t('saveOrderFailed'))
+    setEditingChapter(null)
+    setRefreshKey(key => key + 1)
+  }
+
+  async function handleGenerateSummary(chapterId: string) {
+    if (!coupleId) return
+
+    setActionError(null)
+    setActionMessage(null)
+    setSummaryActionChapterId(chapterId)
+
+    const res = await fetch(`/api/couples/${coupleId}/albums/${albumId}/chapters/${chapterId}/summary`, {
+      method: 'POST',
+    })
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => null)
+      setActionError(data?.error?.message || uiText.generateSummaryFailed)
+      setSummaryActionChapterId(null)
+      return
+    }
+
+    setActionMessage(uiText.summaryUpdated)
+    setSummaryActionChapterId(null)
+    setRefreshKey(key => key + 1)
   }
 
   if (loading) return <PhotoGridSkeleton />
   if (!album) return null
 
+  const sections = buildAlbumDetailSections({
+    chapters: album.chapters,
+    ungroupedPhotos: album.ungroupedPhotos,
+  })
+  const albumSelectionState = buildAlbumSelectionState({
+    selectionMode: albumSelectionMode,
+    selectedPhotoIds,
+  })
+
   return (
-    <div>
-      <div className="flex items-center gap-3 mb-6">
+    <div className="space-y-8">
+      <div className="flex items-center gap-3">
         <Link
           href="/albums"
           className="p-2 text-warm-muted hover:text-warm-text rounded-[var(--radius-sm)]
@@ -270,197 +443,203 @@ export default function AlbumDetailPage() {
         </div>
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="text-sm text-warm-muted">
-          {uiText.photoCount(photos.length)}
-        </div>
-        <div className="flex items-center gap-2">
-          {mode === 'select' ? (
-            <>
-              <span className="text-sm text-warm-muted">
-                {uiText.selectedCount(selectedPhotoIds.length)}
-              </span>
-              <select
-                value={targetAlbumId}
-                onChange={e => setTargetAlbumId(e.target.value)}
-                className="px-3 py-2 text-sm rounded-[var(--radius-md)] border border-warm-border bg-warm-surface text-warm-text"
-              >
-                <option value="">{t('targetAlbumPlaceholder')}</option>
-                {allAlbums
-                  .filter(item => item.id !== albumId)
-                  .map(item => (
-                    <option key={item.id} value={item.id}>
-                      {item.title}
-                    </option>
-                  ))}
-              </select>
-              <button
-                onClick={handleBatchMove}
-                disabled={selectedPhotoIds.length === 0 || !targetAlbumId || moving}
-                className="px-3 py-2 text-sm text-white bg-info rounded-[var(--radius-md)]
-                  disabled:opacity-50 transition-colors"
-              >
-                {moving ? t('moving') : t('moveSelected')}
-              </button>
-              <button
-                onClick={handleBatchDelete}
-                disabled={selectedPhotoIds.length === 0 || deleting}
-                className="px-3 py-2 text-sm text-white bg-error rounded-[var(--radius-md)]
-                  disabled:opacity-50 transition-colors"
-              >
-                {deleting ? t('deleting') : t('deleteSelected')}
-              </button>
-              <button
-                onClick={() => {
-                  setMode('browse')
-                  setSelectedPhotoIds([])
-                  setTargetAlbumId('')
-                }}
-                className="px-3 py-2 text-sm text-warm-muted border border-warm-border
-                  rounded-[var(--radius-md)] hover:bg-warm-bg transition-colors"
-              >
-                {t('cancelSelect')}
-              </button>
-            </>
-          ) : mode === 'reorder' ? (
-            <>
-              <span className="text-sm text-warm-muted">{t('dragToReorder')}</span>
-              <button
-                onClick={saveReorder}
-                disabled={savingOrder}
-                className="px-3 py-2 text-sm text-white bg-warm-accent rounded-[var(--radius-md)]
-                  disabled:opacity-50 transition-colors"
-              >
-                {savingOrder ? t('saving') : t('saveOrder')}
-              </button>
-              <button
-                onClick={cancelReorderMode}
-                className="px-3 py-2 text-sm text-warm-muted border border-warm-border
-                  rounded-[var(--radius-md)] hover:bg-warm-bg transition-colors"
-              >
-                {t('cancelReorder')}
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => setMode('select')}
-                className="px-3 py-2 text-sm text-warm-accent border border-warm-accent
-                  rounded-[var(--radius-md)] hover:bg-warm-accent/10 transition-colors"
-              >
-                {t('selectPhotos')}
-              </button>
-              <button
-                onClick={enterReorderMode}
-                className="px-3 py-2 text-sm text-warm-text border border-warm-border
-                  rounded-[var(--radius-md)] hover:bg-warm-bg transition-colors"
-              >
-                {uiText.reorder}
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
       {actionError && (
-        <div className="mb-4 rounded-[var(--radius-md)] border border-error/30 bg-error/5 px-4 py-3 text-sm text-error">
+        <div className="rounded-[var(--radius-md)] border border-error/30 bg-error/5 px-4 py-3 text-sm text-error">
           {actionError}
         </div>
       )}
 
+      {actionMessage && (
+        <div className="rounded-[var(--radius-md)] border border-success/30 bg-success/5 px-4 py-3 text-sm text-success">
+          {actionMessage}
+        </div>
+      )}
+
       {coupleId && (
-        <div className="mb-6">
+        <div>
           <PhotoUploader
             coupleId={coupleId}
             albumId={albumId}
-            onUploaded={() => setRefreshKey(k => k + 1)}
+            onUploaded={() => setRefreshKey(key => key + 1)}
           />
         </div>
       )}
 
-      {photos.length === 0 ? (
-        <div className="text-center py-16 bg-warm-surface rounded-[var(--radius-lg)] border border-warm-border">
-          <p className="text-warm-muted">{t('empty')}</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {photos.map(photo => (
-            <div
-              key={photo.id}
-              onClick={() => {
-                if (mode === 'select') {
-                  togglePhotoSelection(photo.id)
-                  return
-                }
-                setSelectedPhoto(photo)
-              }}
-              className={`relative cursor-pointer rounded-[var(--radius-md)] overflow-hidden group
-                ${photoCardSurfaceClass} aspect-square`}
-              draggable={mode === 'reorder'}
-              onDragStart={() => setDraggingPhotoId(photo.id)}
-              onDragOver={e => {
-                if (mode === 'reorder') e.preventDefault()
-              }}
-              onDrop={() => {
-                if (mode === 'reorder') handleDropOnPhoto(photo.id)
-              }}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-warm-text">{uiText.chapterSectionTitle}</h2>
+            <p className="text-sm text-warm-muted">{uiText.chapterSectionDescription}</p>
+          </div>
+          {sections.ungroupedCount > 0 ? (
+            <button
+              type="button"
+              onClick={() => setAlbumSelectionMode(true)}
+              className="px-3 py-2 rounded-[var(--radius-md)] border border-warm-border text-sm text-warm-text"
             >
-              {photo.thumbnailUrl ? (
-                <img
-                  src={photo.thumbnailUrl}
-                  alt={photo.fileName}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <span className="text-warm-muted text-xs">
-                    {photo.status === 'PROCESSING' ? t('processing') : t('noPreview')}
-                  </span>
-                </div>
-              )}
-
-              {photo.status !== 'READY' && (
-                <div className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-medium text-white
-                  ${photo.status === 'PROCESSING' ? 'bg-info' : 'bg-error'}`}>
-                  {photo.status === 'PROCESSING' ? t('processingShort') : t('failed')}
-                </div>
-              )}
-
-              {photo.isAlbumCover && (
-                <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-medium text-white bg-warm-text/80">
-                  {t('cover')}
-                </div>
-              )}
-
-              {mode === 'select' && (
-                <div className="absolute left-2 bottom-2">
-                  <div className={`w-5 h-5 rounded-full border-2 transition-colors ${
-                    selectedPhotoIds.includes(photo.id)
-                      ? 'bg-warm-accent border-warm-accent'
-                      : 'bg-white/80 border-white'
-                  }`} />
-                </div>
-              )}
-
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200" />
-            </div>
-          ))}
+              {uiText.organizeAllPhotos}
+            </button>
+          ) : null}
         </div>
-      )}
+
+        {sections.hasEmptyChapters ? (
+          <AlbumEmptyChapters copy={uiText.chapterEmpty} onCreate={() => setSelectionMode(true)} />
+        ) : (
+          <div className="space-y-4">
+            {album.chapters.map(chapter => (
+              <div key={chapter.id} className="space-y-3">
+                <AlbumChapterCard
+                  chapter={chapter}
+                  copy={{
+                    photoCount: uiText.photoCount(chapter.photos.length),
+                    editChapter: uiText.chapterCard.editChapter,
+                    refreshSummary: uiText.chapterCard.refreshSummary,
+                    generateSummary: uiText.chapterCard.generateSummary,
+                    refreshingSummary: uiText.chapterCard.refreshingSummary,
+                    generatingSummary: uiText.chapterCard.generatingSummary,
+                  }}
+                  onOpenPhoto={photo => openChapterPhotoPreview(photo.id, chapter.photos.map(item => item.id))}
+                  onEditChapter={() => setEditingChapter(chapter)}
+                  onRefreshSummary={() => handleGenerateSummary(chapter.id)}
+                  isRefreshingSummary={summaryActionChapterId === chapter.id}
+                />
+                {albumSelectionMode ? (
+                  <PhotoSelectionGrid
+                    photos={chapter.photos}
+                    selectedIds={selectedPhotoIds}
+                    selectionMode={albumSelectionMode}
+                    onToggle={toggleAlbumSelection}
+                    onOpen={photo => openChapterPhotoPreview(photo.id, chapter.photos.map(item => item.id))}
+                  />
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-warm-text">{uiText.ungroupedSectionTitle}</h2>
+            <p className="text-sm text-warm-muted">{uiText.ungroupedSectionDescription}</p>
+          </div>
+          {selectionMode ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-warm-muted">{uiText.selectionCount(selectedUngroupedIds.length)}</span>
+              <button
+                type="button"
+                onClick={openComposerFromUngrouped}
+                disabled={selectedUngroupedIds.length === 0}
+                className="px-3 py-2 rounded-[var(--radius-md)] bg-warm-accent text-white text-sm disabled:opacity-50"
+              >
+                {uiText.createChapter}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectionMode(false)
+                  setSelectedUngroupedIds([])
+                }}
+                className="px-3 py-2 rounded-[var(--radius-md)] border border-warm-border text-sm text-warm-text"
+              >
+                {uiText.cancel}
+              </button>
+            </div>
+          ) : (
+            <div className="text-sm text-warm-muted">
+              {uiText.photoCount(sections.ungroupedCount)}
+            </div>
+          )}
+        </div>
+
+        {sections.ungroupedCount === 0 ? (
+          <div className="text-center py-16 bg-warm-surface rounded-[var(--radius-lg)] border border-warm-border">
+            <p className="text-warm-muted">{uiText.ungroupedEmpty}</p>
+          </div>
+        ) : (
+          <PhotoSelectionGrid
+            photos={album.ungroupedPhotos}
+            selectedIds={albumSelectionMode ? selectedPhotoIds : selectedUngroupedIds}
+            selectionMode={albumSelectionMode ? albumSelectionMode : selectionMode}
+            onToggle={albumSelectionMode ? toggleAlbumSelection : toggleUngroupedSelection}
+            onOpen={photo => setPhotoPreview({ photoId: photo.id, chapterPhotoIds: [photo.id] })}
+          />
+        )}
+      </section>
+
+      {albumSelectionState.active ? (
+        <ChapterSelectionToolbar
+          copy={{
+            selectedCount: uiText.selectionCount(albumSelectionState.count),
+            createChapter: uiText.selectionToolbar.createChapter,
+            moveToChapter: uiText.selectionToolbar.moveToChapter,
+            ungroupPhotos: uiText.selectionToolbar.ungroupPhotos,
+            cancel: uiText.selectionToolbar.cancel,
+          }}
+          onCreate={async () => {
+            setSelectionMode(false)
+            setSelectedUngroupedIds(selectedPhotoIds)
+            setAlbumSelectionMode(false)
+            await openComposerForPhotoIds(selectedPhotoIds)
+          }}
+          onMove={() => setMoveDialogOpen(true)}
+          onUngroup={handleUngroupSelected}
+          onCancel={() => {
+            setAlbumSelectionMode(false)
+            setSelectedPhotoIds([])
+          }}
+        />
+      ) : null}
 
       {selectedPhoto && (
         <PhotoDetailModal
+          key={selectedPhoto.id}
           photo={selectedPhoto}
           coupleId={coupleId ?? ''}
-          onClose={() => setSelectedPhoto(null)}
+          chapterPhotoIds={photoPreview?.chapterPhotoIds ?? [selectedPhoto.id]}
+          onNavigate={photoId => {
+            if (!photoPreview) return
+            setPhotoPreview({
+              photoId,
+              chapterPhotoIds: photoPreview.chapterPhotoIds,
+            })
+          }}
+          onClose={() => setPhotoPreview(null)}
           onUpdated={() => {
-            setSelectedPhoto(null)
+            setPhotoPreview(null)
             setRefreshKey(key => key + 1)
           }}
           onSetCover={handleSetCover}
         />
       )}
+
+      <ChapterComposerDrawer
+        key={selectedUngroupedIds.join(',') || 'empty'}
+        open={chapterComposerOpen}
+        selectedPhotos={album.ungroupedPhotos.filter(photo => selectedUngroupedIds.includes(photo.id))}
+        suggestedTitles={titleSuggestions}
+        copy={uiText.composer}
+        onClose={() => setChapterComposerOpen(false)}
+        onSubmit={handleCreateChapter}
+      />
+
+      <MoveToChapterDialog
+        open={moveDialogOpen}
+        chapters={album.chapters.map(chapter => ({ id: chapter.id, title: chapter.title }))}
+        copy={uiText.moveDialog}
+        onSelect={handleMoveSelected}
+        onClose={() => setMoveDialogOpen(false)}
+      />
+
+      <ChapterDetailDrawer
+        key={editingChapter?.id ?? 'closed'}
+        chapter={editingChapter}
+        open={Boolean(editingChapter)}
+        copy={uiText.detailDrawer}
+        onClose={() => setEditingChapter(null)}
+        onSave={handleSaveChapter}
+      />
     </div>
   )
 }

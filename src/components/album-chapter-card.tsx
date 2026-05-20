@@ -1,0 +1,136 @@
+import type { PhotoData } from './photo-card'
+
+export type AlbumChapterCardData = {
+  id: string
+  title: string
+  backgroundNote: string | null
+  aiSummary?: string | null
+  sortOrder?: number
+  photos: PhotoData[]
+}
+
+export function buildAlbumChapterCardMeta(chapter: {
+  title: string
+  backgroundNote: string | null
+  aiSummary?: string | null
+  photos: Array<{ id: string }>
+}) {
+  return {
+    photoCount: chapter.photos.length,
+    previewCount: Math.min(chapter.photos.length, 4),
+    hasSummary: Boolean(chapter.aiSummary),
+  }
+}
+
+export type AlbumChapterCardCopy = {
+  photoCount: string
+  editChapter: string
+  refreshSummary: string
+  generateSummary: string
+  refreshingSummary: string
+  generatingSummary: string
+}
+
+export function buildSummaryActionState({
+  hasSummary,
+  isRefreshing,
+  copy,
+}: {
+  hasSummary: boolean
+  isRefreshing: boolean
+  copy: Pick<AlbumChapterCardCopy, 'refreshSummary' | 'generateSummary' | 'refreshingSummary' | 'generatingSummary'>
+}) {
+  if (isRefreshing) {
+    return {
+      label: hasSummary ? copy.refreshingSummary : copy.generatingSummary,
+      disabled: true,
+    }
+  }
+
+  return {
+    label: hasSummary ? copy.refreshSummary : copy.generateSummary,
+    disabled: false,
+  }
+}
+
+export function AlbumChapterCard({
+  chapter,
+  copy,
+  onOpenPhoto,
+  onEditChapter,
+  onRefreshSummary,
+  isRefreshingSummary = false,
+}: {
+  chapter: AlbumChapterCardData
+  copy: AlbumChapterCardCopy
+  onOpenPhoto?: (photo: PhotoData) => void
+  onEditChapter?: () => void
+  onRefreshSummary?: () => void
+  isRefreshingSummary?: boolean
+}) {
+  const meta = buildAlbumChapterCardMeta(chapter)
+  const previewPhotos = chapter.photos.slice(0, 4)
+  const summaryAction = buildSummaryActionState({
+    hasSummary: meta.hasSummary,
+    isRefreshing: isRefreshingSummary,
+    copy,
+  })
+
+  return (
+    <section className="rounded-[var(--radius-lg)] border border-warm-border bg-warm-surface p-5 space-y-4">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold text-warm-text">{chapter.title}</h2>
+        {chapter.backgroundNote ? (
+          <p className="text-sm text-warm-muted">{chapter.backgroundNote}</p>
+        ) : null}
+      </div>
+
+      {chapter.aiSummary ? (
+        <p className="text-sm text-warm-text leading-6">{chapter.aiSummary}</p>
+      ) : null}
+
+      {previewPhotos.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {previewPhotos.map(photo => (
+            <button
+              key={photo.id}
+              type="button"
+              onClick={() => onOpenPhoto?.(photo)}
+              className="aspect-square overflow-hidden rounded-[var(--radius-md)] bg-warm-skeleton-base"
+            >
+              {photo.thumbnailUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={photo.thumbnailUrl}
+                  alt={photo.fileName}
+                  className="w-full h-full object-cover"
+                />
+              ) : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-sm text-warm-muted">{copy.photoCount}</div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onEditChapter}
+            className="px-3 py-2 rounded-[var(--radius-md)] border border-warm-border text-sm text-warm-text"
+          >
+            {copy.editChapter}
+          </button>
+          <button
+            type="button"
+            onClick={onRefreshSummary}
+            disabled={summaryAction.disabled}
+            className="px-3 py-2 rounded-[var(--radius-md)] border border-warm-border text-sm text-warm-text"
+          >
+            {summaryAction.label}
+          </button>
+        </div>
+      </div>
+    </section>
+  )
+}

@@ -1,16 +1,62 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { withAuth } from '@/lib/api-middleware'
+import { withAuth, type AuthContext } from '@/lib/api-middleware'
 
-export const GET = withAuth(async (_req, { coupleUser }, params) => {
-  const album = await prisma.album.findFirst({
-    where: { id: params.albumId, coupleId: coupleUser.coupleId },
-  })
-  if (!album) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+type AlbumRouteDeps = {
+  prismaClient?: {
+    album: {
+      findFirst: (args: Record<string, unknown>) => Promise<{
+        id: string
+        title: string
+        description: string | null
+        chapters?: unknown[]
+        photos?: unknown[]
+      } | null>
+      updateMany: (args: Record<string, unknown>) => Promise<{ count: number }>
+      findUnique: (args: Record<string, unknown>) => Promise<unknown>
+      deleteMany: (args: Record<string, unknown>) => Promise<unknown>
+    }
   }
-  return NextResponse.json(album)
-})
+}
+
+async function loadPrismaClient() {
+  return prisma as unknown as NonNullable<AlbumRouteDeps['prismaClient']>
+}
+
+export function createGetAlbumHandler(deps: AlbumRouteDeps = {}) {
+  return async (_req: Request, { coupleUser }: AuthContext, params: Record<string, string>) => {
+    const prismaClient = deps.prismaClient ?? await loadPrismaClient()
+    const album = await prismaClient.album.findFirst({
+      where: { id: params.albumId, coupleId: coupleUser.coupleId },
+      include: {
+        chapters: {
+          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+          include: {
+            photos: {
+              orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+            },
+          },
+        },
+        photos: {
+          where: { chapterId: null },
+          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+        },
+      },
+    })
+    if (!album) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+    return NextResponse.json({
+      id: album.id,
+      title: album.title,
+      description: album.description,
+      chapters: album.chapters ?? [],
+      ungroupedPhotos: album.photos ?? [],
+    })
+  }
+}
+
+export const GET = withAuth(createGetAlbumHandler())
 
 export const PATCH = withAuth(async (req, { coupleUser }, params) => {
   const body = await req.json()

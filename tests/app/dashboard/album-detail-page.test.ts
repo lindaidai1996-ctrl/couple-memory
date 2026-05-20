@@ -1,0 +1,219 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+import React from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+
+import {
+  buildAlbumDetailUiText,
+  buildAlbumDetailSections,
+  buildChapterSummaryActionState,
+} from '../../../src/app/(dashboard)/albums/[albumId]/page'
+import {
+  AlbumChapterCard,
+  buildAlbumChapterCardMeta,
+} from '../../../src/components/album-chapter-card'
+import {
+  buildChapterDetailDraft,
+} from '../../../src/components/chapter-detail-drawer'
+
+test('buildAlbumDetailUiText exposes localized chapter page copy', () => {
+  const uiText = buildAlbumDetailUiText((key, values) => {
+    if (values && 'count' in values) {
+      return `${key}:${String(values.count)}`
+    }
+
+    return key
+  })
+
+  assert.equal(uiText.chapterSectionTitle, 'chapterSectionTitle')
+  assert.equal(uiText.organizeAllPhotos, 'organizeAllPhotos')
+  assert.equal(uiText.selectionCount(3), 'selectionCount:3')
+  assert.equal(uiText.chapterCard.generateSummary, 'chapterCardGenerateSummary')
+  assert.equal(uiText.chapterCard.refreshingSummary, 'chapterCardRefreshingSummary')
+  assert.equal(uiText.chapterCard.generatingSummary, 'chapterCardGeneratingSummary')
+  assert.equal(uiText.chapterEmpty.action, 'chapterEmptyAction')
+  assert.equal(uiText.selectionToolbar.moveToChapter, 'selectionToolbarMoveToChapter')
+  assert.equal(uiText.composer.title, 'composerTitle')
+  assert.equal(uiText.moveDialog.title, 'moveDialogTitle')
+  assert.equal(uiText.detailDrawer.save, 'detailDrawerSave')
+  assert.equal(uiText.createChapterFailed, 'createChapterFailed')
+  assert.equal(uiText.summaryUpdated, 'summaryUpdated')
+})
+
+test('buildAlbumDetailSections returns chapter area before ungrouped area', () => {
+  const sections = buildAlbumDetailSections({
+    chapters: [
+      { id: 'chapter_1', title: '第一次一起看海' },
+    ],
+    ungroupedPhotos: [
+      { id: 'photo_2' },
+    ],
+  })
+
+  assert.deepEqual(sections, {
+    chapterCount: 1,
+    hasEmptyChapters: false,
+    ungroupedCount: 1,
+    order: ['chapters', 'ungrouped'],
+  })
+})
+
+test('buildAlbumDetailSections shows empty chapter guidance when there are no chapters', () => {
+  const sections = buildAlbumDetailSections({
+    chapters: [],
+    ungroupedPhotos: [
+      { id: 'photo_2' },
+      { id: 'photo_3' },
+    ],
+  })
+
+  assert.equal(sections.hasEmptyChapters, true)
+  assert.equal(sections.chapterCount, 0)
+  assert.equal(sections.ungroupedCount, 2)
+})
+
+test('buildAlbumChapterCardMeta shows summary when available', () => {
+  const meta = buildAlbumChapterCardMeta({
+    title: '第一次一起看海',
+    backgroundNote: '那天风很大',
+    aiSummary: '我们在海边待了很久。',
+    photos: [{ id: 'photo_1' }, { id: 'photo_2' }],
+  })
+
+  assert.deepEqual(meta, {
+    photoCount: 2,
+    previewCount: 2,
+    hasSummary: true,
+  })
+})
+
+test('buildAlbumChapterCardMeta works without summary', () => {
+  const meta = buildAlbumChapterCardMeta({
+    title: '第一次一起看海',
+    backgroundNote: null,
+    aiSummary: null,
+    photos: [{ id: 'photo_1' }],
+  })
+
+  assert.deepEqual(meta, {
+    photoCount: 1,
+    previewCount: 1,
+    hasSummary: false,
+  })
+})
+
+test('buildChapterSummaryActionState exposes in-progress label and disabled state', () => {
+  assert.deepEqual(
+    buildChapterSummaryActionState({
+      hasSummary: true,
+      isRefreshing: true,
+      copy: {
+        refreshSummary: '刷新摘要',
+        generateSummary: '生成摘要',
+        refreshingSummary: '刷新中...',
+        generatingSummary: '生成中...',
+      },
+    }),
+    {
+      label: '刷新中...',
+      disabled: true,
+    }
+  )
+
+  assert.deepEqual(
+    buildChapterSummaryActionState({
+      hasSummary: false,
+      isRefreshing: false,
+      copy: {
+        refreshSummary: '刷新摘要',
+        generateSummary: '生成摘要',
+        refreshingSummary: '刷新中...',
+        generatingSummary: '生成中...',
+      },
+    }),
+    {
+      label: '生成摘要',
+      disabled: false,
+    }
+  )
+})
+
+test('AlbumChapterCard renders one edit action and one refresh action inside the card', () => {
+  const markup = renderToStaticMarkup(
+    React.createElement(AlbumChapterCard, {
+      chapter: {
+        id: 'chapter_1',
+        title: '第一次一起看海',
+        backgroundNote: '那天风很大',
+        aiSummary: '我们在海边待了很久。',
+        photos: [
+          {
+            id: 'photo_1',
+            fileName: 'one.jpg',
+            thumbnailUrl: 'https://cdn.example.com/1.jpg',
+            displayUrl: 'https://cdn.example.com/1-large.jpg',
+            status: 'READY',
+            aiCaption: null,
+            userCaption: null,
+            takenAt: null,
+            locationName: null,
+            aiLayout: null,
+            aiScene: null,
+            aiMood: null,
+            cameraMake: null,
+            cameraModel: null,
+            focalLength: null,
+            aperture: null,
+            shutterSpeed: null,
+            iso: null,
+          },
+          {
+            id: 'photo_2',
+            fileName: 'two.jpg',
+            thumbnailUrl: 'https://cdn.example.com/2.jpg',
+            displayUrl: 'https://cdn.example.com/2-large.jpg',
+            status: 'READY',
+            aiCaption: null,
+            userCaption: null,
+            takenAt: null,
+            locationName: null,
+            aiLayout: null,
+            aiScene: null,
+            aiMood: null,
+            cameraMake: null,
+            cameraModel: null,
+            focalLength: null,
+            aperture: null,
+            shutterSpeed: null,
+            iso: null,
+          },
+        ],
+      },
+      copy: {
+        photoCount: '2 张照片',
+        editChapter: '编辑章节',
+        refreshSummary: '刷新摘要',
+        generateSummary: '生成摘要',
+      },
+      onOpenPhoto: () => {},
+      onEditChapter: () => {},
+      onRefreshSummary: () => {},
+    })
+  )
+
+  assert.equal((markup.match(/编辑章节/g) || []).length, 1)
+  assert.equal((markup.match(/刷新摘要/g) || []).length, 1)
+  assert.equal((markup.match(/<button/g) || []).length, 4)
+})
+
+test('buildChapterDetailDraft derives current chapter values for the drawer form', () => {
+  assert.deepEqual(buildChapterDetailDraft({
+    id: 'chapter_1',
+    title: '赛里木湖婚纱照的时刻',
+    backgroundNote: '那天的风很轻',
+    photos: [],
+  }), {
+    title: '赛里木湖婚纱照的时刻',
+    backgroundNote: '那天的风很轻',
+  })
+})
