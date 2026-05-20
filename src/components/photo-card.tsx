@@ -13,6 +13,20 @@ export interface PhotoData {
   takenAt: string | null
   locationName: string | null
   aiLayout: string | null
+  selectedCaptionSource?: string | null
+  selectedLayoutSource?: string | null
+  captionVariants?: Array<{
+    id: string
+    content: string
+    style?: string | null
+    isSelected: boolean
+  }>
+  layoutVariants?: Array<{
+    id: string
+    content: string
+    reason?: string | null
+    isSelected: boolean
+  }>
   aiScene: string | null
   aiMood: string | null
   cameraMake: string | null

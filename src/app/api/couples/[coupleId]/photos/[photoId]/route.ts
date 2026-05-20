@@ -38,12 +38,20 @@ type PhotoRouteDeps = {
               attemptNumber: number
               summary: string | null
               startedAt: unknown
-              completedAt?: unknown
-              duration: number | null
-              totalTokens?: number | null
-              totalCost?: number | null
-              errorCode?: string | null
-            }>
+            completedAt?: unknown
+            duration: number | null
+            totalTokens?: number | null
+            totalCost?: number | null
+            errorCode?: string | null
+          }>
+          aiVariants?: Array<{
+            id: string
+            type: string
+            content: string
+            style?: string | null
+            reason?: string | null
+            isSelected?: boolean
+          }>
             [key: string]: unknown
           }
         | null
@@ -52,11 +60,39 @@ type PhotoRouteDeps = {
       delete?: (args: Record<string, unknown>) => Promise<unknown>
       findMany?: (args: Record<string, unknown>) => Promise<Array<{ id: string; sortOrder: number }>>
     }
+    photoAIVariant?: {
+      findFirst?: (args: Record<string, unknown>) => Promise<{
+        id: string
+        photoId: string
+        type: string
+        content: string
+      } | null>
+      deleteMany?: (args: Record<string, unknown>) => Promise<unknown>
+      updateMany?: (args: Record<string, unknown>) => Promise<unknown>
+      update?: (args: Record<string, unknown>) => Promise<unknown>
+    }
+    pipelineRun?: {
+      deleteMany?: (args: Record<string, unknown>) => Promise<unknown>
+    }
     $transaction?: <T>(
       callback: (tx: {
         photo: {
           delete: (args: Record<string, unknown>) => Promise<unknown>
           findMany: (args: Record<string, unknown>) => Promise<Array<{ id: string; sortOrder: number }>>
+          update: (args: Record<string, unknown>) => Promise<unknown>
+        }
+        pipelineRun: {
+          deleteMany: (args: Record<string, unknown>) => Promise<unknown>
+        }
+        photoAIVariant: {
+          findFirst: (args: Record<string, unknown>) => Promise<{
+            id: string
+            photoId: string
+            type: string
+            content: string
+          } | null>
+          deleteMany: (args: Record<string, unknown>) => Promise<unknown>
+          updateMany: (args: Record<string, unknown>) => Promise<unknown>
           update: (args: Record<string, unknown>) => Promise<unknown>
         }
         album: {
@@ -80,6 +116,17 @@ export function createGetPhotoHandler(deps: PhotoRouteDeps = {}) {
       const photo = await prismaClient.photo.findFirst({
         where: { id: params.photoId, album: { coupleId: coupleUser.coupleId } },
         include: {
+          aiVariants: {
+            orderBy: [{ type: 'asc' }, { createdAt: 'asc' }],
+            select: {
+              id: true,
+              type: true,
+              content: true,
+              style: true,
+              reason: true,
+              isSelected: true,
+            },
+          },
           pipelineRuns: {
             orderBy: { startedAt: 'desc' },
             take: 1,
@@ -103,12 +150,14 @@ export function createGetPhotoHandler(deps: PhotoRouteDeps = {}) {
         return createErrorResponse(404, 'PHOTO_NOT_FOUND', 'Photo not found')
       }
 
-      const { pipelineRuns, ...photoData } = photo
+      const { aiVariants = [], pipelineRuns, ...photoData } = photo
       const [latestRun] = pipelineRuns
 
       return NextResponse.json({
         ...photoData,
         latestRun: latestRun ?? null,
+        captionVariants: aiVariants.filter(item => item.type === 'CAPTION'),
+        layoutVariants: aiVariants.filter(item => item.type === 'LAYOUT'),
       })
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error'
@@ -121,53 +170,186 @@ export function createGetPhotoHandler(deps: PhotoRouteDeps = {}) {
 export const getPhotoHandler = createGetPhotoHandler()
 export const GET = withAuth(getPhotoHandler)
 
-export const PATCH = withAuth(async (req, { coupleUser }, params) => {
-  const prismaClient = await loadPrismaClient()
-  const body = await req.json()
-  const photo = await prismaClient.photo.findFirst({
-    where: { id: params.photoId, album: { coupleId: coupleUser.coupleId } },
-  })
-  if (!photo) {
-    return createErrorResponse(404, 'PHOTO_NOT_FOUND', 'Photo not found')
+type PhotoPatchBody = {
+  userCaption?: unknown
+  aiLayout?: unknown
+  selectedCaptionVariantId?: unknown
+  selectedLayoutVariantId?: unknown
+}
+
+function buildPhotoUpdateData(body: PhotoPatchBody) {
+  const data: Record<string, unknown> = {}
+
+  if (typeof body.userCaption === 'string') {
+    data.userCaption = body.userCaption
+    data.selectedCaptionSource = body.userCaption.trim() ? 'MANUAL' : 'AI'
   }
 
-  const updated = await prismaClient.photo.update!({
-    where: { id: params.photoId },
-    data: body,
-  })
-  return NextResponse.json(updated)
-})
-
-export const DELETE = withAuth(async (req, { coupleUser }, params) => {
-  const prismaClient = await loadPrismaClient()
-  const photo = await prismaClient.photo.findFirst({
-    where: { id: params.photoId, album: { coupleId: coupleUser.coupleId } },
-    select: { id: true, albumId: true },
-  })
-  if (!photo) {
-    return createErrorResponse(404, 'PHOTO_NOT_FOUND', 'Photo not found')
+  if (typeof body.aiLayout === 'string') {
+    data.aiLayout = body.aiLayout
+    data.selectedLayoutSource = 'MANUAL'
   }
 
-  await prismaClient.$transaction!(async tx => {
-    await tx.photo.delete({ where: { id: params.photoId } })
+  return data
+}
 
-    const remainingPhotos = await tx.photo.findMany({
-      where: { albumId: photo.albumId },
-      select: { id: true, sortOrder: true },
-      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+async function updateSelectedVariant(
+  tx: NonNullable<NonNullable<PhotoRouteDeps['prismaClient']>['$transaction']> extends (
+    callback: (tx: infer T) => Promise<unknown>
+  ) => Promise<unknown> ? T : never,
+  photoId: string,
+  variantId: string,
+  variantType: 'CAPTION' | 'LAYOUT'
+) {
+  const variant = await tx.photoAIVariant.findFirst({
+    where: {
+      id: variantId,
+      photoId,
+      type: variantType,
+    },
+  })
+
+  if (!variant) {
+    return null
+  }
+
+  await tx.photoAIVariant.updateMany({
+    where: {
+      photoId,
+      type: variantType,
+    },
+    data: {
+      isSelected: false,
+    },
+  })
+
+  await tx.photoAIVariant.update({
+    where: { id: variantId },
+    data: { isSelected: true },
+  })
+
+  const data = variantType === 'CAPTION'
+    ? {
+        aiCaption: variant.content,
+        selectedCaptionSource: 'AI',
+      }
+    : {
+        aiLayout: variant.content,
+        selectedLayoutSource: 'AI',
+      }
+
+  return tx.photo.update({
+    where: { id: photoId },
+    data,
+  })
+}
+
+export function createPatchPhotoHandler(deps: PhotoRouteDeps = {}) {
+  return async (req: Request, { coupleUser }: AuthContext, params: Record<string, string>) => {
+    const prismaClient = deps.prismaClient ?? await loadPrismaClient()
+    const body = await req.json() as PhotoPatchBody
+    const photo = await prismaClient.photo.findFirst({
+      where: { id: params.photoId, album: { coupleId: coupleUser.coupleId } },
+      select: { id: true, albumId: true },
+    })
+    if (!photo) {
+      return createErrorResponse(404, 'PHOTO_NOT_FOUND', 'Photo not found')
+    }
+
+    const data = buildPhotoUpdateData(body)
+    const hasCaptionVariantSelection = typeof body.selectedCaptionVariantId === 'string'
+    const hasLayoutVariantSelection = typeof body.selectedLayoutVariantId === 'string'
+
+    if (hasCaptionVariantSelection || hasLayoutVariantSelection) {
+      const updated = await prismaClient.$transaction!(async tx => {
+        let current = Object.keys(data).length > 0
+          ? await tx.photo.update({
+              where: { id: params.photoId },
+              data,
+            })
+          : null
+
+        if (hasCaptionVariantSelection) {
+          current = await updateSelectedVariant(tx, params.photoId, body.selectedCaptionVariantId as string, 'CAPTION')
+          if (!current) {
+            throw new Error('CAPTION_VARIANT_NOT_FOUND')
+          }
+        }
+
+        if (hasLayoutVariantSelection) {
+          current = await updateSelectedVariant(tx, params.photoId, body.selectedLayoutVariantId as string, 'LAYOUT')
+          if (!current) {
+            throw new Error('LAYOUT_VARIANT_NOT_FOUND')
+          }
+        }
+
+        return current
+      }).catch(error => {
+        if (error instanceof Error && error.message === 'CAPTION_VARIANT_NOT_FOUND') {
+          return 'CAPTION_VARIANT_NOT_FOUND' as const
+        }
+        if (error instanceof Error && error.message === 'LAYOUT_VARIANT_NOT_FOUND') {
+          return 'LAYOUT_VARIANT_NOT_FOUND' as const
+        }
+        throw error
+      })
+
+      if (updated === 'CAPTION_VARIANT_NOT_FOUND') {
+        return createErrorResponse(404, 'CAPTION_VARIANT_NOT_FOUND', 'Caption variant not found')
+      }
+      if (updated === 'LAYOUT_VARIANT_NOT_FOUND') {
+        return createErrorResponse(404, 'LAYOUT_VARIANT_NOT_FOUND', 'Layout variant not found')
+      }
+
+      return NextResponse.json(updated)
+    }
+
+    const updated = await prismaClient.photo.update!({
+      where: { id: params.photoId },
+      data,
+    })
+    return NextResponse.json(updated)
+  }
+}
+
+export const PATCH = withAuth(createPatchPhotoHandler())
+
+export function createDeletePhotoHandler(deps: PhotoRouteDeps = {}) {
+  return async (_req: Request, { coupleUser }: AuthContext, params: Record<string, string>) => {
+    const prismaClient = deps.prismaClient ?? await loadPrismaClient()
+    const photo = await prismaClient.photo.findFirst({
+      where: { id: params.photoId, album: { coupleId: coupleUser.coupleId } },
+      select: { id: true, albumId: true },
+    })
+    if (!photo) {
+      return createErrorResponse(404, 'PHOTO_NOT_FOUND', 'Photo not found')
+    }
+
+    await prismaClient.$transaction!(async tx => {
+      await tx.photoAIVariant.deleteMany({ where: { photoId: params.photoId } })
+      await tx.pipelineRun.deleteMany({ where: { photoId: params.photoId } })
+      await tx.photo.delete({ where: { id: params.photoId } })
+
+      const remainingPhotos = await tx.photo.findMany({
+        where: { albumId: photo.albumId },
+        select: { id: true, sortOrder: true },
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+      })
+
+      await Promise.all(
+        remainingPhotos.map((item, index) =>
+          tx.photo.update({
+            where: { id: item.id },
+            data: { sortOrder: index + 1 },
+          })
+        )
+      )
+
+      await syncAlbumCover(tx, photo.albumId)
     })
 
-    await Promise.all(
-      remainingPhotos.map((item, index) =>
-        tx.photo.update({
-          where: { id: item.id },
-          data: { sortOrder: index + 1 },
-        })
-      )
-    )
+    return new Response(null, { status: 204 })
+  }
+}
 
-    await syncAlbumCover(tx, photo.albumId)
-  })
-
-  return new Response(null, { status: 204 })
-})
+export const DELETE = withAuth(createDeletePhotoHandler())

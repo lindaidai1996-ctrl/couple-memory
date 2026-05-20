@@ -201,7 +201,7 @@ test('createRetryPhotoHandler rejects unsupported retry scope', async () => {
   assert.deepEqual(await response.json(), {
     error: {
       code: 'INVALID_RETRY_SCOPE',
-      message: 'scope must be FULL or CAPTION_ONLY',
+      message: 'scope must be FULL, CAPTION_ONLY, or LAYOUT_ONLY',
       retryable: false,
     },
   })
@@ -385,6 +385,8 @@ test('createGetPhotoHandler returns the photo and its latest run', async () => {
       totalCost: 0.03,
       errorCode: 'CAPTION_TIMEOUT',
     },
+    captionVariants: [],
+    layoutVariants: [],
   })
 })
 

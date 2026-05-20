@@ -19,8 +19,20 @@ type BatchPhotoRouteDeps = {
     album: {
       findFirst: (args: Record<string, unknown>) => Promise<{ id: string } | null>
     }
+    photoAIVariant?: {
+      deleteMany: (args: Record<string, unknown>) => Promise<unknown>
+    }
+    pipelineRun?: {
+      deleteMany: (args: Record<string, unknown>) => Promise<unknown>
+    }
     $transaction: <T>(
       callback: (tx: {
+        photoAIVariant: {
+          deleteMany: (args: Record<string, unknown>) => Promise<unknown>
+        }
+        pipelineRun: {
+          deleteMany: (args: Record<string, unknown>) => Promise<unknown>
+        }
         photo: {
           deleteMany: (args: Record<string, unknown>) => Promise<unknown>
           findMany: (args: Record<string, unknown>) => Promise<Array<{ id: string; sortOrder: number }>>
@@ -77,6 +89,8 @@ export function createBatchPhotoHandler(deps: BatchPhotoRouteDeps = {}) {
         const sourceAlbumIds = [...new Set(photos.map(photo => photo.albumId))]
 
         await prismaClient.$transaction(async tx => {
+          await tx.photoAIVariant.deleteMany({ where: { photoId: { in: photoIds } } })
+          await tx.pipelineRun.deleteMany({ where: { photoId: { in: photoIds } } })
           await tx.photo.deleteMany({ where: { id: { in: photoIds } } })
 
           for (const albumId of sourceAlbumIds) {

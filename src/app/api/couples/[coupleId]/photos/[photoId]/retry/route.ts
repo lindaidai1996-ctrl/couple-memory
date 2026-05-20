@@ -30,13 +30,20 @@ type RetryPhotoRouteDeps = {
       updateMany: (args: Record<string, unknown>) => Promise<{ count: number }>
     }
   }
-  processPhotoImpl?: typeof processPhoto
+  processPhotoImpl?: (
+    photoId: string,
+    ossKey: string,
+    clientExif?: unknown,
+    triggerType?: 'UPLOAD' | 'MANUAL_RETRY' | 'CAPTION_REGEN' | 'LAYOUT_REGEN'
+  ) => ReturnType<typeof processPhoto>
 }
 
-type RetryScope = 'FULL' | 'CAPTION_ONLY'
+type RetryScope = 'FULL' | 'CAPTION_ONLY' | 'LAYOUT_ONLY'
 
 function resolveRetryTriggerType(scope: RetryScope) {
-  return scope === 'CAPTION_ONLY' ? 'CAPTION_REGEN' as const : 'MANUAL_RETRY' as const
+  if (scope === 'CAPTION_ONLY') return 'CAPTION_REGEN' as const
+  if (scope === 'LAYOUT_ONLY') return 'LAYOUT_REGEN' as const
+  return 'MANUAL_RETRY' as const
 }
 
 async function loadPrismaClient() {
@@ -45,14 +52,14 @@ async function loadPrismaClient() {
 }
 
 export function createRetryPhotoHandler(deps: RetryPhotoRouteDeps = {}) {
-  const processPhotoImpl = deps.processPhotoImpl ?? processPhoto
+  const processPhotoImpl = deps.processPhotoImpl ?? processPhoto as NonNullable<RetryPhotoRouteDeps['processPhotoImpl']>
 
   return async (_req: Request, { coupleUser }: AuthContext, params: Record<string, string>) => {
     try {
       const body = await _req.json().catch(() => ({}))
       const scope = body?.scope
-      if (scope !== 'FULL' && scope !== 'CAPTION_ONLY') {
-        return createErrorResponse(400, 'INVALID_RETRY_SCOPE', 'scope must be FULL or CAPTION_ONLY')
+      if (scope !== 'FULL' && scope !== 'CAPTION_ONLY' && scope !== 'LAYOUT_ONLY') {
+        return createErrorResponse(400, 'INVALID_RETRY_SCOPE', 'scope must be FULL, CAPTION_ONLY, or LAYOUT_ONLY')
       }
 
       const prismaClient = deps.prismaClient ?? await loadPrismaClient()
@@ -82,11 +89,11 @@ export function createRetryPhotoHandler(deps: RetryPhotoRouteDeps = {}) {
       }
 
       const latestRunStatus = photo.pipelineRuns?.[0]?.status ?? null
-      const canRetryFailedPhoto = photo.status === 'FAILED'
-      const canRegenerateCaption =
-        scope === 'CAPTION_ONLY' && latestRunStatus === 'DEGRADED'
+      const canRetryFailedPhoto = scope === 'FULL' && photo.status === 'FAILED'
+      const canRegeneratePartial =
+        scope !== 'FULL' && (photo.status === 'READY' || latestRunStatus === 'DEGRADED')
 
-      if (!canRetryFailedPhoto && !canRegenerateCaption) {
+      if (!canRetryFailedPhoto && !canRegeneratePartial) {
         return createErrorResponse(409, 'PHOTO_RETRY_NOT_ALLOWED', 'Photo is not eligible for retry')
       }
 
@@ -96,7 +103,7 @@ export function createRetryPhotoHandler(deps: RetryPhotoRouteDeps = {}) {
       }
 
       const claimed = await prismaClient.photo.updateMany({
-        where: { id: params.photoId, status: 'FAILED' },
+        where: { id: params.photoId, status: photo.status },
         data: { status: 'PROCESSING', processingError: null },
       })
       if (claimed.count !== 1) {
