@@ -19,8 +19,40 @@ type AlbumRouteDeps = {
   }
 }
 
+type AlbumPatchBody = {
+  title?: unknown
+  description?: unknown
+}
+
 async function loadPrismaClient() {
   return prisma as unknown as NonNullable<AlbumRouteDeps['prismaClient']>
+}
+
+function normalizeOptionalString(value: unknown) {
+  if (typeof value !== 'string') {
+    return undefined
+  }
+
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
+export function buildAlbumUpdateData(body: AlbumPatchBody) {
+  const data: Record<string, unknown> = {}
+
+  const title = normalizeOptionalString(body.title)
+  if (title) {
+    data.title = title
+  }
+
+  if (body.description !== undefined) {
+    const description = normalizeOptionalString(body.description)
+    if (description !== undefined) {
+      data.description = description
+    }
+  }
+
+  return data
 }
 
 export function createGetAlbumHandler(deps: AlbumRouteDeps = {}) {
@@ -58,18 +90,23 @@ export function createGetAlbumHandler(deps: AlbumRouteDeps = {}) {
 
 export const GET = withAuth(createGetAlbumHandler())
 
-export const PATCH = withAuth(async (req, { coupleUser }, params) => {
-  const body = await req.json()
-  const album = await prisma.album.updateMany({
-    where: { id: params.albumId, coupleId: coupleUser.coupleId },
-    data: body,
-  })
-  if (album.count === 0) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+export function createPatchAlbumHandler(deps: AlbumRouteDeps = {}) {
+  return async (req: Request, { coupleUser }: AuthContext, params: Record<string, string>) => {
+    const prismaClient = deps.prismaClient ?? await loadPrismaClient()
+    const body = await req.json() as AlbumPatchBody
+    const album = await prismaClient.album.updateMany({
+      where: { id: params.albumId, coupleId: coupleUser.coupleId },
+      data: buildAlbumUpdateData(body),
+    })
+    if (album.count === 0) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+    const updated = await prismaClient.album.findUnique({ where: { id: params.albumId } })
+    return NextResponse.json(updated)
   }
-  const updated = await prisma.album.findUnique({ where: { id: params.albumId } })
-  return NextResponse.json(updated)
-})
+}
+
+export const PATCH = withAuth(createPatchAlbumHandler())
 
 export const DELETE = withAuth(
   async (req, { coupleUser }, params) => {
