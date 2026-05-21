@@ -110,7 +110,13 @@ export function buildAlbumNarrativeSnapshot({
 }: {
   title: string
   description: string | null
-  chapters: Array<{ aiSummary?: string | null }>
+  chapters: Array<{
+    id?: string
+    title?: string
+    backgroundNote?: string | null
+    aiSummary?: string | null
+    photos?: Array<{ id: string }>
+  }>
   ungroupedPhotos: Array<{ id: string }>
 }) {
   const summarizedChapterCount = chapters.filter(chapter => Boolean(chapter.aiSummary)).length
