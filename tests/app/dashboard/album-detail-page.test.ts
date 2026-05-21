@@ -6,6 +6,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import {
   buildAlbumDetailUiText,
   buildAlbumDetailSections,
+  buildAlbumMetaDraft,
+  buildAlbumMetaUpdatePayload,
   buildAlbumNarrativeSnapshot,
   buildChapterSummaryActionState,
 } from '../../../src/app/(dashboard)/albums/[albumId]/page'
@@ -39,6 +41,8 @@ test('buildAlbumDetailUiText exposes localized chapter page copy', () => {
   assert.equal(uiText.detailDrawer.save, 'detailDrawerSave')
   assert.equal(uiText.createChapterFailed, 'createChapterFailed')
   assert.equal(uiText.summaryUpdated, 'summaryUpdated')
+  assert.equal(uiText.narrative.editAlbum, 'narrativeEditAlbum')
+  assert.equal(uiText.narrative.saveAlbum, 'narrativeSaveAlbum')
 })
 
 test('buildAlbumDetailSections returns chapter area before ungrouped area', () => {
@@ -117,6 +121,32 @@ test('buildAlbumNarrativeSnapshot highlights missing story structure and descrip
       hasNarrativeFoundation: false,
       shouldPromptDescription: true,
       shouldPromptOrganization: true,
+    }
+  )
+})
+
+test('buildAlbumMetaDraft derives editable album title and description values', () => {
+  assert.deepEqual(
+    buildAlbumMetaDraft({
+      title: '2024 夏天',
+      description: null,
+    }),
+    {
+      title: '2024 夏天',
+      description: '',
+    }
+  )
+})
+
+test('buildAlbumMetaUpdatePayload trims title and clears blank description', () => {
+  assert.deepEqual(
+    buildAlbumMetaUpdatePayload({
+      title: ' 2024 夏天 ',
+      description: '   ',
+    }),
+    {
+      title: '2024 夏天',
+      description: null,
     }
   )
 })

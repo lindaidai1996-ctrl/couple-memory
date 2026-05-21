@@ -58,9 +58,16 @@ export function buildAlbumDetailUiText(t: Translator) {
       ungroupedCount: t('narrativeUngroupedCount'),
       descriptionReady: t('narrativeDescriptionReady'),
       descriptionMissing: t('narrativeDescriptionMissing'),
+      editAlbum: t('narrativeEditAlbum'),
+      saveAlbum: t('narrativeSaveAlbum'),
+      savingAlbum: t('narrativeSavingAlbum'),
+      titleLabel: t('narrativeTitleLabel'),
+      descriptionLabel: t('narrativeDescriptionLabel'),
       readyHint: t('narrativeReadyHint'),
       needDescriptionHint: t('narrativeNeedDescriptionHint'),
       needOrganizationHint: t('narrativeNeedOrganizationHint'),
+      saveFailed: t('narrativeSaveFailed'),
+      saveSuccess: t('narrativeSaveSuccess'),
     },
     chapterCard: {
       editChapter: t('chapterCardEditChapter'),
@@ -132,6 +139,26 @@ export function buildAlbumNarrativeSnapshot({
     hasNarrativeFoundation,
     shouldPromptDescription: !hasDescription,
     shouldPromptOrganization: chapters.length === 0 || ungroupedCount > 0,
+  }
+}
+
+export function buildAlbumMetaDraft(album: {
+  title: string
+  description: string | null
+}) {
+  return {
+    title: album.title,
+    description: album.description ?? '',
+  }
+}
+
+export function buildAlbumMetaUpdatePayload(input: {
+  title: string
+  description: string
+}) {
+  return {
+    title: input.title.trim(),
+    description: input.description.trim() || null,
   }
 }
 
@@ -217,6 +244,9 @@ export default function AlbumDetailPage() {
   const [actionError, setActionError] = useState<string | null>(null)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [summaryActionChapterId, setSummaryActionChapterId] = useState<string | null>(null)
+  const [editingAlbumMeta, setEditingAlbumMeta] = useState(false)
+  const [albumMetaDraft, setAlbumMetaDraft] = useState({ title: '', description: '' })
+  const [savingAlbumMeta, setSavingAlbumMeta] = useState(false)
   const uiText = buildAlbumDetailUiText(t)
 
   useEffect(() => {
@@ -230,6 +260,7 @@ export default function AlbumDetailPage() {
       if (albumRes.ok) {
         const data = await albumRes.json()
         setAlbum(data)
+        setAlbumMetaDraft(buildAlbumMetaDraft(data))
       }
 
       setLoading(false)
@@ -453,6 +484,46 @@ export default function AlbumDetailPage() {
     setRefreshKey(key => key + 1)
   }
 
+  async function handleSaveAlbumMeta() {
+    if (!coupleId || !album) return
+
+    setActionError(null)
+    setActionMessage(null)
+    setSavingAlbumMeta(true)
+
+    const payload = buildAlbumMetaUpdatePayload(albumMetaDraft)
+    const res = await fetch(`/api/couples/${coupleId}/albums/${albumId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    setSavingAlbumMeta(false)
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => null)
+      setActionError(data?.error?.message || uiText.narrative.saveFailed)
+      return
+    }
+
+    const updated = await res.json()
+    setAlbum(prev => prev ? {
+      ...prev,
+      title: typeof updated.title === 'string' ? updated.title : prev.title,
+      description: typeof updated.description === 'string' || updated.description === null
+        ? updated.description
+        : prev.description,
+    } : prev)
+    setAlbumMetaDraft(buildAlbumMetaDraft({
+      title: typeof updated.title === 'string' ? updated.title : album.title,
+      description: typeof updated.description === 'string' || updated.description === null
+        ? updated.description
+        : album.description,
+    }))
+    setEditingAlbumMeta(false)
+    setActionMessage(uiText.narrative.saveSuccess)
+  }
+
   if (loading) return <PhotoGridSkeleton />
   if (!album) return null
 
@@ -498,6 +569,61 @@ export default function AlbumDetailPage() {
           <h2 className="text-lg font-semibold text-warm-text">{uiText.narrative.title}</h2>
           <p className="text-sm text-warm-muted">{uiText.narrative.description}</p>
         </div>
+
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => {
+              setAlbumMetaDraft(buildAlbumMetaDraft(album))
+              setEditingAlbumMeta(prev => !prev)
+            }}
+            className="px-3 py-2 rounded-[var(--radius-md)] border border-warm-border text-sm text-warm-text"
+          >
+            {uiText.narrative.editAlbum}
+          </button>
+        </div>
+
+        {editingAlbumMeta ? (
+          <div className="grid gap-3 rounded-[var(--radius-md)] bg-warm-bg p-4">
+            <label className="grid gap-1.5">
+              <span className="text-sm font-medium text-warm-text">{uiText.narrative.titleLabel}</span>
+              <input
+                value={albumMetaDraft.title}
+                onChange={e => setAlbumMetaDraft(prev => ({ ...prev, title: e.target.value }))}
+                className="rounded-[var(--radius-md)] border border-warm-border bg-warm-surface px-3 py-2 text-sm text-warm-text"
+              />
+            </label>
+            <label className="grid gap-1.5">
+              <span className="text-sm font-medium text-warm-text">{uiText.narrative.descriptionLabel}</span>
+              <textarea
+                value={albumMetaDraft.description}
+                onChange={e => setAlbumMetaDraft(prev => ({ ...prev, description: e.target.value }))}
+                rows={3}
+                className="rounded-[var(--radius-md)] border border-warm-border bg-warm-surface px-3 py-2 text-sm text-warm-text resize-none"
+              />
+            </label>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setAlbumMetaDraft(buildAlbumMetaDraft(album))
+                  setEditingAlbumMeta(false)
+                }}
+                className="px-3 py-2 rounded-[var(--radius-md)] border border-warm-border text-sm text-warm-text"
+              >
+                {uiText.cancel}
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveAlbumMeta}
+                disabled={savingAlbumMeta || !albumMetaDraft.title.trim()}
+                className="px-3 py-2 rounded-[var(--radius-md)] bg-warm-accent text-sm text-white disabled:opacity-50"
+              >
+                {savingAlbumMeta ? uiText.narrative.savingAlbum : uiText.narrative.saveAlbum}
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-[var(--radius-md)] bg-warm-bg px-3 py-3">
