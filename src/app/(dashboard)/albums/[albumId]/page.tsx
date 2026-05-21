@@ -50,6 +50,18 @@ export function buildAlbumDetailUiText(t: Translator) {
     saveChapterFailed: t('saveChapterFailed'),
     generateSummaryFailed: t('generateSummaryFailed'),
     summaryUpdated: t('summaryUpdated'),
+    narrative: {
+      title: t('narrativeTitle'),
+      description: t('narrativeDescription'),
+      chapterCount: t('narrativeChapterCount'),
+      summarizedCount: t('narrativeSummarizedCount'),
+      ungroupedCount: t('narrativeUngroupedCount'),
+      descriptionReady: t('narrativeDescriptionReady'),
+      descriptionMissing: t('narrativeDescriptionMissing'),
+      readyHint: t('narrativeReadyHint'),
+      needDescriptionHint: t('narrativeNeedDescriptionHint'),
+      needOrganizationHint: t('narrativeNeedOrganizationHint'),
+    },
     chapterCard: {
       editChapter: t('chapterCardEditChapter'),
       refreshSummary: t('chapterCardRefreshSummary'),
@@ -88,6 +100,32 @@ export function buildAlbumDetailUiText(t: Translator) {
       cancel: t('detailDrawerCancel'),
       save: t('detailDrawerSave'),
     },
+  }
+}
+
+export function buildAlbumNarrativeSnapshot({
+  description,
+  chapters,
+  ungroupedPhotos,
+}: {
+  title: string
+  description: string | null
+  chapters: Array<{ aiSummary?: string | null }>
+  ungroupedPhotos: Array<{ id: string }>
+}) {
+  const summarizedChapterCount = chapters.filter(chapter => Boolean(chapter.aiSummary)).length
+  const ungroupedCount = ungroupedPhotos.length
+  const hasDescription = Boolean(description?.trim())
+  const hasNarrativeFoundation = chapters.length > 0 && (summarizedChapterCount > 0 || hasDescription)
+
+  return {
+    chapterCount: chapters.length,
+    summarizedChapterCount,
+    ungroupedCount,
+    hasDescription,
+    hasNarrativeFoundation,
+    shouldPromptDescription: !hasDescription,
+    shouldPromptOrganization: chapters.length === 0 || ungroupedCount > 0,
   }
 }
 
@@ -416,6 +454,12 @@ export default function AlbumDetailPage() {
     chapters: album.chapters,
     ungroupedPhotos: album.ungroupedPhotos,
   })
+  const narrativeSnapshot = buildAlbumNarrativeSnapshot({
+    title: album.title,
+    description: album.description,
+    chapters: album.chapters,
+    ungroupedPhotos: album.ungroupedPhotos,
+  })
   const albumSelectionState = buildAlbumSelectionState({
     selectionMode: albumSelectionMode,
     selectedPhotoIds,
@@ -442,6 +486,46 @@ export default function AlbumDetailPage() {
           )}
         </div>
       </div>
+
+      <section className="rounded-[var(--radius-lg)] border border-warm-border bg-warm-surface p-5 space-y-4">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold text-warm-text">{uiText.narrative.title}</h2>
+          <p className="text-sm text-warm-muted">{uiText.narrative.description}</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="rounded-[var(--radius-md)] bg-warm-bg px-3 py-3">
+            <div className="text-xs text-warm-muted">{uiText.narrative.chapterCount}</div>
+            <div className="mt-1 text-lg font-semibold text-warm-text">{narrativeSnapshot.chapterCount}</div>
+          </div>
+          <div className="rounded-[var(--radius-md)] bg-warm-bg px-3 py-3">
+            <div className="text-xs text-warm-muted">{uiText.narrative.summarizedCount}</div>
+            <div className="mt-1 text-lg font-semibold text-warm-text">{narrativeSnapshot.summarizedChapterCount}</div>
+          </div>
+          <div className="rounded-[var(--radius-md)] bg-warm-bg px-3 py-3">
+            <div className="text-xs text-warm-muted">{uiText.narrative.ungroupedCount}</div>
+            <div className="mt-1 text-lg font-semibold text-warm-text">{narrativeSnapshot.ungroupedCount}</div>
+          </div>
+          <div className="rounded-[var(--radius-md)] bg-warm-bg px-3 py-3">
+            <div className="text-xs text-warm-muted">{uiText.narrative.descriptionReady}</div>
+            <div className="mt-1 text-sm font-medium text-warm-text">
+              {narrativeSnapshot.hasDescription ? uiText.narrative.descriptionReady : uiText.narrative.descriptionMissing}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-2 text-sm">
+          {narrativeSnapshot.hasNarrativeFoundation ? (
+            <p className="text-success">{uiText.narrative.readyHint}</p>
+          ) : null}
+          {narrativeSnapshot.shouldPromptDescription ? (
+            <p className="text-warm-muted">{uiText.narrative.needDescriptionHint}</p>
+          ) : null}
+          {narrativeSnapshot.shouldPromptOrganization ? (
+            <p className="text-warm-muted">{uiText.narrative.needOrganizationHint}</p>
+          ) : null}
+        </div>
+      </section>
 
       {actionError && (
         <div className="rounded-[var(--radius-md)] border border-error/30 bg-error/5 px-4 py-3 text-sm text-error">

@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import {
   buildAlbumDetailUiText,
   buildAlbumDetailSections,
+  buildAlbumNarrativeSnapshot,
   buildChapterSummaryActionState,
 } from '../../../src/app/(dashboard)/albums/[albumId]/page'
 import {
@@ -70,6 +71,54 @@ test('buildAlbumDetailSections shows empty chapter guidance when there are no ch
   assert.equal(sections.hasEmptyChapters, true)
   assert.equal(sections.chapterCount, 0)
   assert.equal(sections.ungroupedCount, 2)
+})
+
+test('buildAlbumNarrativeSnapshot reports a ready narrative album', () => {
+  assert.deepEqual(
+    buildAlbumNarrativeSnapshot({
+      title: '2024 夏天',
+      description: '一起旅行和普通日常都留下来了。',
+      chapters: [
+        {
+          id: 'chapter_1',
+          title: '第一次一起看海',
+          backgroundNote: '那天风很大',
+          aiSummary: '我们在海边待了很久。',
+          photos: [{ id: 'photo_1' }],
+        },
+      ],
+      ungroupedPhotos: [],
+    }),
+    {
+      chapterCount: 1,
+      summarizedChapterCount: 1,
+      ungroupedCount: 0,
+      hasDescription: true,
+      hasNarrativeFoundation: true,
+      shouldPromptDescription: false,
+      shouldPromptOrganization: false,
+    }
+  )
+})
+
+test('buildAlbumNarrativeSnapshot highlights missing story structure and description', () => {
+  assert.deepEqual(
+    buildAlbumNarrativeSnapshot({
+      title: '2024 夏天',
+      description: null,
+      chapters: [],
+      ungroupedPhotos: [{ id: 'photo_2' }, { id: 'photo_3' }],
+    }),
+    {
+      chapterCount: 0,
+      summarizedChapterCount: 0,
+      ungroupedCount: 2,
+      hasDescription: false,
+      hasNarrativeFoundation: false,
+      shouldPromptDescription: true,
+      shouldPromptOrganization: true,
+    }
+  )
 })
 
 test('buildAlbumChapterCardMeta shows summary when available', () => {
