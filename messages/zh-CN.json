@@ -203,6 +203,7 @@
     "narrativeEditAlbum": "编辑相册信息",
     "narrativeSaveAlbum": "保存相册信息",
     "narrativeSavingAlbum": "保存中...",
+    "narrativeGenerateTitleDraft": "生成标题草稿",
     "narrativeGenerateDescriptionDraft": "生成说明草稿",
     "narrativeTitleLabel": "相册标题",
     "narrativeDescriptionLabel": "相册说明",

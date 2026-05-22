@@ -203,6 +203,7 @@
     "narrativeEditAlbum": "Edit album details",
     "narrativeSaveAlbum": "Save album details",
     "narrativeSavingAlbum": "Saving...",
+    "narrativeGenerateTitleDraft": "Generate title draft",
     "narrativeGenerateDescriptionDraft": "Generate description draft",
     "narrativeTitleLabel": "Album title",
     "narrativeDescriptionLabel": "Album description",

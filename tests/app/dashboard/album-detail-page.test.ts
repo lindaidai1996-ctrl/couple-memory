@@ -8,6 +8,7 @@ import {
   buildAlbumDetailUiText,
   buildAlbumDetailSections,
   buildAlbumMetaDraft,
+  buildAlbumTitleDraftSuggestion,
   buildAlbumMetaUpdatePayload,
   buildAlbumNarrativeSnapshot,
   buildChapterSummaryActionState,
@@ -45,6 +46,7 @@ test('buildAlbumDetailUiText exposes localized chapter page copy', () => {
   assert.equal(uiText.narrative.editAlbum, 'narrativeEditAlbum')
   assert.equal(uiText.narrative.saveAlbum, 'narrativeSaveAlbum')
   assert.equal(uiText.narrative.generateDescriptionDraft, 'narrativeGenerateDescriptionDraft')
+  assert.equal(uiText.narrative.generateTitleDraft, 'narrativeGenerateTitleDraft')
 })
 
 test('buildAlbumDetailSections returns chapter area before ungrouped area', () => {
@@ -184,6 +186,37 @@ test('buildAlbumDescriptionDraftSuggestion falls back to chapter titles when sum
       ],
     }),
     '这本相册记录了“第一次一起看海”这一段回忆。'
+  )
+})
+
+test('buildAlbumTitleDraftSuggestion uses a single chapter title when only one chapter exists', () => {
+  assert.equal(
+    buildAlbumTitleDraftSuggestion({
+      title: '2024',
+      chapters: [
+        {
+          title: '赛里木湖婚纱照的时刻',
+        },
+      ],
+    }),
+    '赛里木湖婚纱照'
+  )
+})
+
+test('buildAlbumTitleDraftSuggestion combines two chapter titles into a concise album title', () => {
+  assert.equal(
+    buildAlbumTitleDraftSuggestion({
+      title: '2024',
+      chapters: [
+        {
+          title: '赛里木湖婚纱照的时刻',
+        },
+        {
+          title: '库尔德宁的晚风',
+        },
+      ],
+    }),
+    '赛里木湖与库尔德宁'
   )
 })
 
