@@ -19,3 +19,25 @@ test('buildOrganizationReadiness scores albums with more chapter coverage higher
   assert.equal(high.score > low.score, true)
   assert.equal(low.suggestions.length > 0, true)
 })
+
+test('buildOrganizationReadiness returns direct repair actions for unorganized albums', async () => {
+  const mod = await import('../../src/lib/readiness/organization-readiness').catch(() => null)
+  assert.ok(mod && typeof mod.buildOrganizationReadiness === 'function')
+
+  const readiness = mod.buildOrganizationReadiness({
+    totalPhotos: 12,
+    chapterPhotoCount: 2,
+    chapterCount: 0,
+  })
+
+  assert.deepEqual(readiness.actions, [
+    {
+      label: '去整理相册章节',
+      href: '/albums',
+    },
+    {
+      label: '继续整理其他瞬间',
+      href: '/albums',
+    },
+  ])
+})

@@ -4,8 +4,10 @@ import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 
 import {
+  buildAlbumCoverCandidates,
   buildAlbumDescriptionDraftSuggestion,
   buildAlbumDetailUiText,
+  buildAlbumNarrativeComparison,
   buildAlbumDetailSections,
   buildAlbumMetaDraft,
   buildAlbumTitleDraftSuggestion,
@@ -47,6 +49,13 @@ test('buildAlbumDetailUiText exposes localized chapter page copy', () => {
   assert.equal(uiText.narrative.saveAlbum, 'narrativeSaveAlbum')
   assert.equal(uiText.narrative.generateDescriptionDraft, 'narrativeGenerateDescriptionDraft')
   assert.equal(uiText.narrative.generateTitleDraft, 'narrativeGenerateTitleDraft')
+  assert.equal(uiText.narrative.coverCandidates, 'narrativeCoverCandidates')
+  assert.equal(uiText.narrative.setAsCover, 'narrativeSetAsCover')
+  assert.equal(uiText.narrative.currentCover, 'narrativeCurrentCover')
+  assert.equal(uiText.narrative.aiTitleLabel, 'narrativeAiTitleLabel')
+  assert.equal(uiText.narrative.currentTitleLabel, 'narrativeCurrentTitleLabel')
+  assert.equal(uiText.narrative.aiDescriptionLabel, 'narrativeAiDescriptionLabel')
+  assert.equal(uiText.narrative.currentDescriptionLabel, 'narrativeCurrentDescriptionLabel')
 })
 
 test('buildAlbumDetailSections returns chapter area before ungrouped area', () => {
@@ -218,6 +227,123 @@ test('buildAlbumTitleDraftSuggestion combines two chapter titles into a concise 
     }),
     '赛里木湖与库尔德宁'
   )
+})
+
+test('buildAlbumNarrativeComparison distinguishes AI drafts from current album text', () => {
+  assert.deepEqual(
+    buildAlbumNarrativeComparison({
+      album: {
+        title: '2024 夏天',
+        description: '这是当前保存的相册说明。',
+        chapters: [
+          {
+            title: '第一次一起看海',
+            aiSummary: '我们在海边待了很久。',
+          },
+          {
+            title: '回家路上的晚风',
+            aiSummary: '那天回去的路上很安静。',
+          },
+        ],
+      },
+    }),
+    {
+      aiTitle: '第一次一起看海与回家路上',
+      currentTitle: '2024 夏天',
+      aiDescription: '这本相册收着“第一次一起看海”和“回家路上的晚风”这些回忆。我们在海边待了很久。那天回去的路上很安静。',
+      currentDescription: '这是当前保存的相册说明。',
+      hasAiTitle: true,
+      hasAiDescription: true,
+      titleDiffers: true,
+      descriptionDiffers: true,
+    }
+  )
+})
+
+test('buildAlbumCoverCandidates keeps only ready photos and prioritizes the current cover', () => {
+  const candidates = buildAlbumCoverCandidates([
+    {
+      id: 'photo_2',
+      fileName: 'cover.jpg',
+      thumbnailUrl: 'https://img.example.com/cover-thumb.jpg',
+      displayUrl: 'https://img.example.com/cover.jpg',
+      status: 'READY',
+      aiCaption: '现在的封面',
+      userCaption: null,
+      takenAt: null,
+      locationName: null,
+      aiLayout: 'story-card',
+      aiScene: null,
+      aiMood: null,
+      cameraMake: null,
+      cameraModel: null,
+      focalLength: null,
+      aperture: null,
+      shutterSpeed: null,
+      iso: null,
+      isAlbumCover: true,
+      canBeCover: true,
+    },
+    {
+      id: 'photo_1',
+      fileName: 'candidate.jpg',
+      thumbnailUrl: 'https://img.example.com/candidate-thumb.jpg',
+      displayUrl: 'https://img.example.com/candidate.jpg',
+      status: 'READY',
+      aiCaption: '候选封面',
+      userCaption: null,
+      takenAt: null,
+      locationName: null,
+      aiLayout: 'story-card',
+      aiScene: null,
+      aiMood: null,
+      cameraMake: null,
+      cameraModel: null,
+      focalLength: null,
+      aperture: null,
+      shutterSpeed: null,
+      iso: null,
+      isAlbumCover: false,
+      canBeCover: true,
+    },
+    {
+      id: 'photo_3',
+      fileName: 'processing.jpg',
+      thumbnailUrl: null,
+      displayUrl: null,
+      status: 'PROCESSING',
+      aiCaption: null,
+      userCaption: null,
+      takenAt: null,
+      locationName: null,
+      aiLayout: 'story-card',
+      aiScene: null,
+      aiMood: null,
+      cameraMake: null,
+      cameraModel: null,
+      focalLength: null,
+      aperture: null,
+      shutterSpeed: null,
+      iso: null,
+      isAlbumCover: false,
+      canBeCover: false,
+    },
+  ])
+
+  assert.deepEqual(candidates, [
+    {
+      id: 'photo_2',
+      previewUrl: 'https://img.example.com/cover-thumb.jpg',
+      label: '现在的封面',
+      isCurrent: true,
+    },
+    {
+      id: 'photo_1',
+      previewUrl: 'https://img.example.com/candidate-thumb.jpg',
+      label: '候选封面',
+      isCurrent: false,
+    },
+  ])
 })
 
 test('buildAlbumChapterCardMeta shows summary when available', () => {

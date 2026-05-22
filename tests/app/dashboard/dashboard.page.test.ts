@@ -28,9 +28,12 @@ test('buildDashboardReadinessCard returns readiness copy for dashboard rendering
   assert.deepEqual(buildDashboardReadinessCard({
     score: 68,
     suggestions: ['还有不少照片停留在“其他瞬间”，可以继续整理章节。'],
+    actions: [{ label: '继续整理其他瞬间', href: '/albums' }],
   }), {
     score: 68,
     hasSuggestions: true,
     suggestionCount: 1,
+    hasActions: true,
+    actionCount: 1,
   })
 })

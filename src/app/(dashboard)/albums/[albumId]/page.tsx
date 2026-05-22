@@ -63,6 +63,13 @@ export function buildAlbumDetailUiText(t: Translator) {
       savingAlbum: t('narrativeSavingAlbum'),
       generateTitleDraft: t('narrativeGenerateTitleDraft'),
       generateDescriptionDraft: t('narrativeGenerateDescriptionDraft'),
+      coverCandidates: t('narrativeCoverCandidates'),
+      setAsCover: t('narrativeSetAsCover'),
+      currentCover: t('narrativeCurrentCover'),
+      aiTitleLabel: t('narrativeAiTitleLabel'),
+      currentTitleLabel: t('narrativeCurrentTitleLabel'),
+      aiDescriptionLabel: t('narrativeAiDescriptionLabel'),
+      currentDescriptionLabel: t('narrativeCurrentDescriptionLabel'),
       titleLabel: t('narrativeTitleLabel'),
       descriptionLabel: t('narrativeDescriptionLabel'),
       readyHint: t('narrativeReadyHint'),
@@ -110,6 +117,19 @@ export function buildAlbumDetailUiText(t: Translator) {
       save: t('detailDrawerSave'),
     },
   }
+}
+
+export function buildAlbumCoverCandidates(photos: PhotoData[]) {
+  return photos
+    .filter(photo => photo.status === 'READY' && Boolean(photo.displayUrl) && photo.canBeCover)
+    .sort((a, b) => Number(Boolean(b.isAlbumCover)) - Number(Boolean(a.isAlbumCover)))
+    .slice(0, 4)
+    .map(photo => ({
+      id: photo.id,
+      previewUrl: photo.thumbnailUrl || photo.displayUrl || '',
+      label: photo.userCaption || photo.aiCaption || photo.fileName,
+      isCurrent: Boolean(photo.isAlbumCover),
+    }))
 }
 
 export function buildAlbumNarrativeSnapshot({
@@ -161,6 +181,41 @@ export function buildAlbumMetaUpdatePayload(input: {
   return {
     title: input.title.trim(),
     description: input.description.trim() || null,
+  }
+}
+
+export function buildAlbumNarrativeComparison({
+  album,
+}: {
+  album: {
+    title: string
+    description: string | null
+    chapters: Array<{
+      title?: string
+      aiSummary?: string | null
+    }>
+  }
+}) {
+  const aiTitle = buildAlbumTitleDraftSuggestion({
+    title: album.title,
+    chapters: album.chapters,
+  })
+  const aiDescription = buildAlbumDescriptionDraftSuggestion({
+    title: album.title,
+    chapters: album.chapters,
+  })
+  const currentTitle = album.title
+  const currentDescription = album.description ?? ''
+
+  return {
+    aiTitle,
+    currentTitle,
+    aiDescription,
+    currentDescription,
+    hasAiTitle: Boolean(aiTitle),
+    hasAiDescription: Boolean(aiDescription),
+    titleDiffers: Boolean(aiTitle) && aiTitle !== currentTitle,
+    descriptionDiffers: Boolean(aiDescription) && aiDescription !== currentDescription,
   }
 }
 
@@ -601,6 +656,8 @@ export default function AlbumDetailPage() {
     chapters: album.chapters,
     ungroupedPhotos: album.ungroupedPhotos,
   })
+  const narrativeComparison = buildAlbumNarrativeComparison({ album })
+  const coverCandidates = buildAlbumCoverCandidates(allVisiblePhotos)
   const albumSelectionState = buildAlbumSelectionState({
     selectionMode: albumSelectionMode,
     selectedPhotoIds,
@@ -645,6 +702,44 @@ export default function AlbumDetailPage() {
           >
             {uiText.narrative.editAlbum}
           </button>
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-2">
+          <div className="rounded-[var(--radius-md)] bg-warm-bg p-4 space-y-3">
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-warm-accent">
+                {uiText.narrative.aiTitleLabel}
+              </p>
+              <p className="text-base font-semibold text-warm-text">
+                {narrativeComparison.aiTitle || album.title}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-warm-accent">
+                {uiText.narrative.aiDescriptionLabel}
+              </p>
+              <p className="text-sm leading-6 text-warm-muted">
+                {narrativeComparison.aiDescription || uiText.narrative.needDescriptionHint}
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-[var(--radius-md)] border border-warm-border p-4 space-y-3">
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-warm-muted">
+                {uiText.narrative.currentTitleLabel}
+              </p>
+              <p className="text-base font-semibold text-warm-text">{narrativeComparison.currentTitle}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-warm-muted">
+                {uiText.narrative.currentDescriptionLabel}
+              </p>
+              <p className="text-sm leading-6 text-warm-muted">
+                {narrativeComparison.currentDescription || uiText.narrative.descriptionMissing}
+              </p>
+            </div>
+          </div>
         </div>
 
         {editingAlbumMeta ? (
@@ -751,6 +846,49 @@ export default function AlbumDetailPage() {
             <p className="text-warm-muted">{uiText.narrative.needOrganizationHint}</p>
           ) : null}
         </div>
+
+        {coverCandidates.length > 0 ? (
+          <div className="space-y-3 border-t border-warm-border pt-4">
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold text-warm-text">{uiText.narrative.coverCandidates}</h3>
+              <p className="text-sm text-warm-muted">{uiText.narrative.description}</p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {coverCandidates.map(candidate => (
+                <div
+                  key={candidate.id}
+                  className="overflow-hidden rounded-[var(--radius-md)] border border-warm-border bg-warm-bg"
+                >
+                  <div className="aspect-[4/3] overflow-hidden bg-warm-surface">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={candidate.previewUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="space-y-3 p-3">
+                    <p className="line-clamp-2 text-sm text-warm-text">{candidate.label}</p>
+                    {candidate.isCurrent ? (
+                      <span className="inline-flex rounded-full bg-warm-accent/10 px-2.5 py-1 text-xs font-medium text-warm-accent">
+                        {uiText.narrative.currentCover}
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleSetCover(candidate.id)}
+                        className="inline-flex rounded-[var(--radius-md)] border border-warm-border px-3 py-1.5 text-sm text-warm-text"
+                      >
+                        {uiText.narrative.setAsCover}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </section>
 
       {actionError && (

@@ -17,6 +17,48 @@ type AnalysisLike = {
   source?: string
 }
 
+function buildCaptionPreferencePrompt(preferences: PipelineInput['preferences']) {
+  const lines: string[] = []
+
+  if (preferences?.captionStylePreference) {
+    lines.push(`优先风格：${preferences.captionStylePreference}`)
+  }
+  if (preferences?.tonePreference) {
+    lines.push(`语气倾向：${preferences.tonePreference}`)
+  }
+  if (preferences?.blockedPhrases && preferences.blockedPhrases.length > 0) {
+    lines.push(`禁用表达：${preferences.blockedPhrases.join('、')}`)
+  }
+
+  return lines
+}
+
+export function buildCaptionGenerationPrompts(
+  input: PipelineInput,
+  analysis: unknown
+) {
+  const preferenceLines = buildCaptionPreferencePrompt(input.preferences)
+  const preferenceText = preferenceLines.length > 0
+    ? `\n额外偏好：\n${preferenceLines.map(line => `- ${line}`).join('\n')}`
+    : ''
+
+  return {
+    systemPrompt: `你是一位擅长情感表达的文案撰写者。请基于图片可见事实和补充信息生成文案。
+要求：
+1) 不要臆测图片中不存在的细节；
+2) 文案 50-120 字；
+3) 关键词 3-5 个，具体、可检索；
+4) 提供 2-3 个文案变体，每个变体包含 text 和 style；
+5) 只输出 JSON：{"caption":"...","keywords":["..."],"style":"romantic|poetic|diary|photography-note","variants":[{"text":"...","style":"..."}]}${preferenceText}`,
+    userPrompt: `补充信息：${JSON.stringify({
+      analysis,
+      locationName: input.locationName || null,
+      takenAt: input.exif?.takenAt || null,
+      preferences: input.preferences ?? null,
+    })}`,
+  }
+}
+
 function parseJSON(text: string): unknown {
   const cleaned = text.replace(/```json\s*|```/g, '').trim()
   return JSON.parse(cleaned)
@@ -90,6 +132,7 @@ async function writeWithClaude(
   input: PipelineInput,
   analysis: unknown
 ): Promise<{ text: string; tokens: number; cost: number }> {
+  const prompts = buildCaptionGenerationPrompts(input, analysis)
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -107,18 +150,7 @@ async function writeWithClaude(
           { type: 'image', source: { type: 'url', url: input.photoUrl } },
           {
             type: 'text',
-            text: `你是一位擅长情感表达的文案撰写者。请基于图片可见事实和补充信息生成文案。
-要求：
-1) 不要臆测图片中不存在的细节；
-2) 文案 50-120 字；
-3) 关键词 3-5 个，具体、可检索；
-4) 提供 2-3 个文案变体，每个变体包含 text 和 style；
-5) 只输出 JSON：{"caption":"...","keywords":["..."],"style":"romantic|poetic|diary|photography-note","variants":[{"text":"...","style":"..."}]}
-补充信息：${JSON.stringify({
-              analysis,
-              locationName: input.locationName || null,
-              takenAt: input.exif?.takenAt || null,
-            })}`,
+            text: `${prompts.systemPrompt}\n${prompts.userPrompt}`,
           },
         ],
       }],
@@ -162,19 +194,7 @@ async function writeWithOpenAI(
   input: PipelineInput,
   analysis: unknown,
 ): Promise<{ text: string; tokens: number; cost: number }> {
-  const systemPrompt = `你是一位擅长情感表达的文案撰写者。请基于图片可见事实和补充信息生成文案。
-要求：
-1) 不要臆测图片中不存在的细节；
-2) 文案 50-120 字；
-3) 关键词 3-5 个，具体、可检索；
-4) 提供 2-3 个文案变体，每个变体包含 text 和 style；
-5) 只输出 JSON：{"caption":"...","keywords":["..."],"style":"romantic|poetic|diary|photography-note","variants":[{"text":"...","style":"..."}]}`
-
-  const userPrompt = `补充信息：${JSON.stringify({
-    analysis,
-    locationName: input.locationName || null,
-    takenAt: input.exif?.takenAt || null,
-  })}`
+  const { systemPrompt, userPrompt } = buildCaptionGenerationPrompts(input, analysis)
 
   return callOpenAIVision(systemPrompt, userPrompt, input.photoUrl, {
     temperature: 0.3,
@@ -186,19 +206,7 @@ async function writeWithQwen(
   input: PipelineInput,
   analysis: unknown,
 ): Promise<{ text: string; tokens: number; cost: number }> {
-  const systemPrompt = `你是一位擅长情感表达的文案撰写者。请基于图片可见事实和补充信息生成文案。
-要求：
-1) 不要臆测图片中不存在的细节；
-2) 文案 50-120 字；
-3) 关键词 3-5 个，具体、可检索；
-4) 提供 2-3 个文案变体，每个变体包含 text 和 style；
-5) 只输出 JSON：{"caption":"...","keywords":["..."],"style":"romantic|poetic|diary|photography-note","variants":[{"text":"...","style":"..."}]}`
-
-  const userPrompt = `补充信息：${JSON.stringify({
-    analysis,
-    locationName: input.locationName || null,
-    takenAt: input.exif?.takenAt || null,
-  })}`
+  const { systemPrompt, userPrompt } = buildCaptionGenerationPrompts(input, analysis)
 
   return callQwenVision(systemPrompt, userPrompt, input.photoUrl, {
     temperature: 0.3,
@@ -230,14 +238,7 @@ export const captionWriter: Agent = {
       return { data: conservative, tokens: 0, cost: 0 }
     }
 
-    const systemPrompt = `你是一位擅长情感表达的文案撰写者。根据照片分析结果，为情侣照片生成温暖走心的文案。
-风格选择：romantic（浪漫絮语）、poetic（诗意短句）、diary（日记体）、photography-note（摄影手记）。
-根据照片情绪自动选择最合适的风格。不要臆测细节。
-以 JSON 输出：{"caption":"默认文案50-120字","keywords":["3-5个具体关键词"],"style":"默认风格","variants":[{"text":"文案变体","style":"风格"}]}`
-
-    const userPrompt = `照片分析：${JSON.stringify(analysis)}
-地点：${input.locationName || '未知'}
-时间：${input.exif?.takenAt || '未知'}`
+    const { systemPrompt, userPrompt } = buildCaptionGenerationPrompts(input, analysis)
 
     const modelResult = process.env.QWEN_API_KEY
       ? await (async () => {

@@ -37,8 +37,17 @@ type ProcessPhotoPrismaClient = {
     update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<unknown>
     findUnique: (args: {
       where: { id: string }
-      include: { album: true }
-    }) => Promise<{ album: { coupleId: string } } | null>
+      include: { album: { include: { couple: true } } }
+    }) => Promise<{
+      album: {
+        coupleId: string
+        couple?: {
+          captionStylePreference?: string | null
+          tonePreference?: string | null
+          blockedPhrases?: string[]
+        }
+      }
+    } | null>
   }
 }
 
@@ -206,7 +215,7 @@ export function createProcessPhoto(deps: ProcessPhotoDeps = {}) {
 
       const photo = await prismaClient.photo.findUnique({
         where: { id: photoId },
-        include: { album: true },
+        include: { album: { include: { couple: true } } },
       })
 
       loggerClient.info(TAG, 'AI Pipeline 开始', { photoId, triggerType })
@@ -217,6 +226,11 @@ export function createProcessPhoto(deps: ProcessPhotoDeps = {}) {
         width: sizes.width || 0,
         height: sizes.height || 0,
         locationName,
+        preferences: {
+          captionStylePreference: photo?.album.couple?.captionStylePreference ?? null,
+          tonePreference: photo?.album.couple?.tonePreference ?? null,
+          blockedPhrases: photo?.album.couple?.blockedPhrases ?? [],
+        },
       }, photo!.album.coupleId, { triggerType })
 
       if (pipelineResult.status === 'COMPLETED' || pipelineResult.status === 'DEGRADED') {

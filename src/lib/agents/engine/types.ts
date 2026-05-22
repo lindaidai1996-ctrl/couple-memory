@@ -16,6 +16,11 @@ export interface PipelineInput {
   width: number
   height: number
   locationName: string | null
+  preferences?: {
+    captionStylePreference?: string | null
+    tonePreference?: string | null
+    blockedPhrases?: string[]
+  }
 }
 
 export interface AgentOutput {

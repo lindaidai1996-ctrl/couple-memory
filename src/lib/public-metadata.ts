@@ -17,6 +17,20 @@ export interface PublicSpacePageData extends PublicSpaceMetadataSource {
   startDate: Date | null
 }
 
+export interface PublicNarrativeChapter {
+  id: string
+  title: string
+  summary: string
+}
+
+export interface PublicNarrativeAlbum {
+  id: string
+  title: string
+  description: string | null
+  coverPhotoUrl: string | null
+  chapters: PublicNarrativeChapter[]
+}
+
 export interface PublicPhotoItem {
   id: string
   displayUrl: string | null
@@ -44,6 +58,20 @@ export interface PublicTimelineItem {
     thumbnailUrl: string | null
     displayUrl: string | null
   } | null
+}
+
+type PublicNarrativeAlbumSource = {
+  id: string
+  title: string
+  description: string | null
+  coverPhotoUrl: string | null
+  sortOrder: number
+  chapters: Array<{
+    id: string
+    title: string
+    aiSummary: string | null
+    sortOrder: number
+  }>
 }
 
 const pageConfig: Record<
@@ -228,6 +256,56 @@ export async function getPublicTimelineByCoupleId(
     ...milestone,
     date: milestone.date.toISOString(),
   }))
+}
+
+export function mapPublicNarrativeAlbums(
+  albums: PublicNarrativeAlbumSource[]
+): PublicNarrativeAlbum[] {
+  return albums
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map(album => ({
+      id: album.id,
+      title: album.title,
+      description: album.description,
+      coverPhotoUrl: album.coverPhotoUrl,
+      chapters: album.chapters
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map(chapter => ({
+          id: chapter.id,
+          title: chapter.title,
+          summary: chapter.aiSummary?.trim() || '',
+        }))
+        .filter(chapter => chapter.summary.length > 0),
+    }))
+    .filter(album => Boolean(album.description?.trim()) || album.chapters.length > 0)
+}
+
+export async function getPublicNarrativeAlbumsByCoupleId(
+  coupleId: string
+): Promise<PublicNarrativeAlbum[]> {
+  const { prisma } = await import('./prisma')
+  const albums = await prisma.album.findMany({
+    where: { coupleId },
+    orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      coverPhotoUrl: true,
+      sortOrder: true,
+      chapters: {
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+        select: {
+          id: true,
+          title: true,
+          aiSummary: true,
+          sortOrder: true,
+        },
+      },
+    },
+  })
+
+  return mapPublicNarrativeAlbums(albums)
 }
 
 export async function resolvePublicMetadata({

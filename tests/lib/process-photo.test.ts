@@ -195,3 +195,60 @@ test('createProcessPhoto ignores EXIF takenAt values that are in the future', as
 
   assert.equal(photoUpdates[0]?.data.takenAt, null)
 })
+
+test('createProcessPhoto passes couple caption preferences into the AI pipeline input', async () => {
+  let receivedPipelineInput: Record<string, unknown> | null = null
+
+  const processPhoto = createProcessPhoto({
+    cdnDomain: 'cdn.example.com',
+    loggerClient: {
+      info: () => undefined,
+      warn: () => undefined,
+      error: () => undefined,
+    },
+    prismaClient: {
+      photo: {
+        update: async (args: { where: unknown; data: Record<string, unknown> }) => ({ id: 'photo_1', ...args.data }),
+        findUnique: async () => ({
+          id: 'photo_1',
+          album: {
+            coupleId: 'couple_1',
+            couple: {
+              captionStylePreference: 'poetic',
+              tonePreference: 'gentle',
+              blockedPhrases: ['幸福', '永远'],
+            },
+          },
+        }),
+      },
+    } as never,
+    downloadFromOSSImpl: async () => Buffer.from('image'),
+    generateSizesImpl: async () => ({
+      thumbnailPath: 'uploads/couple_1/photo_1/thumbnail.jpg',
+      displayPath: 'uploads/couple_1/photo_1/display.jpg',
+      width: 1200,
+      height: 800,
+    }),
+    extractExifImpl: async () => null,
+    reverseGeocodeImpl: async () => null,
+    runAIPipelineImpl: async (input) => {
+      receivedPipelineInput = input as Record<string, unknown>
+      return {
+        status: 'COMPLETED',
+        nodeResults: {},
+        totalTokens: 0,
+        totalCost: 0,
+        duration: 20,
+      }
+    },
+    applyPipelineResultsImpl: async () => undefined,
+  })
+
+  await processPhoto('photo_1', 'uploads/couple_1/photo_1/original.jpg')
+
+  assert.deepEqual(receivedPipelineInput?.preferences, {
+    captionStylePreference: 'poetic',
+    tonePreference: 'gentle',
+    blockedPhrases: ['幸福', '永远'],
+  })
+})

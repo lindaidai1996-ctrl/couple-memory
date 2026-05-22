@@ -1,7 +1,37 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { captionWriter } from '../../../src/lib/agents/caption-writer'
+import {
+  buildCaptionGenerationPrompts,
+  captionWriter,
+} from '../../../src/lib/agents/caption-writer'
+
+test('buildCaptionGenerationPrompts includes couple preferences in prompt context', () => {
+  const prompts = buildCaptionGenerationPrompts(
+    {
+      photoId: 'photo_prompt_preferences',
+      photoUrl: 'https://example.com/photo.jpg',
+      exif: { takenAt: '2026-05-22T10:00:00.000Z' },
+      width: 1200,
+      height: 1600,
+      locationName: '厦门',
+      preferences: {
+        captionStylePreference: 'poetic',
+        tonePreference: 'gentle',
+        blockedPhrases: ['幸福', '浪漫'],
+      },
+    },
+    {
+      mood: '轻松温柔',
+      scene: '海边散步',
+    },
+  )
+
+  assert.match(prompts.systemPrompt, /优先风格：poetic/)
+  assert.match(prompts.systemPrompt, /语气倾向：gentle/)
+  assert.match(prompts.systemPrompt, /禁用表达：幸福、浪漫/)
+  assert.match(prompts.userPrompt, /"locationName":"厦门"/)
+})
 
 test('captionWriter falls back when Claude responds non-OK', async (t) => {
   const originalFetch = globalThis.fetch

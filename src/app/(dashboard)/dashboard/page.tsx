@@ -1,7 +1,10 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ReadinessCard } from '@/components/readiness-card'
-import { buildOrganizationReadiness } from '@/lib/readiness/organization-readiness'
+import {
+  buildOrganizationReadiness,
+  type OrganizationReadinessAction,
+} from '@/lib/readiness/organization-readiness'
 import { getTranslations } from 'next-intl/server'
 import { redirect } from 'next/navigation'
 
@@ -26,14 +29,18 @@ export function buildDashboardCoupleUserQuery(userId: string) {
 export function buildDashboardReadinessCard({
   score,
   suggestions,
+  actions,
 }: {
   score: number
   suggestions: string[]
+  actions: OrganizationReadinessAction[]
 }) {
   return {
     score,
     hasSuggestions: suggestions.length > 0,
     suggestionCount: suggestions.length,
+    hasActions: actions.length > 0,
+    actionCount: actions.length,
   }
 }
 
@@ -134,7 +141,11 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <ReadinessCard score={readiness.score} suggestions={readiness.suggestions} />
+      <ReadinessCard
+        score={readiness.score}
+        suggestions={readiness.suggestions}
+        actions={readiness.actions}
+      />
     </div>
   )
 }
