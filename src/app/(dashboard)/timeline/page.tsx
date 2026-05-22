@@ -16,6 +16,245 @@ interface Milestone {
 
 type Translator = (key: string, values?: Record<string, string | number>) => string
 
+type TimelineNarrativeSummary = {
+  rangeStart: string
+  rangeEnd: string
+  locationLabel: string
+  locationCount: number
+  isMixedLocation: boolean
+  itemCount: number
+}
+
+type TimelineNarrativeGroup = {
+  id: string
+  milestones: Milestone[]
+  summary: TimelineNarrativeSummary
+}
+
+type TimelineReadingMeta = {
+  narrativeText: string
+  hasGeneratedNarrative: boolean
+}
+
+type TimelineReadingCopy = {
+  withLocationAndPhoto: (location: string) => string
+  withLocation: (location: string) => string
+  withPhoto: string
+  generic: string
+}
+
+type TimelineNarrativeCopy = {
+  multiLocationMany: (locationCount: number) => string
+  singleLocationMany: (location: string) => string
+  multiLocationSingle: (locationCount: number) => string
+  singleLocationSingle: (location: string) => string
+  genericMany: (itemCount: number) => string
+  genericSingle: string
+  multiLocationDescription: (locationCount: number) => string
+  manyDescription: (itemCount: number) => string
+  singleDescription: string
+}
+
+type TimelineRecommendationCopy = {
+  withLocationAndPhoto: string
+  withLocation: (location: string) => string
+  withPhoto: string
+  generic: string
+}
+
+const NARRATIVE_GROUP_GAP_DAYS = 45
+const SAME_LOCATION_NEARBY_DAYS = 14
+
+function diffDays(currentDate: string, previousDate: string) {
+  return Math.round(
+    Math.abs(new Date(currentDate).getTime() - new Date(previousDate).getTime()) /
+      (1000 * 60 * 60 * 24)
+  )
+}
+
+export function buildTimelineNarrativeSummary(
+  milestones: Array<Pick<Milestone, 'date' | 'locationName'>>
+): TimelineNarrativeSummary {
+  const rangeStart = milestones[0]?.date ?? ''
+  const rangeEnd = milestones[milestones.length - 1]?.date ?? ''
+  const locations = milestones
+    .map(milestone => milestone.locationName?.trim())
+    .filter((location): location is string => Boolean(location))
+  const uniqueLocations = [...new Set(locations)]
+  const locationCount = uniqueLocations.length
+  const isMixedLocation = locationCount > 1
+
+  return {
+    rangeStart,
+    rangeEnd,
+    locationLabel: isMixedLocation ? '' : (uniqueLocations[0] ?? ''),
+    locationCount,
+    isMixedLocation,
+    itemCount: milestones.length,
+  }
+}
+
+export function buildTimelineNarrativeGroups(milestones: Milestone[]): TimelineNarrativeGroup[] {
+  if (milestones.length === 0) return []
+
+  const sortedMilestones = [...milestones].sort((left, right) => {
+    const dateDiff = new Date(left.date).getTime() - new Date(right.date).getTime()
+    if (dateDiff !== 0) return dateDiff
+
+    return left.id.localeCompare(right.id)
+  })
+  const groups: TimelineNarrativeGroup[] = []
+
+  for (const milestone of sortedMilestones) {
+    const previousGroup = groups[groups.length - 1]
+    const previousMilestone = previousGroup?.milestones[previousGroup.milestones.length - 1]
+
+    if (!previousGroup || !previousMilestone) {
+      groups.push({
+        id: `group-${milestone.id}`,
+        milestones: [milestone],
+        summary: buildTimelineNarrativeSummary([milestone]),
+      })
+      continue
+    }
+
+    const gapDays = diffDays(milestone.date, previousMilestone.date)
+    const normalizedLocation = milestone.locationName?.trim()
+    const normalizedPreviousLocation = previousMilestone.locationName?.trim()
+    const sameLocation = Boolean(normalizedLocation) && normalizedLocation === normalizedPreviousLocation
+
+    if (sameLocation && gapDays <= SAME_LOCATION_NEARBY_DAYS) {
+      previousGroup.milestones.push(milestone)
+      previousGroup.summary = buildTimelineNarrativeSummary(previousGroup.milestones)
+      continue
+    }
+
+    if (gapDays > NARRATIVE_GROUP_GAP_DAYS) {
+      groups.push({
+        id: `group-${milestone.id}`,
+        milestones: [milestone],
+        summary: buildTimelineNarrativeSummary([milestone]),
+      })
+      continue
+    }
+
+    previousGroup.milestones.push(milestone)
+    previousGroup.summary = buildTimelineNarrativeSummary(previousGroup.milestones)
+  }
+
+  return groups
+}
+
+function formatTimelineNarrativeRange(
+  summary: Pick<TimelineNarrativeSummary, 'rangeStart' | 'rangeEnd'>,
+  locale: string
+) {
+  if (!summary.rangeStart) return ''
+
+  const dateFormat: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }
+  const startLabel = new Date(summary.rangeStart).toLocaleDateString(locale, dateFormat)
+
+  if (!summary.rangeEnd || summary.rangeEnd === summary.rangeStart) {
+    return startLabel
+  }
+
+  const endLabel = new Date(summary.rangeEnd).toLocaleDateString(locale, dateFormat)
+  return `${startLabel} - ${endLabel}`
+}
+
+export function buildTimelineNarrativeHeading(
+  summary: TimelineNarrativeSummary,
+  copy: TimelineNarrativeCopy
+) {
+  if (summary.isMixedLocation && summary.itemCount > 1) {
+    return copy.multiLocationMany(summary.locationCount)
+  }
+
+  if (summary.locationLabel && summary.itemCount > 1) {
+    return copy.singleLocationMany(summary.locationLabel)
+  }
+
+  if (summary.isMixedLocation) {
+    return copy.multiLocationSingle(summary.locationCount)
+  }
+
+  if (summary.locationLabel) {
+    return copy.singleLocationSingle(summary.locationLabel)
+  }
+
+  if (summary.itemCount > 1) {
+    return copy.genericMany(summary.itemCount)
+  }
+
+  return copy.genericSingle
+}
+
+export function buildTimelineNarrativeDescription(
+  summary: TimelineNarrativeSummary,
+  copy: TimelineNarrativeCopy
+) {
+  if (summary.isMixedLocation && summary.itemCount > 1) {
+    return copy.multiLocationDescription(summary.locationCount)
+  }
+
+  if (summary.itemCount > 1) {
+    return copy.manyDescription(summary.itemCount)
+  }
+
+  return copy.singleDescription
+}
+
+export function buildTimelineReadingMeta(
+  milestone: Pick<Milestone, 'description' | 'locationName' | 'photoId'>,
+  copy: TimelineReadingCopy = {
+    withLocationAndPhoto: location =>
+      `这是一段和“${location}”有关、也已经关联到具体照片的回忆节点。`,
+    withLocation: location => `这是一段和“${location}”有关的回忆节点。`,
+    withPhoto: '这是从照片里提前提炼出来的一段回忆节点。',
+    generic: '这是一个值得保留在时间线里的阶段节点。',
+  }
+): TimelineReadingMeta {
+  const authoredDescription = milestone.description?.trim()
+  const normalizedLocationName = milestone.locationName?.trim()
+
+  if (authoredDescription) {
+    return {
+      narrativeText: authoredDescription,
+      hasGeneratedNarrative: false,
+    }
+  }
+
+  if (normalizedLocationName && milestone.photoId) {
+    return {
+      narrativeText: copy.withLocationAndPhoto(normalizedLocationName),
+      hasGeneratedNarrative: true,
+    }
+  }
+
+  if (normalizedLocationName) {
+    return {
+      narrativeText: copy.withLocation(normalizedLocationName),
+      hasGeneratedNarrative: true,
+    }
+  }
+
+  if (milestone.photoId) {
+    return {
+      narrativeText: copy.withPhoto,
+      hasGeneratedNarrative: true,
+    }
+  }
+
+  return {
+    narrativeText: copy.generic,
+    hasGeneratedNarrative: true,
+  }
+}
+
 export function buildTimelineUiText(t: Translator) {
   return {
     title: t('title'),
@@ -26,7 +265,19 @@ export function buildTimelineUiText(t: Translator) {
     confirmAllGenerated: t('confirmAllGenerated'),
     ignoreGenerated: t('ignoreGenerated'),
     relatedPhoto: t('relatedPhoto'),
+    narrativeFallbackLabel: t('narrativeFallbackLabel'),
+    readingNarrativeWithLocationAndPhoto: (location: string) =>
+      t('readingNarrativeWithLocationAndPhoto', { location }),
+    readingNarrativeWithLocation: (location: string) =>
+      t('readingNarrativeWithLocation', { location }),
+    readingNarrativeWithPhoto: t('readingNarrativeWithPhoto'),
+    readingNarrativeGeneric: t('readingNarrativeGeneric'),
     recommendationReason: t('recommendationReason'),
+    recommendationReasonWithLocationAndPhoto: t('recommendationReasonWithLocationAndPhoto'),
+    recommendationReasonWithLocation: (location: string) =>
+      t('recommendationReasonWithLocation', { location }),
+    recommendationReasonWithPhoto: t('recommendationReasonWithPhoto'),
+    recommendationReasonGeneric: t('recommendationReasonGeneric'),
     mergeSuggestionTitle: t('mergeSuggestionTitle'),
     mergeSuggestionHint: (location: string, days: number) =>
       t('mergeSuggestionHint', { location, days }),
@@ -35,6 +286,22 @@ export function buildTimelineUiText(t: Translator) {
     pendingSection: t('pendingSection'),
     confirmedSection: t('confirmedSection'),
     pendingReview: (count: number) => t('pendingReview', { count }),
+    narrativeGroupHeadingMultiLocationMany: (locationCount: number) =>
+      t('narrativeGroupHeadingMultiLocationMany', { locationCount }),
+    narrativeGroupHeadingSingleLocationMany: (location: string) =>
+      t('narrativeGroupHeadingSingleLocationMany', { location }),
+    narrativeGroupHeadingMultiLocationSingle: (locationCount: number) =>
+      t('narrativeGroupHeadingMultiLocationSingle', { locationCount }),
+    narrativeGroupHeadingSingleLocationSingle: (location: string) =>
+      t('narrativeGroupHeadingSingleLocationSingle', { location }),
+    narrativeGroupHeadingGenericMany: (itemCount: number) =>
+      t('narrativeGroupHeadingGenericMany', { itemCount }),
+    narrativeGroupHeadingGenericSingle: t('narrativeGroupHeadingGenericSingle'),
+    narrativeGroupDescriptionMultiLocation: (locationCount: number) =>
+      t('narrativeGroupDescriptionMultiLocation', { locationCount }),
+    narrativeGroupDescriptionMany: (itemCount: number) =>
+      t('narrativeGroupDescriptionMany', { itemCount }),
+    narrativeGroupDescriptionSingle: t('narrativeGroupDescriptionSingle'),
   }
 }
 
@@ -46,6 +313,18 @@ export function buildTimelineMilestoneMeta({
   return {
     showAiBadge: isAutoGenerated,
     needsReview: isAutoGenerated,
+  }
+}
+
+export function buildTimelineMilestoneActionState({
+  isAutoGenerated,
+}: {
+  isAutoGenerated: boolean
+}) {
+  return {
+    showConfirmAction: isAutoGenerated,
+    showIgnoreAction: isAutoGenerated,
+    showDeleteAction: !isAutoGenerated,
   }
 }
 
@@ -83,23 +362,32 @@ export function buildMilestoneRecommendationReason({
   isAutoGenerated,
   locationName,
   photoId,
+  copy = {
+    withLocationAndPhoto: '这条候选同时关联了地点和照片，适合作为一段回忆的清晰节点。',
+    withLocation: (location: string) =>
+      `这条候选记录了地点“${location}”，适合你判断它是不是一次值得保留的阶段节点。`,
+    withPhoto: '这条候选已经关联到具体照片，适合快速判断这是不是一段应该进入时间线的回忆。',
+    generic:
+      '这条候选把一张可能重要的时刻提前提了出来，适合你快速确认是否值得留在时间线里。',
+  },
 }: {
   isAutoGenerated: boolean
   locationName: string | null
   photoId: string | null
+  copy?: TimelineRecommendationCopy
 }) {
   if (!isAutoGenerated) return ''
   if (locationName && photoId) {
-    return '这条候选同时关联了地点和照片，适合作为一段回忆的清晰节点。'
+    return copy.withLocationAndPhoto
   }
   if (locationName) {
-    return `这条候选记录了地点“${locationName}”，适合你判断它是不是一次值得保留的阶段节点。`
+    return copy.withLocation(locationName)
   }
   if (photoId) {
-    return '这条候选已经关联到具体照片，适合快速判断这是不是一段应该进入时间线的回忆。'
+    return copy.withPhoto
   }
 
-  return '这条候选把一张可能重要的时刻提前提了出来，适合你快速确认是否值得留在时间线里。'
+  return copy.generic
 }
 
 export function buildTimelineMergeSuggestions<T extends {
@@ -260,8 +548,20 @@ export default function TimelinePage() {
 
   if (loading) return <TimelineSkeleton />
   const uiText = buildTimelineUiText(t)
+  const narrativeCopy = {
+    multiLocationMany: uiText.narrativeGroupHeadingMultiLocationMany,
+    singleLocationMany: uiText.narrativeGroupHeadingSingleLocationMany,
+    multiLocationSingle: uiText.narrativeGroupHeadingMultiLocationSingle,
+    singleLocationSingle: uiText.narrativeGroupHeadingSingleLocationSingle,
+    genericMany: uiText.narrativeGroupHeadingGenericMany,
+    genericSingle: uiText.narrativeGroupHeadingGenericSingle,
+    multiLocationDescription: uiText.narrativeGroupDescriptionMultiLocation,
+    manyDescription: uiText.narrativeGroupDescriptionMany,
+    singleDescription: uiText.narrativeGroupDescriptionSingle,
+  }
   const reviewState = buildTimelineReviewState(milestones)
   const sections = buildTimelineSections(milestones)
+  const confirmedNarrativeGroups = buildTimelineNarrativeGroups(sections.confirmed)
   const mergeSuggestions = buildTimelineMergeSuggestions(milestones)
 
   return (
@@ -377,20 +677,40 @@ export default function TimelinePage() {
                     {uiText.confirmedSection}
                   </h2>
                 </div>
-                {sections.confirmed.map(m => (
-                  <MilestoneCard
-                    key={m.id}
-                    milestone={m}
-                    locale={locale}
-                    editingId={editingId}
-                    setEditingId={setEditingId}
-                    handleUpdate={handleUpdate}
-                    handleDelete={handleDelete}
-                    handleConfirmGenerated={handleConfirmGenerated}
-                    inputClass={inputClass}
-                    t={t}
-                    uiText={uiText}
-                  />
+                {confirmedNarrativeGroups.map(group => (
+                  <div
+                    key={group.id}
+                    className="rounded-[var(--radius-xl)] border border-warm-border/70 bg-warm-surface/50 py-4"
+                  >
+                    <div className="px-6 pb-4 pl-14">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-warm-muted">
+                        {formatTimelineNarrativeRange(group.summary, locale)}
+                      </p>
+                      <h3 className="mt-2 text-base font-semibold text-warm-text">
+                        {buildTimelineNarrativeHeading(group.summary, narrativeCopy)}
+                      </h3>
+                      <p className="mt-1 text-sm text-warm-muted">
+                        {buildTimelineNarrativeDescription(group.summary, narrativeCopy)}
+                      </p>
+                    </div>
+                    <div className="space-y-4">
+                      {group.milestones.map(m => (
+                        <MilestoneCard
+                          key={m.id}
+                          milestone={m}
+                          locale={locale}
+                          editingId={editingId}
+                          setEditingId={setEditingId}
+                          handleUpdate={handleUpdate}
+                          handleDelete={handleDelete}
+                          handleConfirmGenerated={handleConfirmGenerated}
+                          inputClass={inputClass}
+                          t={t}
+                          uiText={uiText}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </section>
             ) : null}
@@ -488,6 +808,13 @@ function MilestoneCard({
   uiText: ReturnType<typeof buildTimelineUiText>
 }) {
   const meta = buildTimelineMilestoneMeta({ isAutoGenerated: m.isAutoGenerated })
+  const actionState = buildTimelineMilestoneActionState({ isAutoGenerated: m.isAutoGenerated })
+  const readingMeta = buildTimelineReadingMeta(m, {
+    withLocationAndPhoto: uiText.readingNarrativeWithLocationAndPhoto,
+    withLocation: uiText.readingNarrativeWithLocation,
+    withPhoto: uiText.readingNarrativeWithPhoto,
+    generic: uiText.readingNarrativeGeneric,
+  })
 
   return (
     <div className="relative pl-14">
@@ -523,25 +850,36 @@ function MilestoneCard({
                   </span>
                 ) : null}
               </div>
-              {m.description ? (
-                <p className="text-sm text-warm-muted mt-1">{m.description}</p>
-              ) : null}
+              <div className="mt-2 space-y-2">
+                <p className="text-sm leading-6 text-warm-text/88">{readingMeta.narrativeText}</p>
+              </div>
               {meta.needsReview ? (
                 <p className="mt-2 text-sm text-info">
                   {uiText.recommendationReason}: {buildMilestoneRecommendationReason({
                     isAutoGenerated: m.isAutoGenerated,
                     locationName: m.locationName,
                     photoId: m.photoId,
+                    copy: {
+                      withLocationAndPhoto: uiText.recommendationReasonWithLocationAndPhoto,
+                      withLocation: uiText.recommendationReasonWithLocation,
+                      withPhoto: uiText.recommendationReasonWithPhoto,
+                      generic: uiText.recommendationReasonGeneric,
+                    },
                   })}
                 </p>
               ) : null}
-              <div className="flex flex-wrap gap-3 mt-2 text-xs text-warm-muted">
+              <div className="flex flex-wrap gap-3 mt-3 text-xs text-warm-muted">
                 <span>{new Date(m.date).toLocaleDateString(locale, {
                   year: 'numeric', month: 'long', day: 'numeric',
                 })}
                 </span>
                 {m.locationName ? <span>{m.locationName}</span> : null}
                 {m.photo ? <span>{uiText.relatedPhoto}</span> : null}
+                {readingMeta.hasGeneratedNarrative ? (
+                  <span className="inline-flex rounded-full bg-warm-bg px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-warm-muted">
+                    {uiText.narrativeFallbackLabel}
+                  </span>
+                ) : null}
               </div>
             </div>
 
@@ -554,16 +892,17 @@ function MilestoneCard({
                   className="w-12 h-12 rounded-[var(--radius-sm)] object-cover"
                 />
               ) : null}
-              <button
-                onClick={() => handleConfirmGenerated(m.id)}
-                className="px-2 py-1 text-[11px] text-info border border-info/30 rounded-[var(--radius-sm)]
-                  hover:bg-info/10 transition-colors"
-                disabled={!meta.needsReview}
-                title={uiText.confirmGenerated}
-              >
-                {uiText.confirmGenerated}
-              </button>
-              {meta.needsReview ? (
+              {actionState.showConfirmAction ? (
+                <button
+                  onClick={() => handleConfirmGenerated(m.id)}
+                  className="px-2 py-1 text-[11px] text-info border border-info/30 rounded-[var(--radius-sm)]
+                    hover:bg-info/10 transition-colors"
+                  title={uiText.confirmGenerated}
+                >
+                  {uiText.confirmGenerated}
+                </button>
+              ) : null}
+              {actionState.showIgnoreAction ? (
                 <button
                   onClick={() => handleDelete(m.id)}
                   className="px-2 py-1 text-[11px] text-warm-muted border border-warm-border rounded-[var(--radius-sm)]
@@ -583,7 +922,7 @@ function MilestoneCard({
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                 </svg>
               </button>
-              {!meta.needsReview ? (
+              {actionState.showDeleteAction ? (
                 <button
                   onClick={() => handleDelete(m.id)}
                   className="p-1.5 text-warm-muted hover:text-error rounded transition-colors"
