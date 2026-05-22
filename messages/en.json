@@ -118,6 +118,8 @@
     "title": "Timeline",
     "create": "Add milestone",
     "empty": "No milestones yet",
+    "reviewGenerated": "Review AI suggestions",
+    "confirmGenerated": "Confirm",
     "createFirst": "Add your first milestone",
     "deleteConfirm": "Delete this milestone?",
     "locationPlaceholder": "Location",
