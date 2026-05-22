@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Velvet Plum Login C1</title>
+  <style>
+    :root {
+      --font-display: "Baskerville", "Times New Roman", "Georgia", "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
+      --font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Source Han Sans SC", "Helvetica Neue", Arial, sans-serif;
+      --radius-xxl: 34px;
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 12px;
+      --shadow-soft: 0 24px 60px rgba(22, 10, 18, 0.2);
+      --shadow-card: 0 16px 34px rgba(16, 7, 14, 0.16);
+    }
+
+    :root,
+    :root[data-theme="light"] {
+      --bg: #f1eded;
+      --bg-2: #faf7f7;
+      --panel: rgba(255, 251, 253, 0.8);
+      --panel-strong: rgba(255, 255, 255, 0.9);
+      --text: #20171c;
+      --text-soft: rgba(32, 23, 28, 0.66);
+      --text-faint: rgba(32, 23, 28, 0.38);
+      --line: rgba(32, 23, 28, 0.1);
+      --accent: #6f4f66;
+      --accent-soft: rgba(111, 79, 102, 0.12);
+      --accent-glow: rgba(111, 79, 102, 0.2);
+      --hero-gradient: linear-gradient(135deg, #4a2f42 0%, #8f607a 42%, #d7bbb7 100%);
+      --active-gradient: linear-gradient(135deg, #5b3a52 0%, #c9a2a1 100%);
+      --surface-gradient: linear-gradient(135deg, rgba(111, 79, 102, 0.12), rgba(201, 162, 161, 0.08));
+      --body-overlay:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.86), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(143, 96, 122, 0.12), transparent 30%);
+      --input-bg: rgba(255, 255, 255, 0.82);
+      --focus-ring: 0 0 0 3px rgba(111, 79, 102, 0.16);
+      --hero-text: #fffafc;
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #161116;
+      --bg-2: #211820;
+      --panel: rgba(35, 24, 33, 0.76);
+      --panel-strong: rgba(42, 28, 39, 0.92);
+      --text: #f7edf3;
+      --text-soft: rgba(247, 237, 243, 0.7);
+      --text-faint: rgba(247, 237, 243, 0.4);
+      --line: rgba(247, 237, 243, 0.1);
+      --accent: #d5a6b5;
+      --accent-soft: rgba(213, 166, 181, 0.12);
+      --accent-glow: rgba(213, 166, 181, 0.16);
+      --hero-gradient: linear-gradient(135deg, #2c1625 0%, #5a3550 38%, #a97684 100%);
+      --active-gradient: linear-gradient(135deg, #70455f 0%, #b78795 100%);
+      --surface-gradient: linear-gradient(135deg, rgba(213, 166, 181, 0.1), rgba(91, 53, 80, 0.18));
+      --body-overlay:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.05), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(183, 135, 149, 0.1), transparent 30%);
+      --input-bg: rgba(255, 247, 252, 0.04);
+      --focus-ring: 0 0 0 3px rgba(213, 166, 181, 0.18);
+      --hero-text: #fff7fb;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--body-overlay), linear-gradient(180deg, var(--bg-2), var(--bg));
+      color: var(--text);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: radial-gradient(circle at center, black 42%, transparent 82%);
+      opacity: 0.2;
+    }
+
+    body, button, input, a { font: inherit; }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      width: min(100%, 100%);
+      padding: 16px;
+    }
+
+    .preference-pill {
+      display: inline-flex;
+      gap: 6px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(16px);
+      align-items: center;
+    }
+
+    .preference-group {
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .preference-divider {
+      width: 1px;
+      height: 18px;
+      background: var(--line);
+    }
+
+    .preference-pill button {
+      border: 0;
+      border-radius: 999px;
+      padding: 8px 10px;
+      background: transparent;
+      color: var(--text-soft);
+      cursor: pointer;
+      min-width: 42px;
+    }
+
+    .preference-pill button.active {
+      color: var(--hero-text);
+      background: var(--active-gradient);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 10px 22px var(--accent-glow);
+    }
+
+    .frame {
+      width: min(440px, calc(100vw - 32px));
+      min-height: min(700px, calc(100vh - 32px));
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xxl);
+      background: var(--panel);
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(22px);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .frame::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at top center, rgba(255, 255, 255, 0.08), transparent 22%),
+        radial-gradient(circle at bottom right, rgba(143, 96, 122, 0.12), transparent 30%);
+    }
+
+    .glow {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 24%, rgba(201, 162, 161, 0.2), transparent 24%);
+      opacity: 0.85;
+    }
+
+    .inner {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+
+    .shell {
+      width: min(418px, 100%);
+      display: grid;
+      gap: 0;
+    }
+
+    .small-top-card {
+      width: min(356px, calc(100% - 36px));
+      margin: 0 auto -12px;
+      padding: 12px 16px 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.02)),
+        var(--surface-gradient);
+      box-shadow: var(--shadow-card);
+      text-align: center;
+    }
+
+    .top-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+      text-align: left;
+    }
+
+    .eyebrow {
+      margin: 0;
+      font-size: 10px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .small-top-card h1 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(24px, 3.2vw, 34px);
+      line-height: 0.94;
+      letter-spacing: -0.06em;
+      text-wrap: pretty;
+    }
+
+    .small-top-card p {
+      margin: 6px auto 0;
+      color: var(--text-soft);
+      font-size: 12px;
+      line-height: 1.5;
+      max-width: 23ch;
+    }
+
+    .login-card {
+      padding: 16px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      box-shadow: 0 24px 70px rgba(34, 18, 30, 0.18);
+      backdrop-filter: blur(18px);
+      display: grid;
+      gap: 12px;
+    }
+
+    .login-card header {
+      display: grid;
+      gap: 6px;
+    }
+
+    .badge {
+      width: fit-content;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .login-card header h2 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: 30px;
+      line-height: 0.96;
+      letter-spacing: -0.05em;
+    }
+
+    .login-card header p {
+      margin: 0;
+      color: var(--text-soft);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .fields {
+      display: grid;
+      gap: 10px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-soft);
+      font-size: 11px;
+    }
+
+    .field-row label {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      height: 42px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line);
+      background: var(--input-bg);
+      color: var(--text);
+      padding: 0 12px;
+      outline: none;
+    }
+
+    input::placeholder { color: var(--text-faint); }
+
+    input:focus {
+      border-color: color-mix(in srgb, var(--accent) 40%, white 10%);
+      box-shadow: var(--focus-ring);
+    }
+
+    .utility {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    .checkbox {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .checkbox input {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--accent);
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+    }
+
+    .primary,
+    .secondary {
+      height: 42px;
+      border-radius: var(--radius-md);
+      display: grid;
+      place-items: center;
+      text-decoration: none;
+    }
+
+    .primary {
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: var(--hero-text);
+      background: var(--active-gradient);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 10px 22px var(--accent-glow);
+    }
+
+    .secondary {
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: transparent;
+    }
+
+    .micro {
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: var(--surface-gradient);
+      color: var(--text-soft);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .foot {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    .foot strong {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    @media (max-width: 520px) {
+      .page { padding: 12px; }
+      .frame {
+        width: min(100vw - 24px, 440px);
+        min-height: min(700px, calc(100vh - 24px));
+      }
+      .top-card-head {
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: 8px;
+      }
+      .preference-pill button {
+        padding: 7px 9px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="frame">
+      <div class="glow"></div>
+      <div class="inner">
+        <div class="shell">
+          <div class="small-top-card">
+            <div class="top-card-head">
+              <p class="eyebrow">Couple Memory Archive</p>
+              <div class="preference-pill" aria-label="切换偏好">
+                <div class="preference-group">
+                  <button type="button" class="active" data-locale-button="zh-CN">中</button>
+                  <button type="button" data-locale-button="en">EN</button>
+                </div>
+                <span class="preference-divider" aria-hidden="true"></span>
+                <div class="preference-group">
+                  <button type="button" data-theme-button="light">Light</button>
+                  <button type="button" class="active" data-theme-button="dark">Night</button>
+                </div>
+              </div>
+            </div>
+            <h1>把重要的时刻，好好留住。</h1>
+            <p>品牌有存在感，但不会压过主操作区。</p>
+          </div>
+
+          <div class="login-card">
+            <header>
+              <span class="badge">Private Access</span>
+              <h2>欢迎回来</h2>
+              <p>继续整理你们的相册、纪念日与共同生活片段。</p>
+            </header>
+
+            <div class="fields">
+              <div class="field">
+                <div class="field-row"><label>邮箱</label><span>Secure sign-in</span></div>
+                <input type="email" placeholder="name@example.com">
+              </div>
+              <div class="field">
+                <div class="field-row"><label>密码</label><span>Register</span></div>
+                <input type="password" placeholder="••••••••">
+              </div>
+            </div>
+
+            <div class="utility">
+              <label class="checkbox"><input type="checkbox" checked><span>记住设备</span></label>
+              <span>Session protected</span>
+            </div>
+
+            <div class="actions">
+              <a href="/" class="primary">登录并继续</a>
+              <a href="/" class="secondary">创建新的情侣空间</a>
+            </div>
+
+            <div class="micro">这个版本的目标是控制在一屏内，同时让顶部品牌区和登录动作保持清晰层级。</div>
+            <div class="foot">还没有账号？<strong>注册</strong></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const root = document.documentElement;
+    const themeButtons = Array.from(document.querySelectorAll("[data-theme-button]"));
+    const localeButtons = Array.from(document.querySelectorAll("[data-locale-button]"));
+
+    function setTheme(theme) {
+      root.setAttribute("data-theme", theme);
+      themeButtons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.themeButton === theme);
+      });
+    }
+
+    function setLocale(locale) {
+      localeButtons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.localeButton === locale);
+      });
+    }
+
+    themeButtons.forEach((button) => {
+      button.addEventListener("click", () => setTheme(button.dataset.themeButton));
+    });
+
+    localeButtons.forEach((button) => {
+      button.addEventListener("click", () => setLocale(button.dataset.localeButton));
+    });
+  </script>
+</body>
+</html>

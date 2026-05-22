@@ -75,6 +75,7 @@
   --font-display: "Baskerville", "Times New Roman", "Georgia", "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
   --font-sans: "ALPH", "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-latin: "DM Sans", sans-serif;
+  --font-dashboard-title: "Smiley Sans", "ALPH", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Source Han Sans SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
 
   /* ─── 圆角 ─── */
   --radius-sm: 12px;
@@ -100,6 +101,26 @@
   --dashboard-shadow-card: 0 8px 22px rgba(40, 24, 34, 0.06);
   --dashboard-focus-ring: 0 0 0 3px rgba(111, 79, 102, 0.16);
   --dashboard-input-bg: rgba(255, 255, 255, 0.74);
+  --dashboard-card-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(247, 238, 241, 0.78));
+  --dashboard-card-bg-soft: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(250, 244, 246, 0.82));
+  --dashboard-card-bg-strong: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 232, 237, 0.84));
+  --dashboard-inset-bg: rgba(255, 255, 255, 0.76);
+  --dashboard-chip-bg: rgba(111, 79, 102, 0.08);
+  --dashboard-chip-border: rgba(111, 79, 102, 0.14);
+  --dashboard-chip-text: rgba(111, 79, 102, 0.84);
+  --dashboard-card-hairline: rgba(111, 79, 102, 0.32);
+  --dashboard-empty-bg: rgba(255, 255, 255, 0.52);
+  --dashboard-hero-border: rgba(255, 255, 255, 0.45);
+  --dashboard-hero-overlay: radial-gradient(circle at top right, rgba(255, 255, 255, 0.26), transparent 34%), radial-gradient(circle at bottom left, rgba(255, 245, 247, 0.18), transparent 30%);
+  --dashboard-hero-panel-bg: rgba(255, 255, 255, 0.12);
+  --dashboard-hero-panel-border: rgba(255, 255, 255, 0.18);
+  --dashboard-hero-muted: rgba(255, 255, 255, 0.78);
+  --dashboard-hero-soft: rgba(255, 255, 255, 0.68);
+  --dashboard-hero-faint: rgba(255, 255, 255, 0.56);
+}
+
+html {
+  scrollbar-gutter: stable;
 }
 
 html.dark {
@@ -131,6 +152,22 @@ html.dark {
   --dashboard-shadow-card: 0 12px 30px rgba(0, 0, 0, 0.2);
   --dashboard-focus-ring: 0 0 0 3px rgba(213, 166, 181, 0.18);
   --dashboard-input-bg: rgba(52, 34, 46, 0.72);
+  --dashboard-card-bg: linear-gradient(145deg, rgba(42, 28, 39, 0.9), rgba(31, 21, 30, 0.82));
+  --dashboard-card-bg-soft: linear-gradient(180deg, rgba(42, 28, 39, 0.9), rgba(29, 20, 28, 0.84));
+  --dashboard-card-bg-strong: linear-gradient(160deg, rgba(46, 30, 42, 0.92), rgba(35, 24, 33, 0.9));
+  --dashboard-inset-bg: rgba(57, 38, 51, 0.78);
+  --dashboard-chip-bg: rgba(213, 166, 181, 0.12);
+  --dashboard-chip-border: rgba(213, 166, 181, 0.18);
+  --dashboard-chip-text: rgba(247, 237, 243, 0.8);
+  --dashboard-card-hairline: rgba(213, 166, 181, 0.26);
+  --dashboard-empty-bg: rgba(49, 33, 45, 0.62);
+  --dashboard-hero-border: rgba(255, 255, 255, 0.18);
+  --dashboard-hero-overlay: radial-gradient(circle at top right, rgba(255, 255, 255, 0.1), transparent 34%), radial-gradient(circle at bottom left, rgba(183, 135, 149, 0.12), transparent 30%);
+  --dashboard-hero-panel-bg: rgba(255, 255, 255, 0.06);
+  --dashboard-hero-panel-border: rgba(255, 255, 255, 0.14);
+  --dashboard-hero-muted: rgba(255, 247, 251, 0.88);
+  --dashboard-hero-soft: rgba(255, 247, 251, 0.74);
+  --dashboard-hero-faint: rgba(255, 247, 251, 0.58);
 
   --color-film-skeleton-base: #2c2522;
   --color-film-skeleton-highlight: #433731;
@@ -248,6 +285,15 @@ body > * {
   backdrop-filter: blur(18px);
 }
 
+.dashboard-scroll-shell {
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+
+.dashboard-scroll-shell::-webkit-scrollbar-track {
+  margin-block: 14px;
+}
+
 .dashboard-panel-soft {
   border: 1px solid var(--color-warm-border);
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)), var(--color-warm-sidebar);
@@ -311,4 +357,140 @@ body > * {
   outline: none;
   border-color: color-mix(in srgb, var(--color-warm-accent) 70%, white 10%);
   box-shadow: var(--dashboard-focus-ring);
+}
+
+.velvet-floating-panel,
+.velvet-date-panel,
+.velvet-select-panel {
+  border: 1px solid var(--color-warm-border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.995), rgba(247, 239, 243, 0.985));
+  box-shadow: 0 18px 36px rgba(40, 24, 34, 0.12);
+  color: var(--color-warm-text);
+  isolation: isolate;
+}
+
+html.dark .velvet-floating-panel,
+html.dark .velvet-date-panel,
+html.dark .velvet-select-panel {
+  background: linear-gradient(180deg, rgba(46, 30, 42, 0.995), rgba(33, 22, 31, 0.985));
+  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.34);
+}
+
+.velvet-date-nav-button {
+  border: 1px solid rgba(111, 79, 102, 0.1);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.985), rgba(244, 236, 240, 0.97));
+  color: var(--color-warm-muted);
+}
+
+html.dark .velvet-date-nav-button {
+  border-color: rgba(213, 166, 181, 0.14);
+  background: linear-gradient(180deg, rgba(66, 45, 60, 0.985), rgba(49, 33, 45, 0.97));
+}
+
+.velvet-hover-surface {
+  border-color: rgba(111, 79, 102, 0.08);
+  background: var(--dashboard-surface-gradient);
+}
+
+html.dark .velvet-hover-surface {
+  border-color: rgba(213, 166, 181, 0.16);
+  background: linear-gradient(135deg, rgba(213, 166, 181, 0.16), rgba(91, 53, 80, 0.28));
+  color: #fdf5f9;
+}
+
+.velvet-date-day-hoverable:hover,
+.velvet-select-option-hoverable:hover {
+  border-color: rgba(111, 79, 102, 0.18);
+  background: linear-gradient(135deg, rgba(111, 79, 102, 0.16), rgba(201, 162, 161, 0.2));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 8px 18px rgba(111, 79, 102, 0.12);
+}
+
+html.dark .velvet-date-day-hoverable:hover,
+html.dark .velvet-select-option-hoverable:hover {
+  border-color: rgba(213, 166, 181, 0.32);
+  background: linear-gradient(135deg, rgba(167, 118, 132, 0.42), rgba(109, 70, 92, 0.6));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 10px 22px rgba(0, 0, 0, 0.24);
+  color: #fff7fb;
+}
+
+.velvet-active-surface,
+.velvet-date-day-selected,
+.velvet-select-option-selected {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(135deg, #4a2f42 0%, #8f607a 52%, #c59f9d 100%);
+  color: #fffafc;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 10px 18px rgba(111, 79, 102, 0.18);
+}
+
+html.dark .velvet-active-surface,
+html.dark .velvet-date-day-selected,
+html.dark .velvet-select-option-selected {
+  background: var(--dashboard-active-gradient);
+  color: #fff7fb;
+}
+
+.velvet-date-day-selected {
+  font-weight: 500;
+}
+
+.dashboard-surface-card {
+  border: 1px solid var(--color-warm-border);
+  background: var(--dashboard-card-bg);
+  box-shadow: var(--dashboard-shadow-card);
+}
+
+.dashboard-surface-card-soft {
+  border: 1px solid var(--color-warm-border);
+  background: var(--dashboard-card-bg-soft);
+  box-shadow: var(--dashboard-shadow-card);
+}
+
+.dashboard-surface-card-strong {
+  border: 1px solid var(--color-warm-border);
+  background: var(--dashboard-card-bg-strong);
+  box-shadow: var(--dashboard-shadow-soft);
+}
+
+.dashboard-inset-panel {
+  border: 1px solid var(--dashboard-chip-border);
+  background: var(--dashboard-inset-bg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.dashboard-chip {
+  border: 1px solid var(--dashboard-chip-border);
+  background: var(--dashboard-chip-bg);
+  color: var(--dashboard-chip-text);
+}
+
+.dashboard-hairline {
+  background: linear-gradient(90deg, transparent, var(--dashboard-card-hairline), transparent);
+}
+
+.dashboard-empty-surface {
+  border: 1px dashed color-mix(in srgb, var(--color-warm-accent) 22%, var(--color-warm-border));
+  background: var(--dashboard-empty-bg);
+}
+
+.dashboard-hero-surface {
+  border: 1px solid var(--dashboard-hero-border);
+  background: var(--dashboard-hero-gradient);
+  color: white;
+  box-shadow: 0 24px 70px rgba(56, 28, 46, 0.2);
+}
+
+.dashboard-hero-overlay {
+  background: var(--dashboard-hero-overlay);
+}
+
+.dashboard-hero-panel {
+  border: 1px solid var(--dashboard-hero-panel-border);
+  background: var(--dashboard-hero-panel-bg);
+  backdrop-filter: blur(10px);
 }

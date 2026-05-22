@@ -280,6 +280,9 @@ Rules:
 - Menu panel uses `panel-strong`
 - Selected option uses accent wash or active gradient depending on importance
 - Avoid browser-native arrow if custom styling is possible
+- Menu panel should be visually opaque in both themes; underlying page content should not read through the surface
+- Selected option must be explicitly tested in light theme for text contrast, not inferred from dark-theme success
+- Prefer shared semantic surface classes for panel and selected-row states instead of per-component inline arbitrary-value gradients
 
 ## Date Picker
 
@@ -292,12 +295,20 @@ Date picker styling rules:
 - Selected day may use active gradient
 - Hover day uses surface gradient
 - Today state uses thin accent outline or low-opacity fill
+- Picker surface should read as a solid premium panel, not a translucent haze over the page
+- Selected day must maintain strong text contrast in light theme and dark theme independently
 
 Third-party overrides to require:
 
 - Remove default blue selected cell
 - Remove default heavy drop shadow
 - Match border, radius, background, and text hierarchy
+
+Implementation guidance for both select and date picker:
+
+- Treat `floating panel`, `selected row`, and `selected day` as system states with reusable global styles
+- Avoid encoding key visual states only inside long inline utility strings
+- If a state is important enough to appear across multiple controls, promote it into a named global class or token-backed component style
 
 ## Time Picker
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
+import { VelvetDatePicker } from '@/components/forms/velvet-date-picker'
 
 interface Milestone {
   id: string
@@ -468,6 +469,8 @@ export default function TimelinePage() {
     e.preventDefault()
     if (!coupleId) return
     const formData = new FormData(e.currentTarget)
+    const date = String(formData.get('date') ?? '').trim()
+    if (!date) return
 
     const res = await fetch(`/api/couples/${coupleId}/milestones`, {
       method: 'POST',
@@ -475,7 +478,7 @@ export default function TimelinePage() {
       body: JSON.stringify({
         title: formData.get('title'),
         description: formData.get('description') || undefined,
-        date: formData.get('date'),
+        date,
         locationName: formData.get('locationName') || undefined,
       }),
     })
@@ -490,6 +493,8 @@ export default function TimelinePage() {
     e.preventDefault()
     if (!coupleId) return
     const formData = new FormData(e.currentTarget)
+    const date = String(formData.get('date') ?? '').trim()
+    if (!date) return
 
     await fetch(`/api/couples/${coupleId}/milestones/${id}`, {
       method: 'PATCH',
@@ -497,7 +502,7 @@ export default function TimelinePage() {
       body: JSON.stringify({
         title: formData.get('title'),
         description: formData.get('description') || null,
-        date: formData.get('date'),
+        date,
         locationName: formData.get('locationName') || null,
       }),
     })
@@ -731,7 +736,11 @@ export default function TimelinePage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-warm-text mb-1.5">{t('fieldDate')}</label>
-                <input name="date" type="date" required className={inputClass} />
+                <VelvetDatePicker
+                  ariaLabel={t('fieldDate')}
+                  locale={locale}
+                  name="date"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-warm-text mb-1.5">{t('fieldLocation')}</label>
@@ -831,7 +840,14 @@ function MilestoneCard({
             <input name="title" defaultValue={m.title} required className={inputClass} />
             <textarea name="description" defaultValue={m.description || ''} rows={2} className={inputClass + ' resize-none'} />
             <div className="flex gap-3">
-              <input name="date" type="date" defaultValue={m.date.split('T')[0]} required className={inputClass + ' flex-1'} />
+              <div className="flex-1">
+                <VelvetDatePicker
+                  ariaLabel={t('fieldDate')}
+                  defaultValue={m.date.split('T')[0]}
+                  locale={locale}
+                  name="date"
+                />
+              </div>
               <input name="locationName" defaultValue={m.locationName || ''} placeholder={t('locationPlaceholder')} className={inputClass + ' flex-1'} />
             </div>
             <div className="flex gap-2">

@@ -6,6 +6,11 @@ import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import Link from 'next/link'
 
+const inputClassName = `h-[42px] w-full rounded-[var(--radius-md)] border border-warm-border
+  bg-[var(--dashboard-input-bg)] px-3 text-sm text-warm-text placeholder:text-[color:var(--dashboard-text-faint)]
+  outline-none transition-[border-color,box-shadow,transform,background-color] duration-200
+  hover:border-warm-accent/30 focus:border-warm-accent/40 focus:shadow-[var(--dashboard-focus-ring)] focus:-translate-y-px`
+
 export default function LoginPage() {
   const t = useTranslations('LoginPage')
   const router = useRouter()
@@ -34,71 +39,83 @@ export default function LoginPage() {
 
   return (
     <>
-      <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-warm-text tracking-tight">
-          {t('title')}
-        </h1>
-        <p className="text-warm-muted text-sm mt-1">{t('subtitle')}</p>
+      <div className="mb-4 space-y-2">
+        <div className="inline-flex rounded-full border border-warm-border bg-[var(--dashboard-accent-soft)] px-3 py-1.5 text-[10px] uppercase tracking-[0.18em] text-warm-accent">
+          Private Access
+        </div>
+        <div className="space-y-1.5">
+          <h1 className="font-[var(--font-display)] text-[clamp(28px,4vw,40px)] leading-[0.94] tracking-[-0.05em] text-warm-text">
+            {t('title')}
+          </h1>
+          <p className="text-[12px] leading-5 text-warm-muted sm:text-[13px] sm:whitespace-nowrap">
+            {t('subtitle')}
+          </p>
+        </div>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-[var(--radius-md)] bg-red-50 text-error text-sm text-center">
+        <div className="mb-3 rounded-[var(--radius-md)] border border-red-200/70 bg-red-50/80 px-3 py-2.5 text-sm text-error dark:border-red-500/20 dark:bg-red-500/10">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-warm-text mb-1.5">
-            {t('email')}
-          </label>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between gap-3 text-xs text-warm-muted">
+            <label htmlFor="email" className="font-medium text-warm-text">
+              {t('email')}
+            </label>
+          </div>
           <input
             id="email"
             name="email"
             type="email"
             required
             autoComplete="email"
-            className="w-full px-4 py-3 rounded-[var(--radius-md)] border border-warm-border
-              bg-warm-bg text-warm-text placeholder:text-warm-muted/60
-              focus:ring-2 focus:ring-warm-accent/30 focus:border-warm-accent outline-none
-              transition-all duration-200"
-            placeholder="your@email.com"
+            className={inputClassName}
+            placeholder="name@example.com"
           />
         </div>
 
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-warm-text mb-1.5">
-            {t('password')}
-          </label>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between gap-3 text-xs text-warm-muted">
+            <label htmlFor="password" className="font-medium text-warm-text">
+              {t('password')}
+            </label>
+          </div>
           <input
             id="password"
             name="password"
             type="password"
             required
             autoComplete="current-password"
-            className="w-full px-4 py-3 rounded-[var(--radius-md)] border border-warm-border
-              bg-warm-bg text-warm-text placeholder:text-warm-muted/60
-              focus:ring-2 focus:ring-warm-accent/30 focus:border-warm-accent outline-none
-              transition-all duration-200"
+            className={inputClassName}
             placeholder="••••••••"
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-3 mt-2 bg-warm-accent text-white font-medium rounded-[var(--radius-md)]
-            hover:bg-warm-accent-hover active:scale-[0.98]
-            disabled:opacity-50 disabled:cursor-not-allowed
-            transition-all duration-200 shadow-sm hover:shadow-md"
-        >
-          {loading ? t('submitting') : t('submit')}
-        </button>
+        <div className="flex items-center justify-between gap-3 text-xs text-warm-muted">
+          <label className="inline-flex items-center gap-2">
+            <input type="checkbox" defaultChecked className="h-4 w-4 accent-warm-accent" />
+            <span>{t('remember')}</span>
+          </label>
+          <span>{t('sessionNote')}</span>
+        </div>
+
+        <div className="space-y-2 pt-0.5">
+          <button
+            type="submit"
+            disabled={loading}
+            className="h-[42px] w-full cursor-pointer rounded-[var(--radius-md)] border border-warm-border bg-transparent text-sm font-medium text-warm-text transition-[transform,background-color,border-color,box-shadow] duration-200 hover:-translate-y-px hover:border-warm-accent/20 hover:bg-white/40 hover:shadow-[0_10px_24px_rgba(34,18,30,0.08)] disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-white/6 dark:hover:shadow-[0_10px_24px_rgba(0,0,0,0.16)]"
+          >
+            {loading ? t('submitting') : t('submit')}
+          </button>
+        </div>
       </form>
 
-      <p className="text-center text-sm text-warm-muted mt-6">
+      <p className="mt-4 text-center text-sm text-warm-muted">
         {t('noAccount')}
-        <Link href="/register" className="text-warm-accent hover:text-warm-accent-hover font-medium ml-1">
+        <Link href="/register" className="ml-1 font-medium text-warm-accent hover:text-warm-accent-hover">
           {t('register')}
         </Link>
       </p>

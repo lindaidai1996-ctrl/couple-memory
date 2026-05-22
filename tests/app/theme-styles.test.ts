@@ -18,3 +18,14 @@ test('dashboard theme exposes Velvet Plum token families', () => {
   assert.equal(css.includes('--color-warm-surface: var(--vp-panel-strong-light);'), true)
   assert.equal(css.includes('--color-warm-sidebar: var(--vp-sidebar-light);'), true)
 })
+
+test('dashboard theme defines dark-aware shared surface tokens', () => {
+  const css = readFileSync('src/app/globals.css', 'utf8')
+
+  assert.equal(css.includes('--dashboard-card-bg:'), true)
+  assert.equal(css.includes('--dashboard-card-bg-soft:'), true)
+  assert.equal(css.includes('--dashboard-inset-bg:'), true)
+  assert.equal(css.includes('.dashboard-surface-card {'), true)
+  assert.equal(css.includes('.dashboard-surface-card-soft {'), true)
+  assert.equal(css.includes('.dashboard-inset-panel {'), true)
+})

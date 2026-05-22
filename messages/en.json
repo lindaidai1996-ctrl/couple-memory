@@ -18,14 +18,29 @@
   },
   "LoginPage": {
     "title": "Welcome back",
-    "subtitle": "Sign in to your couple space",
+    "subtitle": "Continue organizing your albums, milestones, and the everyday moments you share.",
     "email": "Email",
     "password": "Password",
     "submit": "Log in",
     "submitting": "Logging in...",
     "error": "Incorrect email or password",
     "noAccount": "Don't have an account yet?",
-    "register": "Create one"
+    "register": "Create one",
+    "remember": "Remember this device",
+    "sessionNote": "Session protected",
+    "secondaryAction": "Create a new couple space",
+    "trustTitle": "What you'll see inside",
+    "trustTag": "Private",
+    "trustLineOne": "Photo timelines, anniversaries, and shared wish lists all continue with the same velvet plum language.",
+    "trustLineTwo": "This is not a one-off landing page. It is a private space built to hold your shared memories over time.",
+    "trustCompact": "Your photos, milestones, and shared moments stay here."
+  },
+  "AuthLayout": {
+    "eyebrow": "Couple Memory Archive",
+    "brandTitle": "Hold on to the moments that matter.",
+    "brandCopy": "Keep your photos, milestones, and shared everyday moments in one space made just for the two of you.",
+    "footerLeft": "Couple Memory",
+    "footerRight": "Private archive for two"
   },
   "RegisterPage": {
     "title": "Create account",
@@ -63,12 +78,21 @@
     "publicLink": "Public link",
     "photos": "Photos",
     "albums": "Albums",
+    "chapters": "Chapters",
     "milestones": "Milestones",
     "daysTogether": "Together",
     "photoSuffix": "",
     "albumSuffix": "",
+    "chapterSuffix": "",
     "milestoneSuffix": "",
-    "daySuffix": "days"
+    "daySuffix": "days",
+    "summaryWithStartDate": "Starting from {date}, this space keeps your photos, chapters, and public entry point organized in one place.",
+    "summaryWithoutStartDate": "This space keeps your photos, chapters, and public entry point organized in one place.",
+    "publicLinkPublishedHint": "This space is already public, so you can share the entry point directly with visitors.",
+    "publicLinkPrivateHint": "The public entry is still disabled. Once enabled, a shareable private link will appear here.",
+    "curationTitle": "Curation Progress",
+    "curationSuggestionCount": "{count} suggestions are still available to improve the album structure.",
+    "curationStableHint": "The current curation state is stable, so you can keep adding new memories."
   },
   "PipelinePage": {
     "title": "Pipeline run history",

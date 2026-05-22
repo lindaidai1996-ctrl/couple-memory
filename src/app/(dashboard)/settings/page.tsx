@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
+import { VelvetDatePicker } from '@/components/forms/velvet-date-picker'
+import { VelvetSelect } from '@/components/forms/velvet-select'
 import { SettingsFormSkeleton } from '@/components/skeleton/settings-form-skeleton'
 import { compressAndUploadAvatar, type UploadStage } from '@/lib/upload'
 import {
@@ -300,6 +302,7 @@ function buildAvatarUploadStageLabels(t: ReturnType<typeof useTranslations<'Sett
 
 export default function SettingsPage() {
   const t = useTranslations('SettingsPage')
+  const locale = useLocale()
   const avatarStageLabels = useMemo(() => buildAvatarUploadStageLabels(t), [t])
   const [couple, setCouple] = useState<CoupleData | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -654,14 +657,14 @@ export default function SettingsPage() {
           </Field>
 
           <Field label={t('date')}>
-            <input
-              type="date"
+            <VelvetDatePicker
+              ariaLabel={t('date')}
+              locale={locale}
               value={couple.startDate?.split('T')[0] || ''}
-              onChange={e => setCouple(prev => prev ? {
+              onChange={value => setCouple(prev => prev ? {
                 ...prev,
-                startDate: e.target.value || null,
+                startDate: value || null,
               } : prev)}
-              className={controlClass}
             />
           </Field>
 
@@ -691,7 +694,19 @@ export default function SettingsPage() {
                 className={checkboxInputClass}
               />
               <span className={checkboxVisualClass} aria-hidden="true">
-                <span className={checkboxDotClass} />
+                <svg
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  className={checkboxDotClass}
+                >
+                  <path
+                    d="M3.5 8.25 6.4 11.15 12.5 5.1"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </span>
             </span>
             <span className="space-y-1">
@@ -713,38 +728,42 @@ export default function SettingsPage() {
             label={t('captionStyleLabel')}
             hint={t('captionStyleHint')}
           >
-            <select
+            <VelvetSelect
+              ariaLabel={t('captionStyleLabel')}
               value={couple.captionStylePreference || ''}
-              onChange={e => setCouple(prev => prev ? {
+              onChange={value => setCouple(prev => prev ? {
                 ...prev,
-                captionStylePreference: e.target.value || null,
+                captionStylePreference: value || null,
               } : prev)}
-              className={controlClass}
-            >
-              <option value="">{t('useSystemDefault')}</option>
-              {CAPTION_STYLE_OPTIONS.map(option => (
-                <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: t('useSystemDefault') },
+                ...CAPTION_STYLE_OPTIONS.map(option => ({
+                  value: option.value,
+                  label: t(option.labelKey),
+                })),
+              ]}
+            />
           </Field>
 
           <Field
             label={t('toneLabel')}
             hint={t('toneHint')}
           >
-            <select
+            <VelvetSelect
+              ariaLabel={t('toneLabel')}
               value={couple.tonePreference || ''}
-              onChange={e => setCouple(prev => prev ? {
+              onChange={value => setCouple(prev => prev ? {
                 ...prev,
-                tonePreference: e.target.value || null,
+                tonePreference: value || null,
               } : prev)}
-              className={controlClass}
-            >
-              <option value="">{t('useSystemDefault')}</option>
-              {TONE_OPTIONS.map(option => (
-                <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: t('useSystemDefault') },
+                ...TONE_OPTIONS.map(option => ({
+                  value: option.value,
+                  label: t(option.labelKey),
+                })),
+              ]}
+            />
           </Field>
 
           <Field
@@ -772,17 +791,18 @@ export default function SettingsPage() {
           accent="plum"
         >
           <Field label={t('coverSource')}>
-            <select
+            <VelvetSelect
+              ariaLabel={t('coverSource')}
               value={couple.coverMode}
-              onChange={e => setCouple(prev => prev ? {
+              onChange={value => setCouple(prev => prev ? {
                 ...prev,
-                coverMode: e.target.value as CoverMode,
+                coverMode: value as CoverMode,
               } : prev)}
-              className={controlClass}
-            >
-              <option value="NONE">{t('coverNone')}</option>
-              <option value="PHOTO">{t('coverPhoto')}</option>
-            </select>
+              options={[
+                { value: 'NONE', label: t('coverNone') },
+                { value: 'PHOTO', label: t('coverPhoto') },
+              ]}
+            />
           </Field>
 
           {couple.coverMode === 'PHOTO' ? (
@@ -904,11 +924,11 @@ const pageShellClass = `mx-auto flex max-w-4xl flex-col gap-4 text-[var(--text)]
   [--panel-strong:var(--color-warm-surface)] [--accent:var(--color-warm-accent)]
   [--accent-2:var(--dashboard-accent-secondary)] [--accent-glow:var(--dashboard-accent-glow)]`
 
-const heroClass = `relative overflow-hidden rounded-[30px] border border-[var(--line)] bg-[linear-gradient(135deg,rgba(74,47,66,0.96)_0%,rgba(143,96,122,0.92)_44%,rgba(215,187,183,0.88)_100%)] px-5 py-5 text-white shadow-[0_24px_64px_rgba(48,24,36,0.18)] sm:px-6`
+const heroClass = `dashboard-hero-surface relative overflow-hidden rounded-[30px] px-5 py-5 text-white sm:px-6`
 
-const sectionClass = `rounded-[26px] border border-[var(--line)] bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(255,248,251,0.72))] p-5 shadow-[0_16px_38px_rgba(40,24,34,0.08)] backdrop-blur-sm`
+const sectionClass = `dashboard-surface-card-soft rounded-[26px] p-5 backdrop-blur-sm`
 
-const sectionGlowClass = `pointer-events-none absolute inset-x-6 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.75),transparent)]`
+const sectionGlowClass = `dashboard-hairline pointer-events-none absolute inset-x-6 top-0 h-px`
 
 const controlClass = `h-10 w-full rounded-[16px] border border-[var(--line)] bg-[var(--panel-strong)] px-3.5 text-sm text-[var(--text)]
   shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] outline-none transition duration-200
@@ -917,7 +937,7 @@ const controlClass = `h-10 w-full rounded-[16px] border border-[var(--line)] bg-
 
 const textareaClass = `${controlClass} h-auto min-h-[108px] py-3 leading-6 resize-none`
 
-const readOnlyControlClass = `${controlClass} bg-[linear-gradient(135deg,rgba(111,79,102,0.08),rgba(201,162,161,0.12))] text-[var(--text-soft)]`
+const readOnlyControlClass = `${controlClass} bg-[var(--dashboard-surface-gradient)] text-[var(--text-soft)]`
 
 const primaryButtonClass = `inline-flex h-10 items-center justify-center rounded-[16px] border border-white/20
   bg-[linear-gradient(135deg,#5b3a52_0%,#c9a2a1_100%)] px-4 text-sm font-medium text-white
@@ -925,16 +945,16 @@ const primaryButtonClass = `inline-flex h-10 items-center justify-center rounded
   transition duration-200 hover:-translate-y-0.5 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_14px_28px_rgba(111,79,102,0.26)]
   disabled:translate-y-0 disabled:opacity-50`
 
-const secondaryButtonClass = `inline-flex h-10 items-center justify-center rounded-[16px] border border-[rgba(111,79,102,0.26)]
-  bg-[var(--panel-strong)] px-4 text-sm font-medium text-[var(--accent)] transition duration-200
-  hover:-translate-y-0.5 hover:bg-[rgba(111,79,102,0.06)] disabled:translate-y-0 disabled:opacity-50`
+const secondaryButtonClass = `dashboard-glass-button inline-flex h-10 items-center justify-center rounded-[16px]
+  px-4 text-sm font-medium text-[var(--accent)] transition duration-200
+  hover:-translate-y-0.5 disabled:translate-y-0 disabled:opacity-50`
 
 const ghostButtonClass = `inline-flex h-10 items-center justify-center rounded-[16px] border border-[var(--line)]
   bg-transparent px-4 text-sm font-medium text-[var(--text)] transition duration-200
   hover:-translate-y-0.5 hover:bg-white/65 dark:hover:bg-white/8 disabled:translate-y-0 disabled:opacity-50`
 
-const chipClass = `inline-flex rounded-full border border-white/20 bg-white/12 px-2.5 py-1 text-[10px]
-  uppercase tracking-[0.22em] text-white/82`
+const chipClass = `inline-flex rounded-full border border-[rgba(111,79,102,0.16)] bg-white/72 px-2.5 py-1 text-[10px]
+  uppercase tracking-[0.22em] text-[rgba(91,58,82,0.88)] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]`
 
 const avatarFrameClass = `relative flex h-28 w-28 items-center justify-center`
 const avatarHaloClass = `absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.82)_0%,rgba(255,255,255,0.12)_56%,transparent_70%)] blur-sm`
@@ -951,16 +971,15 @@ const checkboxCardClass = `flex cursor-pointer items-start gap-3 rounded-[20px] 
 const checkboxInputClass = `peer absolute inset-0 z-10 cursor-pointer opacity-0`
 const checkboxVisualClass = `flex h-5 w-5 items-center justify-center rounded-[7px] border border-[rgba(111,79,102,0.3)]
   bg-white/70 transition duration-200 peer-checked:border-[var(--accent)] peer-checked:bg-[linear-gradient(135deg,#5b3a52_0%,#c9a2a1_100%)]
-  peer-focus:ring-4 peer-focus:ring-[rgba(111,79,102,0.12)]`
-const checkboxDotClass = `h-2 w-2 rounded-full bg-white opacity-0 transition duration-200 peer-checked:opacity-100`
+  text-transparent peer-checked:text-white peer-focus:ring-4 peer-focus:ring-[rgba(111,79,102,0.12)]`
+const checkboxDotClass = `h-3.5 w-3.5 transition duration-200`
 
 const coverSelectedBadgeClass = `absolute left-2 top-2 rounded-full border border-white/20 bg-[linear-gradient(135deg,#5b3a52_0%,#c9a2a1_100%)]
   px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-white shadow-[0_10px_20px_rgba(48,24,36,0.22)]`
 
 const coverTileCaptionClass = `absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,transparent,rgba(18,10,14,0.76))] p-2.5`
 
-const emptyStateClass = `rounded-[22px] border border-dashed border-[rgba(111,79,102,0.22)]
-  bg-[linear-gradient(135deg,rgba(111,79,102,0.05),rgba(201,162,161,0.09))] px-4 py-8 text-sm text-[var(--text-soft)]`
+const emptyStateClass = `dashboard-empty-surface rounded-[22px] px-4 py-8 text-sm text-[var(--text-soft)]`
 
 function buildMessageBannerClass(type: 'success' | 'error') {
   return `rounded-[20px] border px-4 py-3 text-sm shadow-[0_10px_30px_rgba(40,24,34,0.06)] ${
@@ -1039,10 +1058,10 @@ function Section({
   return (
     <section className={`${sectionClass} relative overflow-hidden`}>
       <div
-        className={`absolute inset-y-0 right-0 w-32 ${
+        className={`pointer-events-none absolute inset-0 ${
           accent === 'rose'
-            ? 'bg-[radial-gradient(circle_at_center,rgba(201,162,161,0.18),transparent_70%)]'
-            : 'bg-[radial-gradient(circle_at_center,rgba(111,79,102,0.16),transparent_70%)]'
+            ? 'bg-[radial-gradient(circle_at_86%_28%,rgba(201,162,161,0.12),transparent_42%),radial-gradient(circle_at_14%_100%,rgba(201,162,161,0.04),transparent_28%)]'
+            : 'bg-[radial-gradient(circle_at_86%_28%,rgba(111,79,102,0.1),transparent_40%),radial-gradient(circle_at_14%_100%,rgba(111,79,102,0.035),transparent_26%)]'
         }`}
       />
       <div className={sectionGlowClass} />

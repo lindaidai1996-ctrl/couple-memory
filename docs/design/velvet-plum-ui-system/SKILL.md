@@ -26,6 +26,8 @@ Before making UI changes:
 - Keep controls premium and subtle, not default-library styled.
 - Remove generic blues, generic shadows, and unrelated accents.
 - When implementing inputs, selects, date pickers, or time pickers, override library defaults until they feel native to the system.
+- For floating panels and selected states, prefer shared semantic classes or tokens in global styles over one-off inline gradients or long arbitrary-value utility strings.
+- Do not ship light-theme selected states, panel backgrounds, or overlay surfaces without checking real contrast and opacity in the browser.
 
 ## Required Checks
 
@@ -33,6 +35,8 @@ Before making UI changes:
 - Are spacing and heights compact enough for real product use?
 - Do active and focus states use the same refined inner-highlight language?
 - Do light and dark themes both remain coherent?
+- Are floating panels opaque enough that underlying content does not bleed through?
+- Are selected rows, days, and pills legible in both light and dark themes without relying on accidental contrast?
 
 ## Reference Files
 

@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Velvet Plum Login Variants</title>
+  <style>
+    :root {
+      --vp-font-display: "Baskerville", "Times New Roman", "Georgia", "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
+      --vp-font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Source Han Sans SC", "Helvetica Neue", Arial, sans-serif;
+      --radius-xxl: 34px;
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 12px;
+      --shadow-soft: 0 24px 60px rgba(22, 10, 18, 0.2);
+      --shadow-card: 0 16px 34px rgba(16, 7, 14, 0.16);
+    }
+
+    :root,
+    :root[data-theme="light"] {
+      --bg: #f1eded;
+      --bg-2: #faf7f7;
+      --panel: rgba(255, 251, 253, 0.8);
+      --panel-strong: rgba(255, 255, 255, 0.9);
+      --text: #20171c;
+      --text-soft: rgba(32, 23, 28, 0.66);
+      --text-faint: rgba(32, 23, 28, 0.38);
+      --line: rgba(32, 23, 28, 0.1);
+      --accent: #6f4f66;
+      --accent-2: #c9a2a1;
+      --accent-soft: rgba(111, 79, 102, 0.12);
+      --accent-glow: rgba(111, 79, 102, 0.2);
+      --hero-gradient: linear-gradient(135deg, #4a2f42 0%, #8f607a 42%, #d7bbb7 100%);
+      --active-gradient: linear-gradient(135deg, #5b3a52 0%, #c9a2a1 100%);
+      --surface-gradient: linear-gradient(135deg, rgba(111, 79, 102, 0.12), rgba(201, 162, 161, 0.08));
+      --body-overlay:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.86), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(143, 96, 122, 0.12), transparent 30%);
+      --input-bg: rgba(255, 255, 255, 0.82);
+      --focus-ring: 0 0 0 3px rgba(111, 79, 102, 0.16);
+      --hero-text: #fffafc;
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #161116;
+      --bg-2: #211820;
+      --panel: rgba(35, 24, 33, 0.76);
+      --panel-strong: rgba(42, 28, 39, 0.92);
+      --text: #f7edf3;
+      --text-soft: rgba(247, 237, 243, 0.7);
+      --text-faint: rgba(247, 237, 243, 0.4);
+      --line: rgba(247, 237, 243, 0.1);
+      --accent: #d5a6b5;
+      --accent-2: #8b657e;
+      --accent-soft: rgba(213, 166, 181, 0.12);
+      --accent-glow: rgba(213, 166, 181, 0.16);
+      --hero-gradient: linear-gradient(135deg, #2c1625 0%, #5a3550 38%, #a97684 100%);
+      --active-gradient: linear-gradient(135deg, #70455f 0%, #b78795 100%);
+      --surface-gradient: linear-gradient(135deg, rgba(213, 166, 181, 0.1), rgba(91, 53, 80, 0.18));
+      --body-overlay:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.05), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(183, 135, 149, 0.1), transparent 30%);
+      --input-bg: rgba(255, 247, 252, 0.04);
+      --focus-ring: 0 0 0 3px rgba(213, 166, 181, 0.18);
+      --hero-text: #fff7fb;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--body-overlay), linear-gradient(180deg, var(--bg-2), var(--bg));
+      color: var(--text);
+      font-family: var(--vp-font-sans);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: radial-gradient(circle at center, black 42%, transparent 82%);
+      opacity: 0.2;
+    }
+
+    body, button, input {
+      font: inherit;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      width: min(1380px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 18px 0 26px;
+    }
+
+    .intro {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .intro-copy {
+      max-width: 52rem;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      font-size: 10px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .intro h1 {
+      margin: 0;
+      font-family: var(--vp-font-display);
+      font-size: clamp(34px, 4vw, 54px);
+      line-height: 0.92;
+      letter-spacing: -0.06em;
+      text-wrap: pretty;
+    }
+
+    .intro p {
+      margin: 12px 0 0;
+      color: var(--text-soft);
+      font-size: 14px;
+      line-height: 1.75;
+      max-width: 46ch;
+    }
+
+    .theme-toggle {
+      display: inline-flex;
+      gap: 6px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      flex-shrink: 0;
+    }
+
+    .theme-toggle button {
+      border: 0;
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: transparent;
+      color: var(--text-soft);
+      cursor: pointer;
+    }
+
+    .theme-toggle button.active {
+      color: var(--hero-text);
+      background: var(--active-gradient);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 10px 22px var(--accent-glow);
+    }
+
+    .variants {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .variant {
+      display: grid;
+      gap: 10px;
+    }
+
+    .variant-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .variant-meta h2 {
+      margin: 0;
+      font-size: 14px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+
+    .variant-meta p {
+      margin: 3px 0 0;
+      color: var(--text-soft);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .tag {
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .frame {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xxl);
+      background: var(--panel);
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(22px);
+      overflow: hidden;
+      min-height: 760px;
+      position: relative;
+    }
+
+    .frame::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at top center, rgba(255, 255, 255, 0.08), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(143, 96, 122, 0.12), transparent 30%);
+    }
+
+    .frame-inner {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+    }
+
+    .variant-a .frame-inner {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      padding: 18px;
+      gap: 14px;
+    }
+
+    .hero-band {
+      border-radius: 26px;
+      padding: 20px 20px 18px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)),
+        var(--hero-gradient);
+      color: var(--hero-text);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: var(--shadow-card);
+    }
+
+    .hero-band small,
+    .hero-band p {
+      color: rgba(255, 247, 251, 0.82);
+    }
+
+    .hero-band small {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+    }
+
+    .hero-band h3 {
+      margin: 0;
+      font-family: var(--vp-font-display);
+      font-size: clamp(36px, 4.2vw, 56px);
+      line-height: 0.9;
+      letter-spacing: -0.07em;
+      max-width: 8ch;
+      text-wrap: pretty;
+    }
+
+    .hero-band p {
+      margin: 12px 0 0;
+      max-width: 28ch;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .stack-card {
+      align-self: end;
+      width: min(430px, 100%);
+      margin: 0 auto 6px;
+      padding: 18px;
+      border-radius: 26px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      box-shadow: 0 26px 70px rgba(34, 18, 30, 0.18);
+      backdrop-filter: blur(18px);
+    }
+
+    .variant-b .frame-inner {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      height: 100%;
+    }
+
+    .editorial-pane {
+      padding: 20px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+      border-right: 1px solid var(--line);
+      background: var(--surface-gradient);
+    }
+
+    .editorial-pane h3 {
+      margin: 0;
+      font-family: var(--vp-font-display);
+      font-size: clamp(42px, 5vw, 72px);
+      line-height: 0.88;
+      letter-spacing: -0.08em;
+      max-width: 6ch;
+      text-wrap: pretty;
+    }
+
+    .editorial-pane p {
+      margin: 0;
+      color: var(--text-soft);
+      font-size: 13px;
+      line-height: 1.7;
+      max-width: 28ch;
+    }
+
+    .stat-strip {
+      display: grid;
+      gap: 10px;
+      align-content: center;
+    }
+
+    .stat-card {
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      padding: 14px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .stat-card small {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .stat-card strong {
+      display: block;
+      font-family: var(--vp-font-display);
+      font-size: 30px;
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+      margin-bottom: 8px;
+    }
+
+    .stat-card span {
+      color: var(--text-soft);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .side-card-wrap {
+      display: flex;
+      align-items: center;
+      padding: 20px 18px;
+      background: rgba(0, 0, 0, 0.02);
+    }
+
+    .variant-c .frame-inner {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 0;
+      padding: 18px;
+    }
+
+    .center-top {
+      border-radius: 28px;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.02)),
+        var(--surface-gradient);
+      box-shadow: var(--shadow-card);
+      padding: 20px 22px 18px;
+      text-align: center;
+    }
+
+    .center-top h3 {
+      margin: 8px auto 0;
+      max-width: 10ch;
+      font-family: var(--vp-font-display);
+      font-size: clamp(34px, 4vw, 54px);
+      line-height: 0.92;
+      letter-spacing: -0.07em;
+      text-wrap: pretty;
+    }
+
+    .center-top p {
+      margin: 10px auto 0;
+      max-width: 29ch;
+      color: var(--text-soft);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .mini-bar {
+      margin: 12px auto 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-faint);
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .mini-bar::before,
+    .mini-bar::after {
+      content: "";
+      width: 26px;
+      height: 1px;
+      background: var(--line);
+    }
+
+    .center-card-wrap {
+      align-self: end;
+      width: min(440px, calc(100% - 28px));
+      margin: -14px auto 0;
+    }
+
+    .login-card {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      box-shadow: 0 24px 70px rgba(34, 18, 30, 0.18);
+      backdrop-filter: blur(18px);
+    }
+
+    .login-card header {
+      display: grid;
+      gap: 8px;
+    }
+
+    .login-card header .badge {
+      width: fit-content;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .login-card header h4 {
+      margin: 0;
+      font-family: var(--vp-font-display);
+      font-size: 34px;
+      line-height: 0.96;
+      letter-spacing: -0.05em;
+    }
+
+    .login-card header p {
+      margin: 0;
+      color: var(--text-soft);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .fields {
+      display: grid;
+      gap: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .field-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      color: var(--text-soft);
+      font-size: 12px;
+    }
+
+    .field-row label {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      height: 42px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line);
+      background: var(--input-bg);
+      color: var(--text);
+      padding: 0 12px;
+      outline: none;
+      box-shadow: none;
+    }
+
+    input::placeholder {
+      color: var(--text-faint);
+    }
+
+    input:focus {
+      border-color: color-mix(in srgb, var(--accent) 40%, white 10%);
+      box-shadow: var(--focus-ring);
+    }
+
+    .utility {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text-soft);
+      align-items: center;
+    }
+
+    .checkbox {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .checkbox input {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--accent);
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+    }
+
+    .primary,
+    .secondary {
+      height: 42px;
+      border-radius: var(--radius-md);
+      display: grid;
+      place-items: center;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .primary {
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: var(--hero-text);
+      background: var(--active-gradient);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 10px 22px var(--accent-glow);
+    }
+
+    .secondary {
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: transparent;
+    }
+
+    .micro-note {
+      color: var(--text-soft);
+      font-size: 12px;
+      line-height: 1.55;
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: var(--surface-gradient);
+    }
+
+    .footer-link {
+      text-align: center;
+      color: var(--text-soft);
+      font-size: 13px;
+    }
+
+    .footer-link strong {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    @media (max-width: 1180px) {
+      .variants {
+        grid-template-columns: 1fr;
+      }
+
+      .frame {
+        min-height: 680px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        width: min(100% - 20px, 1380px);
+        padding-top: 12px;
+      }
+
+      .intro {
+        flex-direction: column;
+        align-items: start;
+      }
+
+      .variant-b .frame-inner {
+        grid-template-columns: 1fr;
+      }
+
+      .editorial-pane {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .side-card-wrap {
+        padding-top: 14px;
+      }
+
+      .hero-band h3,
+      .editorial-pane h3,
+      .center-top h3 {
+        max-width: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="intro">
+      <div class="intro-copy">
+        <p class="eyebrow">Velvet Plum Login Layout Study</p>
+        <h1>三个方案，只比较布局，不比较主题。</h1>
+        <p>这三个版本都保留 Velvet Plum 的配色、衬线标题、玻璃质感和酒红色交互。区别只在于页面构图、信息密度和首屏重心。</p>
+      </div>
+      <div class="theme-toggle" aria-label="切换主题">
+        <button type="button" class="active" data-theme-button="dark">Night</button>
+        <button type="button" data-theme-button="light">Light</button>
+      </div>
+    </section>
+
+    <section class="variants">
+      <article class="variant variant-a">
+        <div class="variant-meta">
+          <div>
+            <h2>Version A</h2>
+            <p>上方扁 Hero，下方登录卡。最稳，最容易一屏。</p>
+          </div>
+          <span class="tag">One Screen</span>
+        </div>
+        <div class="frame">
+          <div class="frame-inner">
+            <section class="hero-band">
+              <small>Couple Memory Archive</small>
+              <h3>把重要的时刻，好好留住。</h3>
+              <p>顶部只承担气质和品牌识别，登录动作集中在底部卡片。</p>
+            </section>
+
+            <section class="stack-card">
+              <div class="login-card">
+                <header>
+                  <span class="badge">Private Access</span>
+                  <h4>欢迎回来</h4>
+                  <p>继续整理你们的相册、纪念日与共同生活片段。</p>
+                </header>
+
+                <div class="fields">
+                  <div class="field">
+                    <div class="field-row">
+                      <label>邮箱</label>
+                      <span>Secure sign-in</span>
+                    </div>
+                    <input type="email" placeholder="name@example.com">
+                  </div>
+                  <div class="field">
+                    <div class="field-row">
+                      <label>密码</label>
+                      <span>Register</span>
+                    </div>
+                    <input type="password" placeholder="••••••••">
+                  </div>
+                </div>
+
+                <div class="utility">
+                  <label class="checkbox"><input type="checkbox" checked><span>记住设备</span></label>
+                  <span>Session protected</span>
+                </div>
+
+                <div class="actions">
+                  <a href="/" class="primary">登录并继续</a>
+                  <a href="/" class="secondary">创建新的情侣空间</a>
+                </div>
+
+                <div class="micro-note">照片、纪念日与共同生活片段都会继续保留在这里。</div>
+                <div class="footer-link">还没有账号？<strong>注册</strong></div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </article>
+
+      <article class="variant variant-b">
+        <div class="variant-meta">
+          <div>
+            <h2>Version B</h2>
+            <p>偏编辑画报，不对称排版。左侧更有张力。</p>
+          </div>
+          <span class="tag">Editorial</span>
+        </div>
+        <div class="frame">
+          <div class="frame-inner">
+            <section class="editorial-pane">
+              <div>
+                <p class="eyebrow">Couple Memory Archive</p>
+                <h3>把记忆整理成一份值得再翻开的私密档案。</h3>
+              </div>
+
+              <div class="stat-strip">
+                <article class="stat-card">
+                  <small>Photos</small>
+                  <strong>Shared Albums</strong>
+                  <span>旅行、日常、纪念日不再散落，全部归到同一处。</span>
+                </article>
+                <article class="stat-card">
+                  <small>Milestones</small>
+                  <strong>Timeline</strong>
+                  <span>第一次见面、第一次旅行、未来计划串成共同时间线。</span>
+                </article>
+              </div>
+
+              <p>这个版本更像一本编辑画报的封面页，左侧不空，但高度风险也最大。</p>
+            </section>
+
+            <section class="side-card-wrap">
+              <div class="login-card">
+                <header>
+                  <span class="badge">Private Access</span>
+                  <h4>欢迎回来</h4>
+                  <p>继续进入你们的私人记忆空间。</p>
+                </header>
+
+                <div class="fields">
+                  <div class="field">
+                    <div class="field-row">
+                      <label>邮箱</label>
+                      <span>Email</span>
+                    </div>
+                    <input type="email" placeholder="name@example.com">
+                  </div>
+                  <div class="field">
+                    <div class="field-row">
+                      <label>密码</label>
+                      <span>Password</span>
+                    </div>
+                    <input type="password" placeholder="••••••••">
+                  </div>
+                </div>
+
+                <div class="actions">
+                  <a href="/" class="primary">登录并继续</a>
+                  <a href="/" class="secondary">注册</a>
+                </div>
+
+                <div class="micro-note">更有力，但也更接近“视觉封面”，产品感略弱于 A / C。</div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </article>
+
+      <article class="variant variant-c">
+        <div class="variant-meta">
+          <div>
+            <h2>Version C</h2>
+            <p>顶部居中，登录卡前压。最像正式产品入口。</p>
+          </div>
+          <span class="tag">Balanced</span>
+        </div>
+        <div class="frame">
+          <div class="frame-inner">
+            <section class="center-top">
+              <p class="eyebrow">Couple Memory Archive</p>
+              <h3>把重要的时刻，好好留住。</h3>
+              <p>你们的照片、纪念日和共同生活片段，都留在一个只属于彼此的地方。</p>
+              <div class="mini-bar">Private archive for two</div>
+            </section>
+
+            <section class="center-card-wrap">
+              <div class="login-card">
+                <header>
+                  <span class="badge">Private Access</span>
+                  <h4>欢迎回来</h4>
+                  <p>继续整理你们的相册、纪念日与共同生活片段。</p>
+                </header>
+
+                <div class="fields">
+                  <div class="field">
+                    <div class="field-row">
+                      <label>邮箱</label>
+                      <span>Secure sign-in</span>
+                    </div>
+                    <input type="email" placeholder="name@example.com">
+                  </div>
+                  <div class="field">
+                    <div class="field-row">
+                      <label>密码</label>
+                      <span>Register</span>
+                    </div>
+                    <input type="password" placeholder="••••••••">
+                  </div>
+                </div>
+
+                <div class="utility">
+                  <label class="checkbox"><input type="checkbox" checked><span>记住设备</span></label>
+                  <span>Session protected</span>
+                </div>
+
+                <div class="actions">
+                  <a href="/" class="primary">登录并继续</a>
+                  <a href="/" class="secondary">创建新的情侣空间</a>
+                </div>
+
+                <div class="micro-note">这个版本兼顾品牌感和产品感，首屏控制也最容易。</div>
+                <div class="footer-link">还没有账号？<strong>注册</strong></div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const root = document.documentElement;
+    const buttons = Array.from(document.querySelectorAll("[data-theme-button]"));
+
+    function setTheme(theme) {
+      root.setAttribute("data-theme", theme);
+      buttons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.themeButton === theme);
+      });
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => setTheme(button.dataset.themeButton));
+    });
+  </script>
+</body>
+</html>

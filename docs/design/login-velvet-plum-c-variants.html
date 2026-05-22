@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Velvet Plum Login C Variants</title>
+  <style>
+    :root {
+      --font-display: "Baskerville", "Times New Roman", "Georgia", "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
+      --font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Source Han Sans SC", "Helvetica Neue", Arial, sans-serif;
+      --radius-xxl: 34px;
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 12px;
+      --shadow-soft: 0 24px 60px rgba(22, 10, 18, 0.2);
+      --shadow-card: 0 16px 34px rgba(16, 7, 14, 0.16);
+    }
+
+    :root,
+    :root[data-theme="light"] {
+      --bg: #f1eded;
+      --bg-2: #faf7f7;
+      --panel: rgba(255, 251, 253, 0.8);
+      --panel-strong: rgba(255, 255, 255, 0.9);
+      --text: #20171c;
+      --text-soft: rgba(32, 23, 28, 0.66);
+      --text-faint: rgba(32, 23, 28, 0.38);
+      --line: rgba(32, 23, 28, 0.1);
+      --accent: #6f4f66;
+      --accent-2: #c9a2a1;
+      --accent-soft: rgba(111, 79, 102, 0.12);
+      --accent-glow: rgba(111, 79, 102, 0.2);
+      --hero-gradient: linear-gradient(135deg, #4a2f42 0%, #8f607a 42%, #d7bbb7 100%);
+      --active-gradient: linear-gradient(135deg, #5b3a52 0%, #c9a2a1 100%);
+      --surface-gradient: linear-gradient(135deg, rgba(111, 79, 102, 0.12), rgba(201, 162, 161, 0.08));
+      --body-overlay:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.86), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(143, 96, 122, 0.12), transparent 30%);
+      --input-bg: rgba(255, 255, 255, 0.82);
+      --focus-ring: 0 0 0 3px rgba(111, 79, 102, 0.16);
+      --hero-text: #fffafc;
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #161116;
+      --bg-2: #211820;
+      --panel: rgba(35, 24, 33, 0.76);
+      --panel-strong: rgba(42, 28, 39, 0.92);
+      --text: #f7edf3;
+      --text-soft: rgba(247, 237, 243, 0.7);
+      --text-faint: rgba(247, 237, 243, 0.4);
+      --line: rgba(247, 237, 243, 0.1);
+      --accent: #d5a6b5;
+      --accent-2: #8b657e;
+      --accent-soft: rgba(213, 166, 181, 0.12);
+      --accent-glow: rgba(213, 166, 181, 0.16);
+      --hero-gradient: linear-gradient(135deg, #2c1625 0%, #5a3550 38%, #a97684 100%);
+      --active-gradient: linear-gradient(135deg, #70455f 0%, #b78795 100%);
+      --surface-gradient: linear-gradient(135deg, rgba(213, 166, 181, 0.1), rgba(91, 53, 80, 0.18));
+      --body-overlay:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.05), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(183, 135, 149, 0.1), transparent 30%);
+      --input-bg: rgba(255, 247, 252, 0.04);
+      --focus-ring: 0 0 0 3px rgba(213, 166, 181, 0.18);
+      --hero-text: #fff7fb;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--body-overlay), linear-gradient(180deg, var(--bg-2), var(--bg));
+      color: var(--text);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: radial-gradient(circle at center, black 42%, transparent 82%);
+      opacity: 0.2;
+    }
+
+    body, button, input { font: inherit; }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      width: min(1360px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 18px 0 28px;
+    }
+
+    .intro {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      font-size: 10px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .intro h1 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(32px, 4vw, 50px);
+      line-height: 0.92;
+      letter-spacing: -0.06em;
+    }
+
+    .intro p {
+      margin: 12px 0 0;
+      color: var(--text-soft);
+      font-size: 14px;
+      line-height: 1.7;
+      max-width: 44ch;
+    }
+
+    .theme-toggle {
+      display: inline-flex;
+      gap: 6px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      flex-shrink: 0;
+    }
+
+    .theme-toggle button {
+      border: 0;
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: transparent;
+      color: var(--text-soft);
+      cursor: pointer;
+    }
+
+    .theme-toggle button.active {
+      color: var(--hero-text);
+      background: var(--active-gradient);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 10px 22px var(--accent-glow);
+    }
+
+    .variants {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .variant {
+      display: grid;
+      gap: 10px;
+    }
+
+    .variant-c1 .frame {
+      min-height: 700px;
+    }
+
+    .variant-c1 .inner {
+      padding: 18px;
+    }
+
+    .meta {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .meta h2 {
+      margin: 0;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .meta p {
+      margin: 4px 0 0;
+      color: var(--text-soft);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .tag {
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      white-space: nowrap;
+    }
+
+    .frame {
+      min-height: 760px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xxl);
+      background: var(--panel);
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(22px);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .frame::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at top center, rgba(255, 255, 255, 0.08), transparent 22%),
+        radial-gradient(circle at bottom right, rgba(143, 96, 122, 0.12), transparent 30%);
+    }
+
+    .inner {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 22px;
+    }
+
+    .glow {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 50% 24%, rgba(201, 162, 161, 0.2), transparent 24%);
+      opacity: 0.85;
+    }
+
+    .shell {
+      width: min(450px, 100%);
+      display: grid;
+      gap: 0;
+    }
+
+    .small-top-card {
+      width: min(400px, calc(100% - 28px));
+      margin: 0 auto -16px;
+      padding: 14px 18px 18px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.02)),
+        var(--surface-gradient);
+      box-shadow: var(--shadow-card);
+      text-align: center;
+    }
+
+    .variant-c1 .shell {
+      width: min(418px, 100%);
+    }
+
+    .variant-c1 .small-top-card {
+      width: min(356px, calc(100% - 36px));
+      margin-bottom: -12px;
+      padding: 12px 16px 14px;
+      border-radius: 18px;
+    }
+
+    .variant-c1 .small-top-card .eyebrow {
+      margin-bottom: 6px;
+    }
+
+    .variant-c1 .small-top-card h3 {
+      font-size: clamp(24px, 3.2vw, 34px);
+      line-height: 0.94;
+    }
+
+    .variant-c1 .small-top-card p {
+      margin-top: 6px;
+      font-size: 12px;
+      line-height: 1.5;
+      max-width: 23ch;
+    }
+
+    .small-top-card h3,
+    .integrated-card h3,
+    .floating-chip h3 {
+      margin: 8px 0 0;
+      font-family: var(--font-display);
+      font-size: clamp(28px, 3.8vw, 42px);
+      line-height: 0.92;
+      letter-spacing: -0.06em;
+      text-wrap: pretty;
+    }
+
+    .small-top-card p,
+    .integrated-card p,
+    .floating-chip p {
+      margin: 8px auto 0;
+      color: var(--text-soft);
+      font-size: 13px;
+      line-height: 1.6;
+      max-width: 24ch;
+    }
+
+    .login-card {
+      padding: 18px;
+      border-radius: 26px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      box-shadow: 0 24px 70px rgba(34, 18, 30, 0.18);
+      backdrop-filter: blur(18px);
+      display: grid;
+      gap: 14px;
+    }
+
+    .variant-c1 .login-card {
+      padding: 16px;
+      border-radius: 22px;
+      gap: 12px;
+    }
+
+    .variant-c1 .login-card header {
+      gap: 6px;
+    }
+
+    .variant-c1 .login-card header h4 {
+      font-size: 30px;
+    }
+
+    .variant-c1 .login-card header p {
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .variant-c1 .fields {
+      gap: 10px;
+    }
+
+    .variant-c1 .field {
+      gap: 6px;
+    }
+
+    .variant-c1 .field-row,
+    .variant-c1 .utility,
+    .variant-c1 .micro,
+    .variant-c1 .foot {
+      font-size: 11px;
+    }
+
+    .variant-c1 .micro {
+      padding: 10px 12px;
+      line-height: 1.45;
+    }
+
+    .login-card header {
+      display: grid;
+      gap: 8px;
+    }
+
+    .badge {
+      width: fit-content;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .login-card header h4 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: 34px;
+      line-height: 0.96;
+      letter-spacing: -0.05em;
+    }
+
+    .login-card header p {
+      margin: 0;
+      color: var(--text-soft);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .integrated-card {
+      padding-bottom: 2px;
+    }
+
+    .integrated-top {
+      padding: 2px 2px 10px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 4px;
+    }
+
+    .integrated-top .eyebrow {
+      margin-bottom: 6px;
+    }
+
+    .integrated-top p {
+      max-width: 26ch;
+      margin-left: 0;
+    }
+
+    .floating-wrap {
+      position: relative;
+      padding-top: 28px;
+    }
+
+    .floating-chip {
+      position: absolute;
+      top: 0;
+      left: 22px;
+      right: 22px;
+      padding: 12px 16px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: var(--hero-gradient);
+      color: var(--hero-text);
+      box-shadow: var(--shadow-card);
+    }
+
+    .floating-chip .eyebrow,
+    .floating-chip p {
+      color: rgba(255, 247, 251, 0.82);
+    }
+
+    .floating-chip h3 {
+      max-width: 8ch;
+      color: var(--hero-text);
+    }
+
+    .floating-chip p {
+      max-width: 24ch;
+      margin-left: 0;
+    }
+
+    .floating-wrap .login-card {
+      padding-top: 134px;
+    }
+
+    .fields {
+      display: grid;
+      gap: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .field-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-soft);
+      font-size: 12px;
+    }
+
+    .field-row label {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      height: 42px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line);
+      background: var(--input-bg);
+      color: var(--text);
+      padding: 0 12px;
+      outline: none;
+    }
+
+    input::placeholder { color: var(--text-faint); }
+
+    input:focus {
+      border-color: color-mix(in srgb, var(--accent) 40%, white 10%);
+      box-shadow: var(--focus-ring);
+    }
+
+    .utility {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-soft);
+    }
+
+    .checkbox {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .checkbox input {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--accent);
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+    }
+
+    .primary,
+    .secondary {
+      height: 42px;
+      border-radius: var(--radius-md);
+      display: grid;
+      place-items: center;
+      text-decoration: none;
+    }
+
+    .primary {
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: var(--hero-text);
+      background: var(--active-gradient);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 10px 22px var(--accent-glow);
+    }
+
+    .secondary {
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: transparent;
+    }
+
+    .micro {
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: var(--surface-gradient);
+      color: var(--text-soft);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .foot {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-soft);
+    }
+
+    .foot strong {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    @media (max-width: 1180px) {
+      .variants { grid-template-columns: 1fr; }
+      .frame { min-height: 680px; }
+    }
+
+    @media (max-width: 720px) {
+      .page { width: min(100% - 20px, 1360px); padding-top: 12px; }
+      .intro { flex-direction: column; align-items: start; }
+      .floating-chip h3,
+      .small-top-card h3,
+      .integrated-card h3 { max-width: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="intro">
+      <div>
+        <p class="eyebrow">Velvet Plum C Variants</p>
+        <h1>同一个 C 方向，拆成三种品牌与表单关系。</h1>
+        <p>这次只看一件事：顶部品牌信息怎么放，才能和登录输入区更像一个整体，而不是两张互相竞争的卡。</p>
+      </div>
+      <div class="theme-toggle" aria-label="切换主题">
+        <button type="button" class="active" data-theme-button="dark">Night</button>
+        <button type="button" data-theme-button="light">Light</button>
+      </div>
+    </section>
+
+    <section class="variants">
+      <article class="variant variant-c1">
+        <div class="meta">
+          <div>
+            <h2>C1 上小下大</h2>
+            <p>顶部品牌卡缩成更扁的条，下面登录卡仍然是主角。</p>
+          </div>
+          <span class="tag">Safer</span>
+        </div>
+        <div class="frame">
+          <div class="glow"></div>
+          <div class="inner">
+            <div class="shell">
+              <div class="small-top-card">
+                <p class="eyebrow">Couple Memory Archive</p>
+                <h3>把重要的时刻，好好留住。</h3>
+                <p>品牌有存在感，但不会压过主操作区。</p>
+              </div>
+
+              <div class="login-card">
+                <header>
+                  <span class="badge">Private Access</span>
+                  <h4>欢迎回来</h4>
+                  <p>继续整理你们的相册、纪念日与共同生活片段。</p>
+                </header>
+
+                <div class="fields">
+                  <div class="field">
+                    <div class="field-row"><label>邮箱</label><span>Secure sign-in</span></div>
+                    <input type="email" placeholder="name@example.com">
+                  </div>
+                  <div class="field">
+                    <div class="field-row"><label>密码</label><span>Register</span></div>
+                    <input type="password" placeholder="••••••••">
+                  </div>
+                </div>
+
+                <div class="utility">
+                  <label class="checkbox"><input type="checkbox" checked><span>记住设备</span></label>
+                  <span>Session protected</span>
+                </div>
+
+                <div class="actions">
+                  <a href="/" class="primary">登录并继续</a>
+                  <a href="/" class="secondary">创建新的情侣空间</a>
+                </div>
+
+                <div class="micro">优点是最稳。问题是顶部和底部仍然是两个物件。</div>
+                <div class="foot">还没有账号？<strong>注册</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="variant">
+        <div class="meta">
+          <div>
+            <h2>C2 品牌并入登录卡</h2>
+            <p>品牌内容直接成为登录卡上半部分，整个物件完整。</p>
+          </div>
+          <span class="tag">Recommended</span>
+        </div>
+        <div class="frame">
+          <div class="glow"></div>
+          <div class="inner">
+            <div class="shell">
+              <div class="login-card integrated-card">
+                <div class="integrated-top">
+                  <p class="eyebrow">Couple Memory Archive</p>
+                  <h3>把重要的时刻，好好留住。</h3>
+                  <p>你们的照片与纪念日，都留在这里。</p>
+                </div>
+
+                <header>
+                  <span class="badge">Private Access</span>
+                  <h4>欢迎回来</h4>
+                  <p>继续进入你们的私人记忆空间。</p>
+                </header>
+
+                <div class="fields">
+                  <div class="field">
+                    <div class="field-row"><label>邮箱</label><span>Secure sign-in</span></div>
+                    <input type="email" placeholder="name@example.com">
+                  </div>
+                  <div class="field">
+                    <div class="field-row"><label>密码</label><span>Register</span></div>
+                    <input type="password" placeholder="••••••••">
+                  </div>
+                </div>
+
+                <div class="utility">
+                  <label class="checkbox"><input type="checkbox" checked><span>记住设备</span></label>
+                  <span>Session protected</span>
+                </div>
+
+                <div class="actions">
+                  <a href="/" class="primary">登录并继续</a>
+                  <a href="/" class="secondary">创建新的情侣空间</a>
+                </div>
+
+                <div class="micro">品牌和表单属于同一层，页面不会碎，也最容易控制成一屏。</div>
+                <div class="foot">还没有账号？<strong>注册</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="variant">
+        <div class="meta">
+          <div>
+            <h2>C3 悬浮贴边</h2>
+            <p>品牌块不是独立顶部卡，而是悬浮贴在登录卡边缘。</p>
+          </div>
+          <span class="tag">More Stylish</span>
+        </div>
+        <div class="frame">
+          <div class="glow"></div>
+          <div class="inner">
+            <div class="shell floating-wrap">
+              <div class="floating-chip">
+                <p class="eyebrow">Couple Memory Archive</p>
+                <h3>把重要的时刻，好好留住。</h3>
+                <p>更像 editorial header，但实现不好容易显得刻意。</p>
+              </div>
+
+              <div class="login-card">
+                <header>
+                  <span class="badge">Private Access</span>
+                  <h4>欢迎回来</h4>
+                  <p>继续整理你们的相册、纪念日与共同生活片段。</p>
+                </header>
+
+                <div class="fields">
+                  <div class="field">
+                    <div class="field-row"><label>邮箱</label><span>Secure sign-in</span></div>
+                    <input type="email" placeholder="name@example.com">
+                  </div>
+                  <div class="field">
+                    <div class="field-row"><label>密码</label><span>Register</span></div>
+                    <input type="password" placeholder="••••••••">
+                  </div>
+                </div>
+
+                <div class="utility">
+                  <label class="checkbox"><input type="checkbox" checked><span>记住设备</span></label>
+                  <span>Session protected</span>
+                </div>
+
+                <div class="actions">
+                  <a href="/" class="primary">登录并继续</a>
+                  <a href="/" class="secondary">创建新的情侣空间</a>
+                </div>
+
+                <div class="micro">设计感更强，但最容易在真实产品里变成“装饰先于可用性”。</div>
+                <div class="foot">还没有账号？<strong>注册</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const root = document.documentElement;
+    const buttons = Array.from(document.querySelectorAll("[data-theme-button]"));
+
+    function setTheme(theme) {
+      root.setAttribute("data-theme", theme);
+      buttons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.themeButton === theme);
+      });
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => setTheme(button.dataset.themeButton));
+    });
+  </script>
+</body>
+</html>

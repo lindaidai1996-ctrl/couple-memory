@@ -4,8 +4,6 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
-import { LocaleSwitcher } from '@/components/preferences/locale-switcher'
-import { ThemeToggle } from '@/components/preferences/theme-toggle'
 
 export function Sidebar() {
   const t = useTranslations('Sidebar')
@@ -87,13 +85,6 @@ export function Sidebar() {
             )
           })}
         </nav>
-
-        <div className="space-y-3 border-t border-warm-border px-4 py-4">
-          <div className="flex flex-wrap gap-2">
-            <LocaleSwitcher />
-            <ThemeToggle />
-          </div>
-        </div>
       </aside>
     </>
   )

@@ -6,6 +6,11 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 
+const inputClassName = `h-[42px] w-full rounded-[var(--radius-md)] border border-warm-border
+  bg-[var(--dashboard-input-bg)] px-3 text-sm text-warm-text placeholder:text-[color:var(--dashboard-text-faint)]
+  outline-none transition-[border-color,box-shadow,transform,background-color] duration-200
+  hover:border-warm-accent/30 focus:border-warm-accent/40 focus:shadow-[var(--dashboard-focus-ring)] focus:-translate-y-px`
+
 export default function RegisterPage() {
   const t = useTranslations('RegisterPage')
   const router = useRouter()
@@ -64,22 +69,29 @@ export default function RegisterPage() {
 
   return (
     <>
-      <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-warm-text tracking-tight">
-          {t('title')}
-        </h1>
-        <p className="text-warm-muted text-sm mt-1">{t('subtitle')}</p>
+      <div className="mb-6 space-y-3">
+        <div className="inline-flex rounded-full border border-warm-border bg-[var(--dashboard-accent-soft)] px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-warm-accent">
+          Shared Space
+        </div>
+        <div className="space-y-2">
+          <h1 className="font-[var(--font-display)] text-[clamp(28px,4vw,40px)] leading-[0.94] tracking-[-0.05em] text-warm-text">
+            {t('title')}
+          </h1>
+          <p className="max-w-[34ch] text-[13px] leading-6 text-warm-muted">
+            {t('subtitle')}
+          </p>
+        </div>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-[var(--radius-md)] bg-red-50 text-error text-sm text-center">
+        <div className="mb-4 rounded-[var(--radius-md)] border border-red-200/70 bg-red-50/80 px-4 py-3 text-sm text-error dark:border-red-500/20 dark:bg-red-500/10">
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-warm-text mb-1.5">
+        <div className="space-y-2">
+          <label htmlFor="name" className="block text-xs font-medium text-warm-text">
             {t('name')}
           </label>
           <input
@@ -87,16 +99,13 @@ export default function RegisterPage() {
             name="name"
             type="text"
             required
-            className="w-full px-4 py-3 rounded-[var(--radius-md)] border border-warm-border
-              bg-warm-bg text-warm-text placeholder:text-warm-muted/60
-              focus:ring-2 focus:ring-warm-accent/30 focus:border-warm-accent outline-none
-              transition-all duration-200"
+            className={inputClassName}
             placeholder={t('namePlaceholder')}
           />
         </div>
 
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-warm-text mb-1.5">
+        <div className="space-y-2">
+          <label htmlFor="email" className="block text-xs font-medium text-warm-text">
             {t('email')}
           </label>
           <input
@@ -105,16 +114,13 @@ export default function RegisterPage() {
             type="email"
             required
             autoComplete="email"
-            className="w-full px-4 py-3 rounded-[var(--radius-md)] border border-warm-border
-              bg-warm-bg text-warm-text placeholder:text-warm-muted/60
-              focus:ring-2 focus:ring-warm-accent/30 focus:border-warm-accent outline-none
-              transition-all duration-200"
-            placeholder="your@email.com"
+            className={inputClassName}
+            placeholder="name@example.com"
           />
         </div>
 
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-warm-text mb-1.5">
+        <div className="space-y-2">
+          <label htmlFor="password" className="block text-xs font-medium text-warm-text">
             {t('password')}
           </label>
           <input
@@ -124,16 +130,13 @@ export default function RegisterPage() {
             required
             minLength={6}
             autoComplete="new-password"
-            className="w-full px-4 py-3 rounded-[var(--radius-md)] border border-warm-border
-              bg-warm-bg text-warm-text placeholder:text-warm-muted/60
-              focus:ring-2 focus:ring-warm-accent/30 focus:border-warm-accent outline-none
-              transition-all duration-200"
+            className={inputClassName}
             placeholder={t('passwordPlaceholder')}
           />
         </div>
 
-        <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-warm-text mb-1.5">
+        <div className="space-y-2">
+          <label htmlFor="confirmPassword" className="block text-xs font-medium text-warm-text">
             {t('confirmPassword')}
           </label>
           <input
@@ -143,10 +146,7 @@ export default function RegisterPage() {
             required
             minLength={6}
             autoComplete="new-password"
-            className="w-full px-4 py-3 rounded-[var(--radius-md)] border border-warm-border
-              bg-warm-bg text-warm-text placeholder:text-warm-muted/60
-              focus:ring-2 focus:ring-warm-accent/30 focus:border-warm-accent outline-none
-              transition-all duration-200"
+            className={inputClassName}
             placeholder={t('confirmPasswordPlaceholder')}
           />
         </div>
@@ -154,18 +154,15 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 mt-2 bg-warm-accent text-white font-medium rounded-[var(--radius-md)]
-            hover:bg-warm-accent-hover active:scale-[0.98]
-            disabled:opacity-50 disabled:cursor-not-allowed
-            transition-all duration-200 shadow-sm hover:shadow-md"
+          className="h-[42px] w-full rounded-[var(--radius-md)] border border-white/18 bg-[var(--dashboard-active-gradient)] font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_0_0_1px_rgba(255,255,255,0.08),0_10px_22px_var(--dashboard-accent-glow)] transition-transform duration-200 hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? t('submitting') : t('submit')}
         </button>
       </form>
 
-      <p className="text-center text-sm text-warm-muted mt-6">
+      <p className="mt-5 text-center text-sm text-warm-muted">
         {t('hasAccount')}
-        <Link href="/login" className="text-warm-accent hover:text-warm-accent-hover font-medium ml-1">
+        <Link href="/login" className="ml-1 font-medium text-warm-accent hover:text-warm-accent-hover">
           {t('login')}
         </Link>
       </p>

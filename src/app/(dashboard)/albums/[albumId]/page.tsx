@@ -705,7 +705,7 @@ export default function AlbumDetailPage() {
         </div>
 
         <div className="grid gap-3 lg:grid-cols-2">
-          <div className="rounded-[var(--radius-md)] bg-warm-bg p-4 space-y-3">
+          <div className="rounded-[var(--radius-md)] bg-warm-bg p-4 space-y-3 dark:bg-[linear-gradient(135deg,rgba(73,47,66,0.82),rgba(44,28,40,0.96))]">
             <div className="space-y-1">
               <p className="text-xs font-medium uppercase tracking-[0.18em] text-warm-accent">
                 {uiText.narrative.aiTitleLabel}
