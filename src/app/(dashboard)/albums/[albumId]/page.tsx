@@ -32,6 +32,12 @@ interface AlbumDetailResponse {
 
 type Translator = (key: string, values?: Record<string, string | number>) => string
 
+export const ALBUM_NARRATIVE_HIGHLIGHT_CARD_CLASS =
+  'space-y-3 rounded-[var(--radius-md)] border border-[var(--dashboard-card-hairline)] bg-[var(--dashboard-card-bg-strong)] px-4 py-4 shadow-[var(--dashboard-shadow-card)]'
+
+export const ALBUM_NARRATIVE_STAT_CARD_CLASS =
+  'rounded-[var(--radius-md)] border border-[var(--dashboard-card-hairline)] bg-[var(--dashboard-card-bg-soft)] px-3 py-3 shadow-[var(--dashboard-shadow-card)]'
+
 export function buildAlbumDetailUiText(t: Translator) {
   return {
     photoCount: (count: number) => t('photoCount', { count }),
@@ -662,7 +668,6 @@ export default function AlbumDetailPage() {
     selectionMode: albumSelectionMode,
     selectedPhotoIds,
   })
-
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-3">
@@ -705,7 +710,7 @@ export default function AlbumDetailPage() {
         </div>
 
         <div className="grid gap-3 lg:grid-cols-2">
-          <div className="rounded-[var(--radius-md)] bg-warm-bg p-4 space-y-3 dark:bg-[linear-gradient(135deg,rgba(73,47,66,0.82),rgba(44,28,40,0.96))]">
+          <div className={ALBUM_NARRATIVE_HIGHLIGHT_CARD_CLASS}>
             <div className="space-y-1">
               <p className="text-xs font-medium uppercase tracking-[0.18em] text-warm-accent">
                 {uiText.narrative.aiTitleLabel}
@@ -815,19 +820,19 @@ export default function AlbumDetailPage() {
         ) : null}
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-[var(--radius-md)] bg-warm-bg px-3 py-3 dark:bg-[linear-gradient(135deg,rgba(73,47,66,0.82),rgba(44,28,40,0.96))]">
+          <div className={ALBUM_NARRATIVE_STAT_CARD_CLASS}>
             <div className="text-xs text-warm-muted">{uiText.narrative.chapterCount}</div>
             <div className="mt-1 text-lg font-semibold text-warm-text">{narrativeSnapshot.chapterCount}</div>
           </div>
-          <div className="rounded-[var(--radius-md)] bg-warm-bg px-3 py-3 dark:bg-[linear-gradient(135deg,rgba(73,47,66,0.82),rgba(44,28,40,0.96))]">
+          <div className={ALBUM_NARRATIVE_STAT_CARD_CLASS}>
             <div className="text-xs text-warm-muted">{uiText.narrative.summarizedCount}</div>
             <div className="mt-1 text-lg font-semibold text-warm-text">{narrativeSnapshot.summarizedChapterCount}</div>
           </div>
-          <div className="rounded-[var(--radius-md)] bg-warm-bg px-3 py-3 dark:bg-[linear-gradient(135deg,rgba(73,47,66,0.82),rgba(44,28,40,0.96))]">
+          <div className={ALBUM_NARRATIVE_STAT_CARD_CLASS}>
             <div className="text-xs text-warm-muted">{uiText.narrative.ungroupedCount}</div>
             <div className="mt-1 text-lg font-semibold text-warm-text">{narrativeSnapshot.ungroupedCount}</div>
           </div>
-          <div className="rounded-[var(--radius-md)] bg-warm-bg px-3 py-3 dark:bg-[linear-gradient(135deg,rgba(73,47,66,0.82),rgba(44,28,40,0.96))]">
+          <div className={ALBUM_NARRATIVE_STAT_CARD_CLASS}>
             <div className="text-xs text-warm-muted">{uiText.narrative.descriptionReady}</div>
             <div className="mt-1 text-sm font-medium text-warm-text">
               {narrativeSnapshot.hasDescription ? uiText.narrative.descriptionReady : uiText.narrative.descriptionMissing}

@@ -4,6 +4,8 @@ import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 
 import {
+  ALBUM_NARRATIVE_HIGHLIGHT_CARD_CLASS,
+  ALBUM_NARRATIVE_STAT_CARD_CLASS,
   buildAlbumCoverCandidates,
   buildAlbumDescriptionDraftSuggestion,
   buildAlbumDetailUiText,
@@ -56,6 +58,13 @@ test('buildAlbumDetailUiText exposes localized chapter page copy', () => {
   assert.equal(uiText.narrative.currentTitleLabel, 'narrativeCurrentTitleLabel')
   assert.equal(uiText.narrative.aiDescriptionLabel, 'narrativeAiDescriptionLabel')
   assert.equal(uiText.narrative.currentDescriptionLabel, 'narrativeCurrentDescriptionLabel')
+})
+
+test('album narrative cards use shared dashboard surface tokens for theme-aware backgrounds', () => {
+  assert.match(ALBUM_NARRATIVE_HIGHLIGHT_CARD_CLASS, /bg-\[var\(--dashboard-card-bg-strong\)\]/)
+  assert.match(ALBUM_NARRATIVE_HIGHLIGHT_CARD_CLASS, /border-\[var\(--dashboard-card-hairline\)\]/)
+  assert.match(ALBUM_NARRATIVE_STAT_CARD_CLASS, /bg-\[var\(--dashboard-card-bg-soft\)\]/)
+  assert.match(ALBUM_NARRATIVE_STAT_CARD_CLASS, /shadow-\[var\(--dashboard-shadow-card\)\]/)
 })
 
 test('buildAlbumDetailSections returns chapter area before ungrouped area', () => {
