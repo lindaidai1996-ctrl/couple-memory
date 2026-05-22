@@ -120,6 +120,7 @@
     "empty": "No milestones yet",
     "reviewGenerated": "Review AI suggestions",
     "confirmGenerated": "Confirm",
+    "pendingReview": "{count} AI milestone suggestion(s) still need review",
     "createFirst": "Add your first milestone",
     "deleteConfirm": "Delete this milestone?",
     "locationPlaceholder": "Location",
