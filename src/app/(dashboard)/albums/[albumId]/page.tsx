@@ -815,19 +815,19 @@ export default function AlbumDetailPage() {
         ) : null}
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-[var(--radius-md)] bg-warm-bg px-3 py-3">
+          <div className="rounded-[var(--radius-md)] bg-warm-bg px-3 py-3 dark:bg-[linear-gradient(135deg,rgba(73,47,66,0.82),rgba(44,28,40,0.96))]">
             <div className="text-xs text-warm-muted">{uiText.narrative.chapterCount}</div>
             <div className="mt-1 text-lg font-semibold text-warm-text">{narrativeSnapshot.chapterCount}</div>
           </div>
-          <div className="rounded-[var(--radius-md)] bg-warm-bg px-3 py-3">
+          <div className="rounded-[var(--radius-md)] bg-warm-bg px-3 py-3 dark:bg-[linear-gradient(135deg,rgba(73,47,66,0.82),rgba(44,28,40,0.96))]">
             <div className="text-xs text-warm-muted">{uiText.narrative.summarizedCount}</div>
             <div className="mt-1 text-lg font-semibold text-warm-text">{narrativeSnapshot.summarizedChapterCount}</div>
           </div>
-          <div className="rounded-[var(--radius-md)] bg-warm-bg px-3 py-3">
+          <div className="rounded-[var(--radius-md)] bg-warm-bg px-3 py-3 dark:bg-[linear-gradient(135deg,rgba(73,47,66,0.82),rgba(44,28,40,0.96))]">
             <div className="text-xs text-warm-muted">{uiText.narrative.ungroupedCount}</div>
             <div className="mt-1 text-lg font-semibold text-warm-text">{narrativeSnapshot.ungroupedCount}</div>
           </div>
-          <div className="rounded-[var(--radius-md)] bg-warm-bg px-3 py-3">
+          <div className="rounded-[var(--radius-md)] bg-warm-bg px-3 py-3 dark:bg-[linear-gradient(135deg,rgba(73,47,66,0.82),rgba(44,28,40,0.96))]">
             <div className="text-xs text-warm-muted">{uiText.narrative.descriptionReady}</div>
             <div className="mt-1 text-sm font-medium text-warm-text">
               {narrativeSnapshot.hasDescription ? uiText.narrative.descriptionReady : uiText.narrative.descriptionMissing}

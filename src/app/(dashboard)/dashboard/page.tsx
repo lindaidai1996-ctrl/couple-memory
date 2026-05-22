@@ -54,9 +54,38 @@ export function buildDashboardReviewCard(
     id: string
     type: 'YEARLY' | 'ANNIVERSARY'
     title: string
+    year?: number | null
+    publishedAt?: string | null
   }>
 ) {
   return buildDashboardReviewCardState(reviews as never)
+}
+
+export function buildDashboardReviewHighlights(
+  reviews: Array<{
+    id: string
+    type: 'YEARLY' | 'ANNIVERSARY'
+    title: string
+    year?: number | null
+    publishedAt?: string | null
+  }>,
+  now = new Date()
+) {
+  const currentYear = now.getUTCFullYear()
+  const currentYearReview =
+    reviews.find(review => review.type === 'YEARLY' && review.year === currentYear) ?? null
+
+  const recentReview =
+    [...reviews]
+      .filter(review => review.publishedAt)
+      .sort((left, right) =>
+        new Date(right.publishedAt ?? 0).getTime() - new Date(left.publishedAt ?? 0).getTime()
+      )[0] ?? null
+
+  return {
+    currentYearReview,
+    recentReview,
+  }
 }
 
 function formatStartDate(date: Date | null) {
@@ -142,6 +171,7 @@ export default async function DashboardPage() {
   })
   const reviews = await getDashboardMemoryReviewsByCoupleId(couple.id)
   const reviewCard = buildDashboardReviewCard(reviews)
+  const reviewHighlights = buildDashboardReviewHighlights(reviews)
   const formattedStartDate = formatStartDate(couple.startDate)
 
   return (
@@ -312,21 +342,26 @@ export default async function DashboardPage() {
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <div className="dashboard-inset-panel rounded-[20px] px-4 py-4">
                 <p className="text-[11px] uppercase tracking-[0.24em] text-warm-muted">
-                  {t('annualReview')}
+                  {t('currentYearReview')}
                 </p>
                 <p className="mt-3 font-medium text-warm-text">
-                  {reviewCard.yearlyReview?.title ?? t('reviewUnavailable')}
+                  {reviewHighlights.currentYearReview?.title ?? t('reviewUnavailable')}
                 </p>
               </div>
               <div className="dashboard-inset-panel rounded-[20px] px-4 py-4">
                 <p className="text-[11px] uppercase tracking-[0.24em] text-warm-muted">
-                  {t('anniversaryReview')}
+                  {t('recentReview')}
                 </p>
                 <p className="mt-3 font-medium text-warm-text">
-                  {reviewCard.anniversaryReview?.title ?? t('reviewUnavailable')}
+                  {reviewHighlights.recentReview?.title ?? t('reviewUnavailable')}
                 </p>
               </div>
             </div>
+            <p className="mt-4 text-xs leading-5 text-warm-muted">
+              {reviewCard.reviewCount > 0
+                ? t('reviewAvailableCount', { count: reviewCard.reviewCount })
+                : t('reviewGenerateHint')}
+            </p>
           </div>
         </div>
       </section>

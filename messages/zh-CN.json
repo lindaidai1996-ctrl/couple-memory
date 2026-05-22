@@ -94,8 +94,12 @@
     "reviewSubtitle": "把年度与周年节点整理成一份更适合重读和分享的回顾。",
     "annualReview": "年度回顾",
     "anniversaryReview": "周年回顾",
+    "currentYearReview": "本年回顾",
+    "recentReview": "最近回顾",
     "reviewUnavailable": "还没有可阅读的回顾",
     "openReview": "查看回顾",
+    "reviewAvailableCount": "目前已经整理出 {count} 份可阅读回顾。",
+    "reviewGenerateHint": "还没有整理出回顾成品，可以先生成本年或周年回顾。",
     "curationTitle": "整理进度",
     "curationSuggestionCount": "还有 {count} 条建议可以继续优化相册结构。",
     "curationStableHint": "当前整理状态稳定，可以继续补充新的回忆内容。"
@@ -411,6 +415,16 @@
     "blockedPhrasesLabel": "屏蔽词句",
     "blockedPhrasesHint": "每行一条，AI 会尽量避开这些词句。",
     "blockedPhrasesPlaceholder": "比如：命中注定\n一眼万年",
+    "memoryPreferenceStyle": "默认风格记忆",
+    "memoryPreferenceTone": "默认语气记忆",
+    "memoryPreferenceBlocked": "屏蔽词记忆",
+    "memoryPreferenceBlockedCount": "{count} 条",
+    "memoryPreferenceResetTitle": "重置 AI 记忆偏好",
+    "memoryPreferenceResetHint": "清空当前风格、语气和屏蔽词，让后续生成回到默认状态。",
+    "memoryPreferenceResetEmptyHint": "当前没有额外的 AI 记忆偏好需要清空。",
+    "memoryPreferenceResetAction": "重置偏好",
+    "memoryPreferencesReset": "AI 记忆偏好已重置",
+    "memoryPreferencesResetFailed": "重置 AI 记忆偏好失败",
     "useSystemDefault": "跟随系统默认",
     "visibility": "公开设置",
     "visibilityLabel": "公开展示空间",
@@ -463,6 +477,14 @@
     "photosSubtitle": "我们拍下的每一帧",
     "review": "回顾",
     "reviewSubtitle": "把一年和周年节点重新整理成可重读的故事。",
+    "topicsTitle": "专题导航",
+    "topicsSubtitle": "从不同入口重读这段回忆，也把适合分享的版本单独挑出来。",
+    "topicYearlyReview": "年度回顾",
+    "topicAnniversaryReview": "周年回顾",
+    "topicYearlyShare": "年度分享卡",
+    "topicAnniversaryShare": "周年分享卡",
+    "topicFirsts": "我们的第一次",
+    "topicFootprints": "足迹总结",
     "timeline": "时间轴",
     "timelineSubtitle": "属于我们的每一个节点",
     "narrativeTitle": "Album Narrative",
@@ -477,7 +499,31 @@
     "yearlyTitle": "年度回顾",
     "yearlyEmpty": "这一部分还没有生成可公开阅读的年度回顾。",
     "anniversaryTitle": "周年回顾",
-    "anniversaryEmpty": "这一部分还没有生成可公开阅读的周年回顾。"
+    "anniversaryEmpty": "这一部分还没有生成可公开阅读的周年回顾。",
+    "shareCard": "分享卡片"
+  },
+  "PublicReviewSharePage": {
+    "back": "返回回顾页",
+    "eyebrow": "Share Card",
+    "closingLabel": "结尾",
+    "highlightsLabel": "精选片段",
+    "notFound": "这张分享卡片暂时还不可用。"
+  },
+  "PublicFirstsPage": {
+    "back": "返回首页",
+    "title": "Our Firsts",
+    "subtitle": "把最早发生、最早被记录下来的那些片段重新放在一起。",
+    "firstMilestone": "第一条里程碑",
+    "firstPlace": "第一次抵达的地点",
+    "firstPhoto": "最早公开照片",
+    "empty": "这部分还没有足够的公开内容可以整理成专题。"
+  },
+  "PublicFootprintsPage": {
+    "back": "返回首页",
+    "title": "Footprints",
+    "subtitle": "从地点分布里看，这段回忆最常停留在哪里，又是怎样慢慢展开的。",
+    "countLabel": "这里留下了 {count} 张公开照片",
+    "empty": "目前还没有足够的地点信息可以整理出足迹总结。"
   },
   "ReviewsPage": {
     "title": "回顾整理",
@@ -489,6 +535,7 @@
     "anniversaryLabel": "周年"
   },
   "ReviewDetailPage": {
-    "back": "返回回顾列表"
+    "back": "返回回顾列表",
+    "openShareCard": "打开分享卡片"
   }
 }

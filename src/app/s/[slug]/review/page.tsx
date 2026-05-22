@@ -97,16 +97,28 @@ export default async function PublicReviewPage({
               className="overflow-hidden rounded-[var(--radius-xl)] border border-film-surface bg-film-surface/70"
             >
               <div className="border-b border-white/10 px-6 py-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-film-accent/75">
-                  {section.id === 'yearly' ? uiText.yearlyTitle : uiText.anniversaryTitle}
-                </p>
-                <h2
-                  className="mt-3 text-2xl font-bold text-white"
-                  style={{ fontFamily: 'var(--font-display)' }}
-                >
-                  {section.review?.title ??
-                    (section.id === 'yearly' ? uiText.yearlyEmpty : uiText.anniversaryEmpty)}
-                </h2>
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-film-accent/75">
+                      {section.id === 'yearly' ? uiText.yearlyTitle : uiText.anniversaryTitle}
+                    </p>
+                    <h2
+                      className="mt-3 text-2xl font-bold text-white"
+                      style={{ fontFamily: 'var(--font-display)' }}
+                    >
+                      {section.review?.title ??
+                        (section.id === 'yearly' ? uiText.yearlyEmpty : uiText.anniversaryEmpty)}
+                    </h2>
+                  </div>
+                  {section.review ? (
+                    <Link
+                      href={`/s/${slug}/review/share/${section.id}`}
+                      className="rounded-full border border-white/14 px-4 py-2 text-xs uppercase tracking-[0.18em] text-film-accent-light transition-colors hover:bg-white/8"
+                    >
+                      {t('shareCard')}
+                    </Link>
+                  ) : null}
+                </div>
               </div>
 
               {section.review ? (

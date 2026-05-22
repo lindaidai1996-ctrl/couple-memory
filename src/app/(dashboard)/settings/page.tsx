@@ -77,6 +77,13 @@ interface SettingsHeroCard {
   detail: string
 }
 
+interface MemoryPreferenceSummary {
+  styleLabel: string
+  toneLabel: string
+  blockedCount: number
+  hasCustomPreferences: boolean
+}
+
 type CoupleUpdateInput = {
   name: string
   slug: string
@@ -235,6 +242,32 @@ export function buildSettingsHeroCards(input: SettingsHeroCardInput): SettingsHe
       detail: guardrailDetail,
     },
   ]
+}
+
+export function buildMemoryPreferenceSummary(input: {
+  captionStylePreference: string | null
+  tonePreference: string | null
+  blockedPhrases: string[]
+}): MemoryPreferenceSummary {
+  return {
+    styleLabel: input.captionStylePreference || 'default',
+    toneLabel: input.tonePreference || 'default',
+    blockedCount: input.blockedPhrases.length,
+    hasCustomPreferences: Boolean(
+      input.captionStylePreference ||
+      input.tonePreference ||
+      input.blockedPhrases.length > 0
+    ),
+  }
+}
+
+export function buildResetMemoryPreferencesInput(couple: CoupleData): CoupleData {
+  return {
+    ...couple,
+    captionStylePreference: null,
+    tonePreference: null,
+    blockedPhrases: [],
+  }
 }
 
 export function buildRecentCoverPhotoOptions(
@@ -497,6 +530,39 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleResetMemoryPreferences() {
+    if (!couple) return
+
+    setSaving(true)
+    setMessage(null)
+
+    const nextCouple = buildResetMemoryPreferencesInput(couple)
+    setCouple(nextCouple)
+    setBlockedPhrasesDraft('')
+
+    const res = await fetch(`/api/couples/${couple.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildCoupleUpdatePayload(nextCouple)),
+    })
+
+    if (res.ok) {
+      const data = await res.json()
+      const normalizedCouple = normalizeCoupleResponse(data)
+      setCouple(normalizedCouple)
+      setBlockedPhrasesDraft(buildBlockedPhrasesDraft(normalizedCouple.blockedPhrases))
+      setMessage({ type: 'success', text: t('memoryPreferencesReset') })
+    } else {
+      const data = await res.json()
+      setMessage({
+        type: 'error',
+        text: extractApiErrorMessage(data, t('memoryPreferencesResetFailed')),
+      })
+    }
+
+    setSaving(false)
+  }
+
   if (loading) {
     return <SettingsFormSkeleton />
   }
@@ -520,6 +586,11 @@ export default function SettingsPage() {
     coverMode: couple.coverMode,
     coverPhotoUrl: couple.coverPhotoUrl,
     avatar: profile?.avatar || avatarInput.trim() || null,
+    captionStylePreference: couple.captionStylePreference,
+    tonePreference: couple.tonePreference,
+    blockedPhrases: couple.blockedPhrases,
+  })
+  const memoryPreferenceSummary = buildMemoryPreferenceSummary({
     captionStylePreference: couple.captionStylePreference,
     tonePreference: couple.tonePreference,
     blockedPhrases: couple.blockedPhrases,
@@ -724,6 +795,33 @@ export default function SettingsPage() {
           description={t('toneHint')}
           accent="rose"
         >
+          <div className="mb-5 grid gap-3 rounded-[24px] border border-[var(--line)] bg-[var(--panel-soft)] px-4 py-4 sm:grid-cols-3">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--text-faint)]">
+                {t('memoryPreferenceStyle')}
+              </p>
+              <p className="mt-2 text-sm font-medium text-[var(--text)]">
+                {memoryPreferenceSummary.styleLabel}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--text-faint)]">
+                {t('memoryPreferenceTone')}
+              </p>
+              <p className="mt-2 text-sm font-medium text-[var(--text)]">
+                {memoryPreferenceSummary.toneLabel}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--text-faint)]">
+                {t('memoryPreferenceBlocked')}
+              </p>
+              <p className="mt-2 text-sm font-medium text-[var(--text)]">
+                {t('memoryPreferenceBlockedCount', { count: memoryPreferenceSummary.blockedCount })}
+              </p>
+            </div>
+          </div>
+
           <Field
             label={t('captionStyleLabel')}
             hint={t('captionStyleHint')}
@@ -782,6 +880,25 @@ export default function SettingsPage() {
               placeholder={t('blockedPhrasesPlaceholder')}
             />
           </Field>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[22px] border border-[var(--line)] bg-[var(--panel-strong)]/75 px-4 py-4">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-[var(--text)]">{t('memoryPreferenceResetTitle')}</p>
+              <p className="text-xs leading-5 text-[var(--text-soft)]">
+                {memoryPreferenceSummary.hasCustomPreferences
+                  ? t('memoryPreferenceResetHint')
+                  : t('memoryPreferenceResetEmptyHint')}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void handleResetMemoryPreferences()}
+              disabled={saving || !memoryPreferenceSummary.hasCustomPreferences}
+              className={secondaryButtonClass}
+            >
+              {t('memoryPreferenceResetAction')}
+            </button>
+          </div>
         </Section>
 
         <Section

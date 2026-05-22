@@ -5,6 +5,7 @@ import {
   buildPublicHomeSectionOrder,
   buildPublicHomeNarrativeSection,
   buildPublicHomeReviewSection,
+  buildPublicHomeTopicSection,
   buildPublicHomeUiText,
 } from '../../src/app/s/[slug]/page'
 
@@ -17,6 +18,10 @@ test('buildPublicHomeUiText exposes narrative copy keys', () => {
   assert.equal(uiText.chapterLabel, 'chapterLabel')
   assert.equal(uiText.review, 'review')
   assert.equal(uiText.reviewSubtitle, 'reviewSubtitle')
+  assert.equal(uiText.topicsTitle, 'topicsTitle')
+  assert.equal(uiText.topicsSubtitle, 'topicsSubtitle')
+  assert.equal(uiText.topicFirsts, 'topicFirsts')
+  assert.equal(uiText.topicFootprints, 'topicFootprints')
 })
 
 test('buildPublicHomeSectionOrder places the narrative section before navigation cards', () => {
@@ -72,4 +77,34 @@ test('buildPublicHomeReviewSection exposes review entry state', () => {
   assert.equal(section.hasReviews, true)
   assert.equal(section.yearlyReviewTitle, '2026 年回顾')
   assert.equal(section.anniversaryReviewTitle, null)
+})
+
+test('buildPublicHomeTopicSection exposes available topic navigation items', () => {
+  const section = buildPublicHomeTopicSection({
+    slug: 'sun-moon',
+    reviews: {
+      yearlyReview: {
+        id: 'review-1',
+        type: 'YEARLY',
+        label: '2026',
+        title: '2026 年回顾',
+        subtitle: null,
+        summary: 'summary',
+        closing: 'closing',
+        coverPhotoUrl: null,
+        status: 'READY',
+        publishedAt: '2026-05-22T00:00:00.000Z',
+        highlights: [],
+      },
+      anniversaryReview: null,
+    },
+  })
+
+  assert.equal(section.hasTopics, true)
+  assert.deepEqual(section.items.map(item => item.href), [
+    '/s/sun-moon/topics/firsts',
+    '/s/sun-moon/topics/footprints',
+    '/s/sun-moon/review',
+    '/s/sun-moon/review/share/yearly',
+  ])
 })

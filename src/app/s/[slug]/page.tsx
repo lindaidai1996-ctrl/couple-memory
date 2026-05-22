@@ -6,6 +6,7 @@ import {
   getPublicNarrativeAlbumsByCoupleId,
   getPublicSpacePageDataBySlug,
   type PublicNarrativeAlbum,
+  type PublicReviewPair,
   resolvePublicMetadata,
 } from '@/lib/public-metadata'
 
@@ -23,6 +24,14 @@ export function buildPublicHomeUiText(t: Translator) {
     chapterLabel: t('chapterLabel'),
     review: t('review'),
     reviewSubtitle: t('reviewSubtitle'),
+    topicsTitle: t('topicsTitle'),
+    topicsSubtitle: t('topicsSubtitle'),
+    topicYearlyReview: t('topicYearlyReview'),
+    topicAnniversaryReview: t('topicAnniversaryReview'),
+    topicYearlyShare: t('topicYearlyShare'),
+    topicAnniversaryShare: t('topicAnniversaryShare'),
+    topicFirsts: t('topicFirsts'),
+    topicFootprints: t('topicFootprints'),
   }
 }
 
@@ -65,6 +74,77 @@ export function buildPublicHomeReviewSection({
   }
 }
 
+export function buildPublicHomeTopicSection({
+  slug,
+  reviews,
+}: {
+  slug: string
+  reviews: PublicReviewPair
+}) {
+  type TopicItem = {
+    id: string
+    href: string
+    kind:
+      | 'yearlyReview'
+      | 'anniversaryReview'
+      | 'yearlyShare'
+      | 'anniversaryShare'
+    title: string
+  }
+
+  const items = [
+    {
+      id: 'firsts-topic',
+      href: `/s/${slug}/topics/firsts`,
+      kind: 'firsts' as const,
+      title: '',
+    },
+    {
+      id: 'footprints-topic',
+      href: `/s/${slug}/topics/footprints`,
+      kind: 'footprints' as const,
+      title: '',
+    },
+    reviews.yearlyReview
+      ? {
+          id: 'yearly-review',
+          href: `/s/${slug}/review`,
+          kind: 'yearlyReview' as const,
+          title: reviews.yearlyReview.title,
+        }
+      : null,
+    reviews.anniversaryReview
+      ? {
+          id: 'anniversary-review',
+          href: `/s/${slug}/review`,
+          kind: 'anniversaryReview' as const,
+          title: reviews.anniversaryReview.title,
+        }
+      : null,
+    reviews.yearlyReview
+      ? {
+          id: 'yearly-share',
+          href: `/s/${slug}/review/share/yearly`,
+          kind: 'yearlyShare' as const,
+          title: reviews.yearlyReview.title,
+        }
+      : null,
+    reviews.anniversaryReview
+      ? {
+          id: 'anniversary-share',
+          href: `/s/${slug}/review/share/anniversary`,
+          kind: 'anniversaryShare' as const,
+          title: reviews.anniversaryReview.title,
+        }
+      : null,
+  ].filter((item): item is TopicItem => Boolean(item))
+
+  return {
+    hasTopics: items.length > 0,
+    items,
+  }
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -94,6 +174,10 @@ export default async function PublicHomePage({
   const reviewSection = buildPublicHomeReviewSection({
     yearlyReviewTitle: reviews.yearlyReview?.title ?? null,
     anniversaryReviewTitle: reviews.anniversaryReview?.title ?? null,
+  })
+  const topicSection = buildPublicHomeTopicSection({
+    slug,
+    reviews,
   })
   const sectionOrder = buildPublicHomeSectionOrder({
     hasNarrativeAlbums: narrativeSection.hasNarrativeAlbums,
@@ -237,7 +321,104 @@ export default async function PublicHomePage({
 
         return (
           <section key="explore" className="pb-24 px-6">
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-5xl mx-auto space-y-10">
+              {topicSection.hasTopics ? (
+                <div className="space-y-5">
+                  <div className="max-w-2xl">
+                    <p className="mb-3 text-sm uppercase tracking-[0.24em] text-film-accent/80">
+                      {uiText.topicsTitle}
+                    </p>
+                    <h2
+                      className="text-3xl font-bold md:text-4xl"
+                      style={{ fontFamily: 'var(--font-display)' }}
+                    >
+                      {uiText.topicsSubtitle}
+                    </h2>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {topicSection.items.map(item => (
+                      <NavCard
+                        key={item.id}
+                        href={item.href}
+                        title={
+                          item.kind === 'yearlyReview'
+                            ? uiText.topicYearlyReview
+                            : item.kind === 'anniversaryReview'
+                              ? uiText.topicAnniversaryReview
+                              : item.kind === 'yearlyShare'
+                                ? uiText.topicYearlyShare
+                                : item.kind === 'anniversaryShare'
+                                  ? uiText.topicAnniversaryShare
+                                  : item.kind === 'firsts'
+                                    ? uiText.topicFirsts
+                                    : uiText.topicFootprints
+                        }
+                        subtitle={item.title || uiText.topicsSubtitle}
+                        icon={
+                          item.kind === 'yearlyShare' || item.kind === 'anniversaryShare' ? (
+                            <svg
+                              width="28"
+                              height="28"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                            >
+                              <path d="M12 16V4" />
+                              <path d="m7 9 5-5 5 5" />
+                              <path d="M5 20h14" />
+                            </svg>
+                          ) : item.kind === 'firsts' ? (
+                            <svg
+                              width="28"
+                              height="28"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                            >
+                              <path d="M12 6v12" />
+                              <path d="M8 10h8" />
+                              <path d="M6 18h12" />
+                            </svg>
+                          ) : item.kind === 'footprints' ? (
+                            <svg
+                              width="28"
+                              height="28"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                            >
+                              <path d="M7 17c1.2-2.8 2.8-4.2 5-4.2 2.1 0 3.7 1.4 5 4.2" />
+                              <circle cx="9" cy="8" r="1.5" />
+                              <circle cx="15" cy="8" r="1.5" />
+                              <circle cx="12" cy="5" r="1.2" />
+                            </svg>
+                          ) : (
+                            <svg
+                              width="28"
+                              height="28"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                            >
+                              <path d="M7 4h10" />
+                              <path d="M5 8h14" />
+                              <path d="M7 12h10" />
+                              <path d="M7 16h7" />
+                              <path d="M5 20h14" />
+                            </svg>
+                          )
+                        }
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="max-w-3xl mx-auto">
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 <NavCard
                   href={`/s/${slug}/photos`}
@@ -306,6 +487,7 @@ export default async function PublicHomePage({
                   }
                 />
               </div>
+            </div>
             </div>
           </section>
         )

@@ -4,6 +4,8 @@ import test from 'node:test'
 import {
   applyCoverPhotoSelection,
   buildAvatarInputInitialValue,
+  buildMemoryPreferenceSummary,
+  buildResetMemoryPreferencesInput,
   buildSettingsHeroCards,
   buildRecentCoverPhotoOptions,
   buildAvatarUpdatePayload,
@@ -244,6 +246,59 @@ test('buildBlockedPhrasesDraft preserves line breaks for textarea editing', () =
   assert.equal(
     buildBlockedPhrasesDraft(['soulmate', 'meant to be']),
     'soulmate\nmeant to be'
+  )
+})
+
+test('buildMemoryPreferenceSummary exposes current AI memory settings at a glance', () => {
+  assert.deepEqual(
+    buildMemoryPreferenceSummary({
+      captionStylePreference: 'memoir',
+      tonePreference: null,
+      blockedPhrases: ['soulmate', 'meant to be'],
+    }),
+    {
+      styleLabel: 'memoir',
+      toneLabel: 'default',
+      blockedCount: 2,
+      hasCustomPreferences: true,
+    }
+  )
+})
+
+test('buildResetMemoryPreferencesInput clears stored AI memory preferences', () => {
+  assert.deepEqual(
+    buildResetMemoryPreferencesInput({
+      id: 'couple_1',
+      name: 'Our Space',
+      slug: 'our-space',
+      startDate: null,
+      bio: null,
+      isPublic: true,
+      coverMode: 'PHOTO',
+      coverPhotoId: 'photo_9',
+      coverPhotoUrl: 'https://cdn.example.com/cover.jpg',
+      captionStylePreference: 'memoir',
+      tonePreference: 'witty',
+      blockedPhrases: ['soulmate'],
+      inviteCode: null,
+      inviteExpiresAt: null,
+    }),
+    {
+      id: 'couple_1',
+      name: 'Our Space',
+      slug: 'our-space',
+      startDate: null,
+      bio: null,
+      isPublic: true,
+      coverMode: 'PHOTO',
+      coverPhotoId: 'photo_9',
+      coverPhotoUrl: 'https://cdn.example.com/cover.jpg',
+      captionStylePreference: null,
+      tonePreference: null,
+      blockedPhrases: [],
+      inviteCode: null,
+      inviteExpiresAt: null,
+    }
   )
 })
 

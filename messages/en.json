@@ -94,8 +94,12 @@
     "reviewSubtitle": "Turn yearly and anniversary milestones into something easier to revisit and share.",
     "annualReview": "Yearly review",
     "anniversaryReview": "Anniversary review",
+    "currentYearReview": "Current year",
+    "recentReview": "Most recent",
     "reviewUnavailable": "No readable review yet",
     "openReview": "Open reviews",
+    "reviewAvailableCount": "{count} readable review(s) are already available.",
+    "reviewGenerateHint": "No finished review is available yet. Generate a yearly or anniversary review first.",
     "curationTitle": "Curation Progress",
     "curationSuggestionCount": "{count} suggestions are still available to improve the album structure.",
     "curationStableHint": "The current curation state is stable, so you can keep adding new memories."
@@ -411,6 +415,16 @@
     "blockedPhrasesLabel": "Blocked phrases",
     "blockedPhrasesHint": "One phrase per line. AI will try to avoid them.",
     "blockedPhrasesPlaceholder": "For example: soulmate\nmeant to be",
+    "memoryPreferenceStyle": "Stored style",
+    "memoryPreferenceTone": "Stored tone",
+    "memoryPreferenceBlocked": "Stored blockers",
+    "memoryPreferenceBlockedCount": "{count} item(s)",
+    "memoryPreferenceResetTitle": "Reset AI memory preferences",
+    "memoryPreferenceResetHint": "Clear the current style, tone, and blocked phrases so future generations return to the default state.",
+    "memoryPreferenceResetEmptyHint": "There are no extra AI memory preferences to clear right now.",
+    "memoryPreferenceResetAction": "Reset preferences",
+    "memoryPreferencesReset": "AI memory preferences reset",
+    "memoryPreferencesResetFailed": "Failed to reset AI memory preferences",
     "useSystemDefault": "Use system default",
     "visibility": "Public visibility",
     "visibilityLabel": "Make this space public",
@@ -463,6 +477,14 @@
     "photosSubtitle": "Every frame we've captured",
     "review": "Review",
     "reviewSubtitle": "Revisit the stories gathered from your year and anniversary milestones.",
+    "topicsTitle": "Topic Navigation",
+    "topicsSubtitle": "Re-enter the same memories from different story paths, including versions made for sharing.",
+    "topicYearlyReview": "Yearly review",
+    "topicAnniversaryReview": "Anniversary review",
+    "topicYearlyShare": "Yearly share card",
+    "topicAnniversaryShare": "Anniversary share card",
+    "topicFirsts": "Our firsts",
+    "topicFootprints": "Footprints",
     "timeline": "Timeline",
     "timelineSubtitle": "Each milestone that belongs to us",
     "narrativeTitle": "Album Narrative",
@@ -477,7 +499,31 @@
     "yearlyTitle": "Yearly review",
     "yearlyEmpty": "No public yearly review is ready yet.",
     "anniversaryTitle": "Anniversary review",
-    "anniversaryEmpty": "No public anniversary review is ready yet."
+    "anniversaryEmpty": "No public anniversary review is ready yet.",
+    "shareCard": "Share card"
+  },
+  "PublicReviewSharePage": {
+    "back": "Back to reviews",
+    "eyebrow": "Share Card",
+    "closingLabel": "Closing",
+    "highlightsLabel": "Highlights",
+    "notFound": "This share card is not available yet."
+  },
+  "PublicFirstsPage": {
+    "back": "Back home",
+    "title": "Our Firsts",
+    "subtitle": "Bring the earliest remembered and published moments back into one place.",
+    "firstMilestone": "First milestone",
+    "firstPlace": "First remembered place",
+    "firstPhoto": "Earliest public photo",
+    "empty": "There is not enough public content here yet to build this topic."
+  },
+  "PublicFootprintsPage": {
+    "back": "Back home",
+    "title": "Footprints",
+    "subtitle": "See which places hold the most memories and how that trail built up over time.",
+    "countLabel": "{count} public photo(s) were left here",
+    "empty": "There is not enough location data yet to build a footprint summary."
   },
   "ReviewsPage": {
     "title": "Review Curation",
@@ -489,6 +535,7 @@
     "anniversaryLabel": "Anniversary"
   },
   "ReviewDetailPage": {
-    "back": "Back to reviews"
+    "back": "Back to reviews",
+    "openShareCard": "Open share card"
   }
 }

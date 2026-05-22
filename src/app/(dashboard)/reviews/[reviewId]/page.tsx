@@ -24,6 +24,8 @@ export default async function ReviewDetailPage({
       couple: {
         select: {
           name: true,
+          slug: true,
+          isPublic: true,
         },
       },
     },
@@ -74,6 +76,19 @@ export default async function ReviewDetailPage({
               <p className="mt-4 text-sm uppercase tracking-[0.18em] text-warm-muted">{review.subtitle}</p>
             ) : null}
             <p className="mt-5 text-sm leading-7 text-warm-muted">{review.summary}</p>
+
+            {coupleUser.couple.isPublic && coupleUser.couple.slug ? (
+              <div className="mt-6">
+                <a
+                  href={`/s/${coupleUser.couple.slug}/review/share/${review.type === 'YEARLY' ? 'yearly' : 'anniversary'}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex rounded-[18px] border border-warm-border px-4 py-2.5 text-sm text-warm-text transition-colors hover:bg-warm-bg"
+                >
+                  {t('openShareCard')}
+                </a>
+              </div>
+            ) : null}
 
             <div className="mt-6 space-y-4">
               {review.highlights.map(highlight => (

@@ -17,6 +17,15 @@ import {
   buildPublicReviewUiText,
 } from '../../src/app/s/[slug]/review/page'
 import {
+  buildPublicReviewShareUiText,
+} from '../../src/app/s/[slug]/review/share/[type]/page'
+import {
+  buildPublicFirstsUiText,
+} from '../../src/app/s/[slug]/topics/firsts/page'
+import {
+  buildPublicFootprintsUiText,
+} from '../../src/app/s/[slug]/topics/footprints/page'
+import {
   buildErrorUiText,
 } from '../../src/app/error'
 
@@ -97,6 +106,60 @@ test('public pages ui text uses translated headings', () => {
     anniversaryTitle: 'Anniversary',
     anniversaryEmpty: 'No anniversary review',
   })
+
+  const reviewShareT = (key: string) =>
+    ({
+      back: 'Back',
+      eyebrow: 'Share Card',
+      closingLabel: 'Closing',
+      highlightsLabel: 'Highlights',
+      notFound: 'Not found',
+    })[key] ?? key
+
+  assert.deepEqual(buildPublicReviewShareUiText(reviewShareT), {
+    back: 'Back',
+    eyebrow: 'Share Card',
+    closingLabel: 'Closing',
+    highlightsLabel: 'Highlights',
+    notFound: 'Not found',
+  })
+
+  const firstsT = (key: string) =>
+    ({
+      back: 'Back',
+      title: 'Our Firsts',
+      subtitle: 'Subtitle',
+      firstMilestone: 'First milestone',
+      firstPlace: 'First place',
+      firstPhoto: 'First photo',
+      empty: 'Empty',
+    })[key] ?? key
+
+  assert.deepEqual(buildPublicFirstsUiText(firstsT), {
+    back: 'Back',
+    title: 'Our Firsts',
+    subtitle: 'Subtitle',
+    firstMilestone: 'First milestone',
+    firstPlace: 'First place',
+    firstPhoto: 'First photo',
+    empty: 'Empty',
+  })
+
+  const footprintsT = (key: string, values?: Record<string, string | number>) =>
+    ({
+      back: 'Back',
+      title: 'Footprints',
+      subtitle: 'Subtitle',
+      countLabel: `${values?.count} photos`,
+      empty: 'Empty',
+    })[key] ?? key
+
+  const footprintsUiText = buildPublicFootprintsUiText(footprintsT)
+  assert.equal(footprintsUiText.back, 'Back')
+  assert.equal(footprintsUiText.title, 'Footprints')
+  assert.equal(footprintsUiText.subtitle, 'Subtitle')
+  assert.equal(footprintsUiText.empty, 'Empty')
+  assert.equal(footprintsUiText.countLabel(3), '3 photos')
 })
 
 test('error ui text uses translated button labels', () => {

@@ -4,7 +4,7 @@ import { mapMemoryReview, type MemoryReviewListItem, type MemoryReviewRecord } f
 
 const SITE_NAME = 'Couple Memory'
 
-export type PublicPageKind = 'home' | 'photos' | 'timeline' | 'review'
+export type PublicPageKind = 'home' | 'photos' | 'timeline' | 'review' | 'topics'
 
 export interface PublicSpaceMetadataSource {
   name: string
@@ -67,6 +67,23 @@ export interface PublicReviewPair {
   anniversaryReview: MemoryReviewListItem | null
 }
 
+export interface PublicFirstMoment {
+  id: string
+  title: string
+  date: string | null
+  locationName: string | null
+  narrative: string
+  imageUrl: string | null
+}
+
+export interface PublicFootprintLocation {
+  locationName: string
+  count: number
+  firstDate: string | null
+  lastDate: string | null
+  imageUrl: string | null
+}
+
 type PublicNarrativeAlbumSource = {
   id: string
   title: string
@@ -108,6 +125,11 @@ const pageConfig: Record<
     path: slug => `/s/${slug}/review`,
     title: name => `${name} 的回顾 | ${SITE_NAME}`,
     descriptionPrefix: name => `阅读 ${name} 公开空间整理出的年度与周年回顾。`,
+  },
+  topics: {
+    path: slug => `/s/${slug}/topics/firsts`,
+    title: name => `${name} 的专题 | ${SITE_NAME}`,
+    descriptionPrefix: name => `浏览 ${name} 公开空间整理出的专题内容与足迹总结。`,
   },
 }
 
@@ -290,6 +312,176 @@ export async function getPublicMemoryReviewsByCoupleId(
     anniversaryReview:
       items.find(review => review.type === 'ANNIVERSARY') ?? null,
   }
+}
+
+export async function getPublicFirstMomentsByCoupleId(
+  coupleId: string
+): Promise<{
+  firstMilestone: PublicFirstMoment | null
+  firstPlace: PublicFirstMoment | null
+  firstPhoto: PublicFirstMoment | null
+}> {
+  const { prisma } = await import('./prisma')
+
+  const [milestones, photos] = await Promise.all([
+    prisma.milestone.findMany({
+      where: { coupleId },
+      orderBy: [{ date: 'asc' }, { createdAt: 'asc' }],
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        date: true,
+        locationName: true,
+        photo: {
+          select: {
+            displayUrl: true,
+            thumbnailUrl: true,
+          },
+        },
+      },
+    }),
+    prisma.photo.findMany({
+      where: {
+        album: { coupleId },
+        status: 'READY',
+      },
+      orderBy: [{ takenAt: 'asc' }, { createdAt: 'asc' }],
+      select: {
+        id: true,
+        takenAt: true,
+        createdAt: true,
+        locationName: true,
+        displayUrl: true,
+        thumbnailUrl: true,
+        userCaption: true,
+        aiCaption: true,
+      },
+    }),
+  ])
+
+  const firstMilestone = milestones[0]
+  const firstPlace = milestones.find(item => item.locationName?.trim())
+  const firstPhoto = photos[0]
+
+  return {
+    firstMilestone: firstMilestone
+      ? {
+          id: firstMilestone.id,
+          title: firstMilestone.title,
+          date: firstMilestone.date.toISOString(),
+          locationName: firstMilestone.locationName,
+          narrative:
+            firstMilestone.description?.trim() ||
+            '这是最早被留下来的一个时间线节点。',
+          imageUrl:
+            firstMilestone.photo?.displayUrl ??
+            firstMilestone.photo?.thumbnailUrl ??
+            null,
+        }
+      : null,
+    firstPlace: firstPlace
+      ? {
+          id: firstPlace.id,
+          title: firstPlace.title,
+          date: firstPlace.date.toISOString(),
+          locationName: firstPlace.locationName,
+          narrative:
+            firstPlace.description?.trim() ||
+            `这是最早和 ${firstPlace.locationName} 关联起来的一段回忆。`,
+          imageUrl:
+            firstPlace.photo?.displayUrl ??
+            firstPlace.photo?.thumbnailUrl ??
+            null,
+        }
+      : null,
+    firstPhoto: firstPhoto
+      ? {
+          id: firstPhoto.id,
+          title: firstPhoto.locationName?.trim() || '第一张公开照片',
+          date: (firstPhoto.takenAt ?? firstPhoto.createdAt).toISOString(),
+          locationName: firstPhoto.locationName,
+          narrative:
+            firstPhoto.userCaption?.trim() ||
+            firstPhoto.aiCaption?.trim() ||
+            '这是目前公开内容里最早的一张照片。',
+          imageUrl: firstPhoto.displayUrl ?? firstPhoto.thumbnailUrl ?? null,
+        }
+      : null,
+  }
+}
+
+export async function getPublicFootprintLocationsByCoupleId(
+  coupleId: string
+): Promise<PublicFootprintLocation[]> {
+  const { prisma } = await import('./prisma')
+  const photos = await prisma.photo.findMany({
+    where: {
+      album: { coupleId },
+      status: 'READY',
+      locationName: { not: null },
+    },
+    orderBy: [{ takenAt: 'asc' }, { createdAt: 'asc' }],
+    select: {
+      id: true,
+      takenAt: true,
+      createdAt: true,
+      locationName: true,
+      displayUrl: true,
+      thumbnailUrl: true,
+    },
+  })
+
+  const grouped = new Map<string, {
+    locationName: string
+    count: number
+    firstDate: Date | null
+    lastDate: Date | null
+    imageUrl: string | null
+  }>()
+
+  for (const photo of photos) {
+    const locationName = photo.locationName?.trim()
+    if (!locationName) continue
+
+    const date = photo.takenAt ?? photo.createdAt
+    const existing = grouped.get(locationName)
+    if (!existing) {
+      grouped.set(locationName, {
+        locationName,
+        count: 1,
+        firstDate: date,
+        lastDate: date,
+        imageUrl: photo.displayUrl ?? photo.thumbnailUrl ?? null,
+      })
+      continue
+    }
+
+    existing.count += 1
+    if (!existing.firstDate || date.getTime() < existing.firstDate.getTime()) {
+      existing.firstDate = date
+    }
+    if (!existing.lastDate || date.getTime() > existing.lastDate.getTime()) {
+      existing.lastDate = date
+    }
+    if (!existing.imageUrl) {
+      existing.imageUrl = photo.displayUrl ?? photo.thumbnailUrl ?? null
+    }
+  }
+
+  return [...grouped.values()]
+    .sort((left, right) => {
+      if (right.count !== left.count) return right.count - left.count
+      return (left.firstDate?.getTime() ?? 0) - (right.firstDate?.getTime() ?? 0)
+    })
+    .slice(0, 6)
+    .map(item => ({
+      locationName: item.locationName,
+      count: item.count,
+      firstDate: item.firstDate?.toISOString() ?? null,
+      lastDate: item.lastDate?.toISOString() ?? null,
+      imageUrl: item.imageUrl,
+    }))
 }
 
 export function mapPublicNarrativeAlbums(
