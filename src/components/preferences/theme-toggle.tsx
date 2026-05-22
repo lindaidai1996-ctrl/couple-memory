@@ -76,7 +76,7 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={handleClick}
-      className="inline-flex items-center gap-2 rounded-full border border-warm-border bg-warm-surface/90 px-3 py-2 text-xs font-medium text-warm-text shadow-sm backdrop-blur transition-colors hover:bg-warm-bg"
+      className="dashboard-glass-button inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium shadow-sm backdrop-blur"
       aria-label={`${t('themeLabel')}: ${labelMap[theme]}`}
       title={`${t('themeLabel')}: ${labelMap[theme]}`}
     >

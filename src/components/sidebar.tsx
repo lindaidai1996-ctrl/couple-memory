@@ -24,7 +24,7 @@ export function Sidebar() {
       {/* 移动端触发按钮 */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-[var(--radius-sm)] bg-warm-surface shadow-md"
+        className="dashboard-glass-button lg:hidden fixed left-4 top-4 z-50 rounded-full p-2.5 shadow-sm"
         aria-label={t('openNavigation')}
       >
         <MenuIcon />
@@ -39,39 +39,56 @@ export function Sidebar() {
 
       {/* 侧边栏 */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-60 bg-warm-sidebar border-r border-warm-border
-          flex flex-col transition-transform duration-300 ease-out
+        className={`dashboard-panel-soft fixed inset-y-0 left-0 z-50 flex w-60 flex-col rounded-r-[22px]
+          transition-transform duration-300 ease-out lg:static lg:min-h-[calc(100vh-24px)] lg:rounded-[22px]
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
-        <div className="px-6 py-5 border-b border-warm-border">
-          <h2 className="text-lg font-bold text-warm-text tracking-tight">
+        <div className="border-b border-warm-border px-5 pb-4 pt-5">
+          <p className="mb-2 text-[9px] uppercase tracking-[0.28em] text-warm-accent">
+            Memory Atelier
+          </p>
+          <h2 className="font-[var(--font-display)] text-[27px] leading-[0.92] tracking-[-0.05em] text-warm-text">
             Couple Memory
           </h2>
+          <p className="mt-2 max-w-[156px] text-[11px] leading-[1.52] text-warm-muted">
+            A quieter editorial workspace for chapters, timelines, and memory curation.
+          </p>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {navItems.map(item => {
+        <nav className="flex-1 space-y-1 px-3 py-4">
+          {navItems.map((item, index) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] text-sm font-medium
-                  transition-all duration-150
+                className={`grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2 rounded-[15px]
+                  border px-2.5 py-2.5 transition-all duration-150
                   ${isActive
-                    ? 'bg-warm-accent/10 text-warm-accent'
-                    : 'text-warm-muted hover:bg-warm-border/50 hover:text-warm-text'
+                    ? 'dashboard-pill-active border-white/15'
+                    : 'border-transparent text-warm-muted hover:translate-x-[3px] hover:border-warm-border hover:bg-white/4 hover:text-warm-text'
                   }`}
               >
-                <item.icon active={isActive} />
-                {item.label}
+                <span className={`grid h-7 w-7 place-items-center rounded-full border text-[9px] uppercase tracking-[0.12em]
+                  ${isActive ? 'border-white/20 bg-white/8 text-white' : 'border-white/14 bg-white/10 text-warm-text'}`}>
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium">{item.label}</span>
+                  <span className={`mt-0.5 block text-[9px] uppercase tracking-[0.22em] ${isActive ? 'text-white/72' : 'text-warm-muted'}`}>
+                    {item.href.replace('/', '') || 'home'}
+                  </span>
+                </span>
+                <span className={`font-[var(--font-display)] text-sm ${isActive ? 'text-white/80' : 'text-warm-muted/70'}`}>
+                  <item.icon active={isActive} />
+                </span>
               </Link>
             )
           })}
         </nav>
 
-        <div className="border-t border-warm-border px-4 py-4 space-y-3">
+        <div className="space-y-3 border-t border-warm-border px-4 py-4">
           <div className="flex flex-wrap gap-2">
             <LocaleSwitcher />
             <ThemeToggle />

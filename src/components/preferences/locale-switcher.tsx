@@ -30,7 +30,7 @@ export function LocaleSwitcher() {
 
   return (
     <div
-      className="inline-flex rounded-full border border-warm-border bg-warm-surface/90 p-1 text-xs shadow-sm backdrop-blur"
+      className="inline-flex rounded-full border border-warm-border bg-white/40 p-1 text-xs shadow-sm backdrop-blur dark:bg-white/4"
       aria-label={t('languageLabel')}
     >
       {SUPPORTED_LOCALES.map(option => {
@@ -40,10 +40,10 @@ export function LocaleSwitcher() {
             key={option}
             type="button"
             onClick={() => handleChange(option)}
-            className={`rounded-full px-2.5 py-1.5 transition-colors ${
+            className={`rounded-full px-2.5 py-1.5 transition-all ${
               active
-                ? 'bg-warm-accent text-white'
-                : 'text-warm-text hover:bg-warm-bg'
+                ? 'dashboard-pill-active'
+                : 'text-warm-text hover:bg-white/50 dark:hover:bg-white/8'
             }`}
           >
             {labelMap[option]}

@@ -4,6 +4,7 @@ import test from 'node:test'
 import {
   applyCoverPhotoSelection,
   buildAvatarInputInitialValue,
+  buildSettingsHeroCards,
   buildRecentCoverPhotoOptions,
   buildAvatarUpdatePayload,
   buildBlockedPhrasesDraft,
@@ -273,5 +274,37 @@ test('extractApiErrorMessage prefers unified error envelope message', () => {
       '保存失败'
     ),
     'Slug already taken'
+  )
+})
+
+test('buildSettingsHeroCards summarizes publication, cover, and ai preferences', () => {
+  assert.deepEqual(
+    buildSettingsHeroCards({
+      isPublic: true,
+      slug: 'our-space',
+      coverMode: 'PHOTO',
+      coverPhotoUrl: 'https://cdn.example.com/cover.jpg',
+      avatar: 'https://cdn.example.com/avatar.jpg',
+      captionStylePreference: 'memoir',
+      tonePreference: null,
+      blockedPhrases: ['soulmate', 'meant to be'],
+    }),
+    [
+      {
+        label: 'Publication',
+        value: 'Live',
+        detail: 'Slug /s/our-space is available for sharing.',
+      },
+      {
+        label: 'Visual Mood',
+        value: 'Curated',
+        detail: 'Avatar, cover, and tone controls already have visible material.',
+      },
+      {
+        label: 'AI Guardrails',
+        value: '2 filters',
+        detail: 'Caption style memoir with 2 blocked phrases.',
+      },
+    ]
   )
 })

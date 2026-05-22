@@ -58,6 +58,23 @@ interface CoverPhotoOption {
   coverUrl: string
 }
 
+interface SettingsHeroCardInput {
+  isPublic: boolean
+  slug: string
+  coverMode: CoverMode
+  coverPhotoUrl: string | null
+  avatar: string | null
+  captionStylePreference: string | null
+  tonePreference: string | null
+  blockedPhrases: string[]
+}
+
+interface SettingsHeroCard {
+  label: string
+  value: string
+  detail: string
+}
+
 type CoupleUpdateInput = {
   name: string
   slug: string
@@ -175,6 +192,47 @@ export function buildCoupleUpdatePayload(input: CoupleUpdateInput) {
 export function buildPublicPreviewUrl(origin: string, slug: string) {
   const normalizedOrigin = origin.endsWith('/') ? origin.slice(0, -1) : origin
   return `${normalizedOrigin}/s/${slug}`
+}
+
+export function buildSettingsHeroCards(input: SettingsHeroCardInput): SettingsHeroCard[] {
+  const publicationCard: SettingsHeroCard = input.isPublic && input.slug
+    ? {
+        label: 'Publication',
+        value: 'Live',
+        detail: `Slug /s/${input.slug} is available for sharing.`,
+      }
+    : {
+        label: 'Publication',
+        value: 'Private',
+        detail: 'Public preview is hidden until sharing is enabled.',
+      }
+
+  const hasVisualMaterial = Boolean(input.avatar || (input.coverMode === 'PHOTO' && input.coverPhotoUrl))
+  const visualMoodValue = hasVisualMaterial ? 'Curated' : 'Draft'
+  const visualMoodDetail = hasVisualMaterial
+    ? 'Avatar, cover, and tone controls already have visible material.'
+    : 'Add an avatar or cover image to establish a stronger visual mood.'
+
+  const blockedCount = input.blockedPhrases.length
+  const preferenceLabel = input.captionStylePreference || input.tonePreference || 'default'
+  const guardrailValue = blockedCount > 0 ? `${blockedCount} filters` : 'Default'
+  const guardrailDetail = blockedCount > 0
+    ? `Caption style ${preferenceLabel} with ${blockedCount} blocked phrases.`
+    : 'No blocked phrases yet. System defaults are still in use.'
+
+  return [
+    publicationCard,
+    {
+      label: 'Visual Mood',
+      value: visualMoodValue,
+      detail: visualMoodDetail,
+    },
+    {
+      label: 'AI Guardrails',
+      value: guardrailValue,
+      detail: guardrailDetail,
+    },
+  ]
 }
 
 export function buildRecentCoverPhotoOptions(
@@ -452,39 +510,79 @@ export default function SettingsPage() {
     ? buildPublicPreviewUrl(window.location.origin, couple.slug)
     : ''
   const avatarPreviewUrl = avatarInput.trim() || profile?.avatar || ''
+  const previewReady = Boolean(couple.isPublic && couple.slug)
+  const heroCards = buildSettingsHeroCards({
+    isPublic: couple.isPublic,
+    slug: couple.slug,
+    coverMode: couple.coverMode,
+    coverPhotoUrl: couple.coverPhotoUrl,
+    avatar: profile?.avatar || avatarInput.trim() || null,
+    captionStylePreference: couple.captionStylePreference,
+    tonePreference: couple.tonePreference,
+    blockedPhrases: couple.blockedPhrases,
+  })
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold text-warm-text mb-6">{t('title')}</h1>
+    <div className={pageShellClass}>
+      <PageHeader
+        title={t('title')}
+        eyebrow={t('basicInfo')}
+        summary={t('visibilityDescription')}
+        detail={previewReady ? t('visibilityHintOn') : t('visibilityHintOff')}
+        cards={heroCards}
+      />
 
-      {message && (
-        <div className={`mb-6 p-3 rounded-[var(--radius-md)] text-sm ${
-          message.type === 'success'
-            ? 'bg-green-50 text-success'
-            : 'bg-red-50 text-error'
-        }`}>
+      {message ? (
+        <div className={buildMessageBannerClass(message.type)}>
           {message.text}
         </div>
-      )}
+      ) : null}
 
-      <form onSubmit={handleAvatarSubmit} className="mb-6">
-        <Section title={t('avatar')}>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="w-20 h-20 shrink-0 rounded-full overflow-hidden border border-warm-border bg-warm-bg flex items-center justify-center">
-              {avatarPreviewUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={avatarPreviewUrl}
-                  alt={t('avatarPreviewAlt')}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-xs text-warm-muted text-center px-2">{t('avatarEmpty')}</span>
-              )}
+      <form onSubmit={handleAvatarSubmit}>
+        <Section
+          title={t('avatar')}
+          eyebrow="Portrait"
+          description={t('avatarHint')}
+          accent={avatarPreviewUrl ? 'plum' : 'rose'}
+        >
+          <div className="grid gap-5 lg:grid-cols-[132px_minmax(0,1fr)]">
+            <div className="flex flex-col items-center gap-3">
+              <div className={avatarFrameClass}>
+                <div className={avatarHaloClass} />
+                <div className={avatarMediaClass}>
+                  {avatarPreviewUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={avatarPreviewUrl}
+                      alt={t('avatarPreviewAlt')}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="px-4 text-center text-[11px] uppercase tracking-[0.28em] text-[var(--text-soft)]">
+                      {t('avatarEmpty')}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <p className="text-center text-[11px] uppercase tracking-[0.26em] text-[var(--text-faint)]">
+                {profile?.name || profile?.email || t('avatar')}
+              </p>
             </div>
-            <div className="flex-1 space-y-3">
+            <div className="space-y-4">
               <Field label={t('avatarUploadField')} hint={t('avatarUploadHint')}>
-                <label className="flex cursor-pointer items-center justify-center rounded-[var(--radius-md)] border border-dashed border-warm-border bg-warm-bg px-4 py-4 text-sm text-warm-text transition-colors hover:border-warm-accent hover:bg-white">
+                <label className={uploadTileClass}>
+                  <span className="text-[11px] uppercase tracking-[0.3em] text-[var(--text-faint)]">
+                    Image file
+                  </span>
+                  <span className="font-[var(--font-display)] text-[20px] text-[var(--text)]">
+                    {avatarSaving && avatarUploadStage
+                      ? avatarStageLabels[avatarUploadStage]
+                      : t('uploadAvatar')}
+                  </span>
+                  <span className="max-w-sm text-center text-sm leading-6 text-[var(--text-soft)]">
+                    {t('avatarUploadHint')}
+                  </span>
+                  <span className={chipClass}>JPEG / PNG / WEBP / HEIC</span>
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp,image/heic"
@@ -496,33 +594,28 @@ export default function SettingsPage() {
                       e.currentTarget.value = ''
                     }}
                   />
-                  {avatarSaving && avatarUploadStage
-                    ? avatarStageLabels[avatarUploadStage]
-                    : t('uploadAvatar')}
                 </label>
               </Field>
               <Field label={t('avatarField')} hint={t('avatarHint')}>
                 <input
                   value={avatarInput}
                   onChange={e => setAvatarInput(e.target.value)}
-                  className={inputClass}
+                  className={controlClass}
                   placeholder={t('avatarPlaceholder')}
                 />
               </Field>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2.5">
                 <button
                   type="submit"
                   disabled={avatarSaving}
-                  className="px-4 py-2 text-sm bg-warm-accent text-white rounded-[var(--radius-md)]
-                    hover:bg-warm-accent-hover disabled:opacity-50 transition-colors"
+                  className={primaryButtonClass}
                 >
                   {avatarSaving ? t('saving') : t('updateAvatar')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setAvatarInput('')}
-                  className="px-4 py-2 text-sm border border-warm-border text-warm-text
-                    rounded-[var(--radius-md)] hover:bg-warm-bg transition-colors"
+                  className={secondaryButtonClass}
                 >
                   {t('clear')}
                 </button>
@@ -532,14 +625,19 @@ export default function SettingsPage() {
         </Section>
       </form>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <Section title={t('basicInfo')}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Section
+          title={t('basicInfo')}
+          eyebrow="Identity"
+          description={t('slugHint')}
+          accent="plum"
+        >
           <Field label={t('name')}>
             <input
               value={couple.name}
               onChange={e => setCouple(prev => prev ? { ...prev, name: e.target.value } : prev)}
               required
-              className={inputClass}
+              className={controlClass}
               placeholder={t('namePlaceholder')}
             />
           </Field>
@@ -550,7 +648,7 @@ export default function SettingsPage() {
               onChange={e => setCouple(prev => prev ? { ...prev, slug: e.target.value } : prev)}
               required
               pattern="^[a-z0-9-]+$"
-              className={inputClass}
+              className={controlClass}
               placeholder="my-love-story"
             />
           </Field>
@@ -563,7 +661,7 @@ export default function SettingsPage() {
                 ...prev,
                 startDate: e.target.value || null,
               } : prev)}
-              className={inputClass}
+              className={controlClass}
             />
           </Field>
 
@@ -572,29 +670,45 @@ export default function SettingsPage() {
               value={couple.bio || ''}
               onChange={e => setCouple(prev => prev ? { ...prev, bio: e.target.value || null } : prev)}
               rows={3}
-              className={inputClass + ' resize-none'}
+              className={textareaClass}
               placeholder={t('bioPlaceholder')}
             />
           </Field>
         </Section>
 
-        <Section title={t('visibility')}>
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={couple.isPublic}
-              onChange={e => setCouple(prev => prev ? { ...prev, isPublic: e.target.checked } : prev)}
-              className="w-5 h-5 rounded border-warm-border text-warm-accent
-                focus:ring-warm-accent/30 cursor-pointer"
-            />
-            <span className="text-sm text-warm-text">{t('visibilityLabel')}</span>
+        <Section
+          title={t('visibility')}
+          eyebrow="Access"
+          description={t('visibilityDescription')}
+          accent={couple.isPublic ? 'plum' : 'rose'}
+        >
+          <label className={checkboxCardClass}>
+            <span className="relative mt-0.5 inline-flex">
+              <input
+                type="checkbox"
+                checked={couple.isPublic}
+                onChange={e => setCouple(prev => prev ? { ...prev, isPublic: e.target.checked } : prev)}
+                className={checkboxInputClass}
+              />
+              <span className={checkboxVisualClass} aria-hidden="true">
+                <span className={checkboxDotClass} />
+              </span>
+            </span>
+            <span className="space-y-1">
+              <span className="block text-sm font-medium text-[var(--text)]">{t('visibilityLabel')}</span>
+              <span className="block text-xs leading-5 text-[var(--text-soft)]">
+                {t('visibilityDescription')}
+              </span>
+            </span>
           </label>
-          <p className="text-xs text-warm-muted mt-1 ml-8">
-            {t('visibilityDescription')}
-          </p>
         </Section>
 
-        <Section title={t('aiPreferencesTitle')}>
+        <Section
+          title={t('aiPreferencesTitle')}
+          eyebrow="Voice"
+          description={t('toneHint')}
+          accent="rose"
+        >
           <Field
             label={t('captionStyleLabel')}
             hint={t('captionStyleHint')}
@@ -605,7 +719,7 @@ export default function SettingsPage() {
                 ...prev,
                 captionStylePreference: e.target.value || null,
               } : prev)}
-              className={inputClass}
+              className={controlClass}
             >
               <option value="">{t('useSystemDefault')}</option>
               {CAPTION_STYLE_OPTIONS.map(option => (
@@ -624,7 +738,7 @@ export default function SettingsPage() {
                 ...prev,
                 tonePreference: e.target.value || null,
               } : prev)}
-              className={inputClass}
+              className={controlClass}
             >
               <option value="">{t('useSystemDefault')}</option>
               {TONE_OPTIONS.map(option => (
@@ -645,13 +759,18 @@ export default function SettingsPage() {
                 blockedPhrases: parseBlockedPhrasesDraft(blockedPhrasesDraft),
               } : prev)}
               rows={4}
-              className={inputClass + ' resize-none'}
+              className={textareaClass}
               placeholder={t('blockedPhrasesPlaceholder')}
             />
           </Field>
         </Section>
 
-        <Section title={t('cover')}>
+        <Section
+          title={t('cover')}
+          eyebrow="Image"
+          description={t('coverRecentPhotosHint')}
+          accent="plum"
+        >
           <Field label={t('coverSource')}>
             <select
               value={couple.coverMode}
@@ -659,83 +778,82 @@ export default function SettingsPage() {
                 ...prev,
                 coverMode: e.target.value as CoverMode,
               } : prev)}
-              className={inputClass}
+              className={controlClass}
             >
               <option value="NONE">{t('coverNone')}</option>
               <option value="PHOTO">{t('coverPhoto')}</option>
             </select>
           </Field>
 
-          {couple.coverMode === 'PHOTO' && (
-            <>
-              <Field label={t('coverRecentPhotos')} hint={t('coverRecentPhotosHint')}>
-                {recentCoverPhotosLoading ? (
-                  <div className="grid grid-cols-4 gap-3">
-                    {Array.from({ length: 4 }).map((_, index) => (
-                      <div
-                        key={index}
-                        className="aspect-square rounded-[var(--radius-md)] border border-warm-border bg-warm-bg animate-pulse"
-                      />
-                    ))}
-                  </div>
-                ) : recentCoverPhotos.length > 0 ? (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                    {recentCoverPhotos.map(photo => {
-                      const selected = couple.coverPhotoId === photo.id
+          {couple.coverMode === 'PHOTO' ? (
+            <Field label={t('coverRecentPhotos')} hint={t('coverRecentPhotosHint')}>
+              {recentCoverPhotosLoading ? (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="aspect-square rounded-[24px] border border-[var(--line)] bg-[var(--panel-strong)]/75 animate-pulse"
+                    />
+                  ))}
+                </div>
+              ) : recentCoverPhotos.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {recentCoverPhotos.map(photo => {
+                    const selected = couple.coverPhotoId === photo.id
 
-                      return (
-                        <button
-                          key={photo.id}
-                          type="button"
-                          onClick={() => setCouple(prev => prev ? applyCoverPhotoSelection(prev, photo) : prev)}
-                          className={`group relative aspect-square overflow-hidden rounded-[var(--radius-md)] border transition-all ${
-                            selected
-                              ? 'border-warm-accent ring-2 ring-warm-accent/20'
-                              : 'border-warm-border hover:border-warm-accent/60'
-                          }`}
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={photo.previewUrl}
-                            alt={photo.fileName}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                          {selected ? (
-                            <div className="absolute left-2 top-2 rounded-full bg-warm-accent px-2 py-1 text-[10px] font-medium text-white shadow-sm">
-                              {t('coverSelected')}
-                            </div>
-                          ) : null}
-                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                            <p className="truncate text-[11px] text-white">{photo.fileName}</p>
+                    return (
+                      <button
+                        key={photo.id}
+                        type="button"
+                        onClick={() => setCouple(prev => prev ? applyCoverPhotoSelection(prev, photo) : prev)}
+                        className={buildCoverTileClass(selected)}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={photo.previewUrl}
+                          alt={photo.fileName}
+                          className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                          loading="lazy"
+                        />
+                        {selected ? (
+                          <div className={coverSelectedBadgeClass}>
+                            {t('coverSelected')}
                           </div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                ) : (
-                  <div className="rounded-[var(--radius-md)] border border-dashed border-warm-border bg-warm-bg px-4 py-6 text-sm text-warm-muted">
-                    {t('coverRecentPhotosEmpty')}
-                  </div>
-                )}
-              </Field>
-            </>
-          )}
+                        ) : null}
+                        <div className={coverTileCaptionClass}>
+                          <p className="truncate text-[11px] uppercase tracking-[0.16em] text-white/92">
+                            {photo.fileName}
+                          </p>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className={emptyStateClass}>
+                  {t('coverRecentPhotosEmpty')}
+                </div>
+              )}
+            </Field>
+          ) : null}
         </Section>
 
-        <Section title={t('publicPreview')}>
+        <Section
+          title={t('publicPreview')}
+          eyebrow="Preview"
+          description={previewReady ? t('visibilityHintOn') : t('visibilityHintOff')}
+          accent={previewReady ? 'plum' : 'rose'}
+        >
           <Field label={t('publicPreviewUrl')}>
-            <input value={publicPreviewUrl} readOnly className={inputClass} />
+            <input value={publicPreviewUrl} readOnly className={readOnlyControlClass} />
           </Field>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2.5">
             <button
               type="button"
               disabled={!couple.isPublic || !couple.slug}
               onClick={() => window.open(publicPreviewUrl, '_blank', 'noopener,noreferrer')}
-              className="px-4 py-2 text-sm border border-warm-accent text-warm-accent
-                rounded-[var(--radius-md)] hover:bg-warm-accent/10 disabled:opacity-50
-                disabled:hover:bg-transparent transition-colors"
+              className={secondaryButtonClass}
             >
               {t('openPreview')}
             </button>
@@ -746,32 +864,33 @@ export default function SettingsPage() {
                 navigator.clipboard.writeText(publicPreviewUrl)
                 setMessage({ type: 'success', text: t('copiedPreview') })
               }}
-              className="px-4 py-2 text-sm border border-warm-border text-warm-text
-                rounded-[var(--radius-md)] hover:bg-warm-bg disabled:opacity-50 transition-colors"
+              className={ghostButtonClass}
             >
               {t('copyPreview')}
             </button>
           </div>
 
-          <p className="text-xs text-warm-muted">
-            {!couple.isPublic
-              ? t('visibilityHintOff')
-              : t('visibilityHintOn')}
+          <p className="text-xs uppercase tracking-[0.22em] text-[var(--text-faint)]">
+            {previewReady ? t('visibilityHintOn') : t('visibilityHintOff')}
           </p>
         </Section>
 
         <button
           type="submit"
           disabled={saving}
-          className="px-6 py-2.5 bg-warm-accent text-white rounded-[var(--radius-md)] font-medium
-            hover:bg-warm-accent-hover disabled:opacity-50 transition-colors"
+          className={primaryButtonClass}
         >
           {saving ? t('saving') : t('save')}
         </button>
       </form>
 
-      <div className="mt-10 pt-8 border-t border-warm-border">
-        <Section title={t('invite')}>
+      <div className="border-t border-[var(--line)]/80 pt-5">
+        <Section
+          title={t('invite')}
+          eyebrow="Circle"
+          description={t('inviteRegenerateConfirm')}
+          accent="rose"
+        >
           <InviteSection couple={couple} onGenerate={handleGenerateInvite} onRegenerate={handleRegenerateInvite} />
         </Section>
       </div>
@@ -779,25 +898,181 @@ export default function SettingsPage() {
   )
 }
 
-const inputClass = `w-full px-4 py-2.5 rounded-[var(--radius-md)] border border-warm-border
-  bg-warm-bg text-warm-text placeholder:text-warm-muted/60
-  focus:ring-2 focus:ring-warm-accent/30 focus:border-warm-accent outline-none
-  transition-all duration-200 text-sm`
+const pageShellClass = `mx-auto flex max-w-4xl flex-col gap-4 text-[var(--text)]
+  [--line:var(--color-warm-border)] [--text:var(--color-warm-text)] [--text-soft:var(--color-warm-muted)]
+  [--text-faint:var(--dashboard-text-faint)] [--panel:var(--color-warm-sidebar)]
+  [--panel-strong:var(--color-warm-surface)] [--accent:var(--color-warm-accent)]
+  [--accent-2:var(--dashboard-accent-secondary)] [--accent-glow:var(--dashboard-accent-glow)]`
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+const heroClass = `relative overflow-hidden rounded-[30px] border border-[var(--line)] bg-[linear-gradient(135deg,rgba(74,47,66,0.96)_0%,rgba(143,96,122,0.92)_44%,rgba(215,187,183,0.88)_100%)] px-5 py-5 text-white shadow-[0_24px_64px_rgba(48,24,36,0.18)] sm:px-6`
+
+const sectionClass = `rounded-[26px] border border-[var(--line)] bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(255,248,251,0.72))] p-5 shadow-[0_16px_38px_rgba(40,24,34,0.08)] backdrop-blur-sm`
+
+const sectionGlowClass = `pointer-events-none absolute inset-x-6 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.75),transparent)]`
+
+const controlClass = `h-10 w-full rounded-[16px] border border-[var(--line)] bg-[var(--panel-strong)] px-3.5 text-sm text-[var(--text)]
+  shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] outline-none transition duration-200
+  placeholder:text-[var(--text-faint)] hover:border-[rgba(111,79,102,0.28)]
+  focus:border-[rgba(111,79,102,0.42)] focus:ring-4 focus:ring-[rgba(111,79,102,0.12)]`
+
+const textareaClass = `${controlClass} h-auto min-h-[108px] py-3 leading-6 resize-none`
+
+const readOnlyControlClass = `${controlClass} bg-[linear-gradient(135deg,rgba(111,79,102,0.08),rgba(201,162,161,0.12))] text-[var(--text-soft)]`
+
+const primaryButtonClass = `inline-flex h-10 items-center justify-center rounded-[16px] border border-white/20
+  bg-[linear-gradient(135deg,#5b3a52_0%,#c9a2a1_100%)] px-4 text-sm font-medium text-white
+  shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_10px_24px_rgba(111,79,102,0.22)]
+  transition duration-200 hover:-translate-y-0.5 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_14px_28px_rgba(111,79,102,0.26)]
+  disabled:translate-y-0 disabled:opacity-50`
+
+const secondaryButtonClass = `inline-flex h-10 items-center justify-center rounded-[16px] border border-[rgba(111,79,102,0.26)]
+  bg-[var(--panel-strong)] px-4 text-sm font-medium text-[var(--accent)] transition duration-200
+  hover:-translate-y-0.5 hover:bg-[rgba(111,79,102,0.06)] disabled:translate-y-0 disabled:opacity-50`
+
+const ghostButtonClass = `inline-flex h-10 items-center justify-center rounded-[16px] border border-[var(--line)]
+  bg-transparent px-4 text-sm font-medium text-[var(--text)] transition duration-200
+  hover:-translate-y-0.5 hover:bg-white/65 dark:hover:bg-white/8 disabled:translate-y-0 disabled:opacity-50`
+
+const chipClass = `inline-flex rounded-full border border-white/20 bg-white/12 px-2.5 py-1 text-[10px]
+  uppercase tracking-[0.22em] text-white/82`
+
+const avatarFrameClass = `relative flex h-28 w-28 items-center justify-center`
+const avatarHaloClass = `absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.82)_0%,rgba(255,255,255,0.12)_56%,transparent_70%)] blur-sm`
+const avatarMediaClass = `relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-white/50
+  bg-[linear-gradient(135deg,rgba(111,79,102,0.18),rgba(201,162,161,0.26))] shadow-[0_18px_36px_rgba(73,42,58,0.16)]`
+
+const uploadTileClass = `group flex min-h-[168px] cursor-pointer flex-col items-center justify-center gap-3 rounded-[24px]
+  border border-dashed border-[rgba(111,79,102,0.28)] bg-[linear-gradient(135deg,rgba(111,79,102,0.08),rgba(201,162,161,0.14))]
+  px-5 py-5 text-center transition duration-200 hover:-translate-y-0.5 hover:border-[rgba(111,79,102,0.44)]`
+
+const checkboxCardClass = `flex cursor-pointer items-start gap-3 rounded-[20px] border border-[var(--line)]
+  bg-[linear-gradient(135deg,rgba(111,79,102,0.06),rgba(201,162,161,0.1))] px-4 py-3`
+
+const checkboxInputClass = `peer absolute inset-0 z-10 cursor-pointer opacity-0`
+const checkboxVisualClass = `flex h-5 w-5 items-center justify-center rounded-[7px] border border-[rgba(111,79,102,0.3)]
+  bg-white/70 transition duration-200 peer-checked:border-[var(--accent)] peer-checked:bg-[linear-gradient(135deg,#5b3a52_0%,#c9a2a1_100%)]
+  peer-focus:ring-4 peer-focus:ring-[rgba(111,79,102,0.12)]`
+const checkboxDotClass = `h-2 w-2 rounded-full bg-white opacity-0 transition duration-200 peer-checked:opacity-100`
+
+const coverSelectedBadgeClass = `absolute left-2 top-2 rounded-full border border-white/20 bg-[linear-gradient(135deg,#5b3a52_0%,#c9a2a1_100%)]
+  px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-white shadow-[0_10px_20px_rgba(48,24,36,0.22)]`
+
+const coverTileCaptionClass = `absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,transparent,rgba(18,10,14,0.76))] p-2.5`
+
+const emptyStateClass = `rounded-[22px] border border-dashed border-[rgba(111,79,102,0.22)]
+  bg-[linear-gradient(135deg,rgba(111,79,102,0.05),rgba(201,162,161,0.09))] px-4 py-8 text-sm text-[var(--text-soft)]`
+
+function buildMessageBannerClass(type: 'success' | 'error') {
+  return `rounded-[20px] border px-4 py-3 text-sm shadow-[0_10px_30px_rgba(40,24,34,0.06)] ${
+    type === 'success'
+      ? 'border-[rgba(111,79,102,0.16)] bg-[linear-gradient(135deg,rgba(111,79,102,0.09),rgba(201,162,161,0.14))] text-[var(--text)]'
+      : 'border-[rgba(166,79,98,0.16)] bg-[linear-gradient(135deg,rgba(122,45,62,0.08),rgba(201,162,161,0.12))] text-[var(--text)]'
+  }`
+}
+
+function buildCoverTileClass(selected: boolean) {
+  return `group relative aspect-square overflow-hidden rounded-[24px] border transition duration-200 ${
+    selected
+      ? 'border-[rgba(111,79,102,0.42)] shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_16px_30px_rgba(111,79,102,0.18)] ring-4 ring-[rgba(111,79,102,0.12)]'
+      : 'border-[var(--line)] hover:-translate-y-0.5 hover:border-[rgba(111,79,102,0.28)] hover:shadow-[0_14px_26px_rgba(40,24,34,0.08)]'
+  }`
+}
+
+function PageHeader({
+  title,
+  eyebrow,
+  summary,
+  detail,
+  cards,
+}: {
+  title: string
+  eyebrow: string
+  summary: string
+  detail: string
+  cards: SettingsHeroCard[]
+}) {
   return (
-    <div className="bg-warm-surface rounded-[var(--radius-lg)] p-5 border border-warm-border space-y-4">
-      <h2 className="text-base font-semibold text-warm-text">{title}</h2>
-      {children}
-    </div>
+    <header className={heroClass}>
+      <div className="absolute inset-y-0 right-0 w-44 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.34),transparent_68%)]" />
+      <div className="relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start">
+        <div className="space-y-4">
+          <p className="text-[11px] uppercase tracking-[0.34em] text-white/72">{eyebrow}</p>
+          <h1 className="max-w-xl font-[var(--font-display)] text-[clamp(2rem,4vw,3.6rem)] leading-[0.96] tracking-[-0.03em] text-white">
+            {title}
+          </h1>
+          <p className="max-w-2xl text-sm leading-6 text-white/78">{summary}</p>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {cards.map(card => (
+              <div
+                key={card.label}
+                className="rounded-[20px] border border-white/12 bg-white/8 p-3 backdrop-blur-sm"
+              >
+                <p className="text-[10px] uppercase tracking-[0.26em] text-white/56">{card.label}</p>
+                <p className="mt-2 font-[var(--font-display)] text-[22px] leading-none text-white">{card.value}</p>
+                <p className="mt-2 text-xs leading-5 text-white/72">{card.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-[24px] border border-white/12 bg-white/10 p-4 backdrop-blur-sm">
+          <p className="text-[10px] uppercase tracking-[0.3em] text-white/62">Public status</p>
+          <p className="mt-3 font-[var(--font-display)] text-[22px] leading-tight text-white">{detail}</p>
+        </div>
+      </div>
+    </header>
+  )
+}
+
+function Section({
+  title,
+  eyebrow,
+  description,
+  accent,
+  children,
+}: {
+  title: string
+  eyebrow?: string
+  description?: string
+  accent?: 'plum' | 'rose'
+  children: React.ReactNode
+}) {
+  return (
+    <section className={`${sectionClass} relative overflow-hidden`}>
+      <div
+        className={`absolute inset-y-0 right-0 w-32 ${
+          accent === 'rose'
+            ? 'bg-[radial-gradient(circle_at_center,rgba(201,162,161,0.18),transparent_70%)]'
+            : 'bg-[radial-gradient(circle_at_center,rgba(111,79,102,0.16),transparent_70%)]'
+        }`}
+      />
+      <div className={sectionGlowClass} />
+      <div className="relative space-y-4">
+        <div className="flex flex-col gap-2 border-b border-[var(--line)]/80 pb-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-1">
+            {eyebrow ? (
+              <p className="text-[10px] uppercase tracking-[0.34em] text-[var(--text-faint)]">{eyebrow}</p>
+            ) : null}
+            <h2 className="font-[var(--font-display)] text-[26px] leading-none tracking-[-0.02em] text-[var(--text)]">{title}</h2>
+          </div>
+          {description ? (
+            <p className="max-w-md text-xs leading-5 text-[var(--text-soft)]">{description}</p>
+          ) : null}
+        </div>
+        <div className="space-y-4">{children}</div>
+      </div>
+    </section>
   )
 }
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div>
-      <label className="block text-sm font-medium text-warm-text mb-1.5">{label}</label>
-      {hint && <p className="text-xs text-warm-muted mb-1.5">{hint}</p>}
+    <div className="space-y-2">
+      <div className="space-y-1">
+        <label className="block text-[11px] font-medium uppercase tracking-[0.26em] text-[var(--text-soft)]">
+          {label}
+        </label>
+        {hint ? <p className="text-xs leading-5 text-[var(--text-faint)]">{hint}</p> : null}
+      </div>
       {children}
     </div>
   )
@@ -835,45 +1110,48 @@ function InviteSection({
 
   if (!couple.inviteCode) {
     return (
-      <button
-        type="button"
-        onClick={onGenerate}
-        className="px-4 py-2 text-sm text-warm-accent border border-warm-accent
-          rounded-[var(--radius-md)] hover:bg-warm-accent/10 transition-colors"
-      >
-        {t('inviteGenerate')}
-      </button>
+      <div className="rounded-[24px] border border-dashed border-[rgba(111,79,102,0.24)] bg-[linear-gradient(135deg,rgba(111,79,102,0.05),rgba(201,162,161,0.12))] p-4">
+        <p className="mb-3 text-sm leading-6 text-[var(--text-soft)]">{t('visibilityDescription')}</p>
+        <button
+          type="button"
+          onClick={onGenerate}
+          className={primaryButtonClass}
+        >
+          {t('inviteGenerate')}
+        </button>
+      </div>
     )
   }
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <code className="flex-1 px-3 py-2 bg-warm-bg rounded-[var(--radius-sm)] text-sm text-warm-text border border-warm-border break-all">
+      <div className="rounded-[24px] border border-[var(--line)] bg-[linear-gradient(135deg,rgba(111,79,102,0.08),rgba(201,162,161,0.14))] p-4">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-[var(--text-faint)]">{t('invite')}</p>
+        <code className="mt-3 block break-all rounded-[18px] border border-white/45 bg-white/70 px-3 py-3 text-sm leading-6 text-[var(--text)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
           {typeof window !== 'undefined' ? window.location.origin : ''}/invite/{couple.inviteCode}
         </code>
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="px-3 py-2 text-sm text-warm-accent hover:bg-warm-accent/10
-            rounded-[var(--radius-sm)] transition-colors whitespace-nowrap"
-        >
-          {copied ? t('inviteCopied') : t('inviteCopy')}
-        </button>
+        <div className="mt-3 flex flex-wrap gap-2.5">
+          <button
+            type="button"
+            onClick={handleCopy}
+            className={secondaryButtonClass}
+          >
+            {copied ? t('inviteCopied') : t('inviteCopy')}
+          </button>
+          <button
+            type="button"
+            onClick={handleRegenerate}
+            className={ghostButtonClass}
+          >
+            {t('inviteRegenerate')}
+          </button>
+        </div>
       </div>
       {daysLeft !== null && (
-        <p className="text-xs text-warm-muted">
+        <p className="text-xs uppercase tracking-[0.22em] text-[var(--text-faint)]">
           {t('inviteExpires', { days: daysLeft })}
         </p>
       )}
-      <button
-        type="button"
-        onClick={handleRegenerate}
-        className="px-3 py-2 text-xs text-warm-muted border border-warm-border
-          rounded-[var(--radius-sm)] hover:bg-warm-bg transition-colors"
-      >
-        {t('inviteRegenerate')}
-      </button>
     </div>
   )
 }
