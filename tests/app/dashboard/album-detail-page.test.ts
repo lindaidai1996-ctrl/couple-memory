@@ -4,6 +4,7 @@ import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 
 import {
+  buildAlbumDescriptionDraftSuggestion,
   buildAlbumDetailUiText,
   buildAlbumDetailSections,
   buildAlbumMetaDraft,
@@ -43,6 +44,7 @@ test('buildAlbumDetailUiText exposes localized chapter page copy', () => {
   assert.equal(uiText.summaryUpdated, 'summaryUpdated')
   assert.equal(uiText.narrative.editAlbum, 'narrativeEditAlbum')
   assert.equal(uiText.narrative.saveAlbum, 'narrativeSaveAlbum')
+  assert.equal(uiText.narrative.generateDescriptionDraft, 'narrativeGenerateDescriptionDraft')
 })
 
 test('buildAlbumDetailSections returns chapter area before ungrouped area', () => {
@@ -148,6 +150,40 @@ test('buildAlbumMetaUpdatePayload trims title and clears blank description', () 
       title: '2024 夏天',
       description: null,
     }
+  )
+})
+
+test('buildAlbumDescriptionDraftSuggestion combines chapter summaries into an album draft', () => {
+  assert.equal(
+    buildAlbumDescriptionDraftSuggestion({
+      title: '2024 夏天',
+      chapters: [
+        {
+          title: '第一次一起看海',
+          aiSummary: '我们在海边待了很久。',
+        },
+        {
+          title: '回家路上的晚风',
+          aiSummary: '那天回去的路上很安静。',
+        },
+      ],
+    }),
+    '这本相册收着“第一次一起看海”和“回家路上的晚风”这些回忆。我们在海边待了很久。那天回去的路上很安静。'
+  )
+})
+
+test('buildAlbumDescriptionDraftSuggestion falls back to chapter titles when summaries are missing', () => {
+  assert.equal(
+    buildAlbumDescriptionDraftSuggestion({
+      title: '2024 夏天',
+      chapters: [
+        {
+          title: '第一次一起看海',
+          aiSummary: null,
+        },
+      ],
+    }),
+    '这本相册记录了“第一次一起看海”这一段回忆。'
   )
 })
 

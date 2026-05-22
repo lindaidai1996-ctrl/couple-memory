@@ -199,6 +199,7 @@
     "narrativeEditAlbum": "Edit album details",
     "narrativeSaveAlbum": "Save album details",
     "narrativeSavingAlbum": "Saving...",
+    "narrativeGenerateDescriptionDraft": "Generate description draft",
     "narrativeTitleLabel": "Album title",
     "narrativeDescriptionLabel": "Album description",
     "narrativeReadyHint": "This album is already starting to form a readable narrative.",

@@ -61,6 +61,7 @@ export function buildAlbumDetailUiText(t: Translator) {
       editAlbum: t('narrativeEditAlbum'),
       saveAlbum: t('narrativeSaveAlbum'),
       savingAlbum: t('narrativeSavingAlbum'),
+      generateDescriptionDraft: t('narrativeGenerateDescriptionDraft'),
       titleLabel: t('narrativeTitleLabel'),
       descriptionLabel: t('narrativeDescriptionLabel'),
       readyHint: t('narrativeReadyHint'),
@@ -160,6 +161,37 @@ export function buildAlbumMetaUpdatePayload(input: {
     title: input.title.trim(),
     description: input.description.trim() || null,
   }
+}
+
+export function buildAlbumDescriptionDraftSuggestion({
+  chapters,
+}: {
+  title: string
+  chapters: Array<{
+    title?: string
+    aiSummary?: string | null
+  }>
+}) {
+  const titledChapters = chapters
+    .map(chapter => chapter.title?.trim())
+    .filter((title): title is string => Boolean(title))
+  const summarySnippets = chapters
+    .map(chapter => chapter.aiSummary?.trim())
+    .filter((summary): summary is string => Boolean(summary))
+
+  if (titledChapters.length === 0) {
+    return ''
+  }
+
+  const chapterLabel = titledChapters.length === 1
+    ? `“${titledChapters[0]}”这一段回忆`
+    : `“${titledChapters.slice(0, 2).join('”和“')}”这些回忆`
+
+  if (summarySnippets.length === 0) {
+    return `这本相册记录了${chapterLabel}。`
+  }
+
+  return `这本相册收着${chapterLabel}。${summarySnippets.slice(0, 2).join('')}`
 }
 
 export function buildChapterSummaryActionState(args: {
@@ -620,6 +652,21 @@ export default function AlbumDetailPage() {
                 className="px-3 py-2 rounded-[var(--radius-md)] bg-warm-accent text-sm text-white disabled:opacity-50"
               >
                 {savingAlbumMeta ? uiText.narrative.savingAlbum : uiText.narrative.saveAlbum}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const suggestion = buildAlbumDescriptionDraftSuggestion({
+                    title: album.title,
+                    chapters: album.chapters,
+                  })
+                  if (!suggestion) return
+                  setAlbumMetaDraft(prev => ({ ...prev, description: suggestion }))
+                }}
+                disabled={album.chapters.length === 0}
+                className="px-3 py-2 rounded-[var(--radius-md)] border border-warm-border text-sm text-warm-text disabled:opacity-50"
+              >
+                {uiText.narrative.generateDescriptionDraft}
               </button>
             </div>
           </div>
