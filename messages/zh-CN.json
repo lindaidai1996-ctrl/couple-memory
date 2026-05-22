@@ -120,6 +120,7 @@
     "empty": "还没有里程碑",
     "reviewGenerated": "检查 AI 候选",
     "confirmGenerated": "确认采用",
+    "confirmAllGenerated": "全部确认",
     "pendingReview": "还有 {count} 个 AI 候选里程碑待确认",
     "createFirst": "添加第一个里程碑",
     "deleteConfirm": "确定删除此里程碑？",
