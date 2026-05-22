@@ -1,6 +1,11 @@
+import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ReadinessCard } from '@/components/readiness-card'
+import {
+  buildDashboardReviewCard as buildDashboardReviewCardState,
+  getDashboardMemoryReviewsByCoupleId,
+} from '@/lib/memory-reviews/review-queries'
 import {
   buildOrganizationReadiness,
   type OrganizationReadinessAction,
@@ -42,6 +47,16 @@ export function buildDashboardReadinessCard({
     hasActions: actions.length > 0,
     actionCount: actions.length,
   }
+}
+
+export function buildDashboardReviewCard(
+  reviews: Array<{
+    id: string
+    type: 'YEARLY' | 'ANNIVERSARY'
+    title: string
+  }>
+) {
+  return buildDashboardReviewCardState(reviews as never)
 }
 
 function formatStartDate(date: Date | null) {
@@ -125,6 +140,8 @@ export default async function DashboardPage() {
     suggestions: readiness.suggestions,
     actions: readiness.actions,
   })
+  const reviews = await getDashboardMemoryReviewsByCoupleId(couple.id)
+  const reviewCard = buildDashboardReviewCard(reviews)
   const formattedStartDate = formatStartDate(couple.startDate)
 
   return (
@@ -230,45 +247,87 @@ export default async function DashboardPage() {
           ))}
         </div>
 
-        <div className="dashboard-surface-card-strong rounded-[24px] p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.28em] text-warm-muted">
-                Public Link
-              </p>
-              <h2 className="mt-3 font-[var(--font-dashboard-title)] text-[28px] leading-none tracking-[-0.04em] text-warm-text">
-                分享页入口
-              </h2>
-            </div>
-            <span className="dashboard-chip rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] text-warm-muted">
-              {couple.isPublic && couple.slug ? 'Published' : 'Private'}
-            </span>
-          </div>
-
-          {couple.isPublic && couple.slug ? (
-            <div className="mt-5 space-y-4">
-              <p className="text-sm leading-6 text-warm-muted">
-                {t('publicLink')}
-              </p>
-              <div className="dashboard-inset-panel rounded-[20px] px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.24em] text-warm-muted">
-                  URL
+        <div className="grid gap-4">
+          <div className="dashboard-surface-card-strong rounded-[24px] p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.28em] text-warm-muted">
+                  Public Link
                 </p>
-                <p className="mt-2 break-all font-medium text-warm-text">
-                  /s/{couple.slug}
+                <h2 className="mt-3 font-[var(--font-dashboard-title)] text-[28px] leading-none tracking-[-0.04em] text-warm-text">
+                  分享页入口
+                </h2>
+              </div>
+              <span className="dashboard-chip rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] text-warm-muted">
+                {couple.isPublic && couple.slug ? 'Published' : 'Private'}
+              </span>
+            </div>
+
+            {couple.isPublic && couple.slug ? (
+              <div className="mt-5 space-y-4">
+                <p className="text-sm leading-6 text-warm-muted">
+                  {t('publicLink')}
+                </p>
+                <div className="dashboard-inset-panel rounded-[20px] px-4 py-3">
+                  <p className="text-[11px] uppercase tracking-[0.24em] text-warm-muted">
+                    URL
+                  </p>
+                  <p className="mt-2 break-all font-medium text-warm-text">
+                    /s/{couple.slug}
+                  </p>
+                </div>
+                <p className="text-xs leading-5 text-warm-muted">
+                  {t('publicLinkPublishedHint')}
                 </p>
               </div>
-              <p className="text-xs leading-5 text-warm-muted">
-                {t('publicLinkPublishedHint')}
-              </p>
+            ) : (
+              <div className="dashboard-empty-surface mt-5 rounded-[20px] px-4 py-5">
+                <p className="text-sm leading-6 text-warm-muted">
+                  {t('publicLinkPrivateHint')}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="dashboard-surface-card-strong rounded-[24px] p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.28em] text-warm-muted">
+                  Memory Reviews
+                </p>
+                <h2 className="mt-3 font-[var(--font-dashboard-title)] text-[28px] leading-none tracking-[-0.04em] text-warm-text">
+                  {t('reviewTitle')}
+                </h2>
+              </div>
+              <Link
+                href="/reviews"
+                className="dashboard-chip rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] text-warm-muted"
+              >
+                {t('openReview')}
+              </Link>
             </div>
-          ) : (
-            <div className="dashboard-empty-surface mt-5 rounded-[20px] px-4 py-5">
-              <p className="text-sm leading-6 text-warm-muted">
-                {t('publicLinkPrivateHint')}
-              </p>
+            <p className="mt-5 text-sm leading-6 text-warm-muted">
+              {t('reviewSubtitle')}
+            </p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="dashboard-inset-panel rounded-[20px] px-4 py-4">
+                <p className="text-[11px] uppercase tracking-[0.24em] text-warm-muted">
+                  {t('annualReview')}
+                </p>
+                <p className="mt-3 font-medium text-warm-text">
+                  {reviewCard.yearlyReview?.title ?? t('reviewUnavailable')}
+                </p>
+              </div>
+              <div className="dashboard-inset-panel rounded-[20px] px-4 py-4">
+                <p className="text-[11px] uppercase tracking-[0.24em] text-warm-muted">
+                  {t('anniversaryReview')}
+                </p>
+                <p className="mt-3 font-medium text-warm-text">
+                  {reviewCard.anniversaryReview?.title ?? t('reviewUnavailable')}
+                </p>
+              </div>
             </div>
-          )}
+          </div>
         </div>
       </section>
 

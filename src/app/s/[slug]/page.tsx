@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import {
+  getPublicMemoryReviewsByCoupleId,
   getPublicNarrativeAlbumsByCoupleId,
   getPublicSpacePageDataBySlug,
   type PublicNarrativeAlbum,
@@ -20,6 +21,8 @@ export function buildPublicHomeUiText(t: Translator) {
     narrativeSubtitle: t('narrativeSubtitle'),
     narrativeEmpty: t('narrativeEmpty'),
     chapterLabel: t('chapterLabel'),
+    review: t('review'),
+    reviewSubtitle: t('reviewSubtitle'),
   }
 }
 
@@ -48,6 +51,20 @@ export function buildPublicHomeSectionOrder({
     : (['hero', 'narrative', 'explore'] as const)
 }
 
+export function buildPublicHomeReviewSection({
+  yearlyReviewTitle,
+  anniversaryReviewTitle,
+}: {
+  yearlyReviewTitle: string | null
+  anniversaryReviewTitle: string | null
+}) {
+  return {
+    hasReviews: Boolean(yearlyReviewTitle || anniversaryReviewTitle),
+    yearlyReviewTitle,
+    anniversaryReviewTitle,
+  }
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -71,8 +88,13 @@ export default async function PublicHomePage({
   }
 
   const narrativeAlbums = await getPublicNarrativeAlbumsByCoupleId(space.id)
+  const reviews = await getPublicMemoryReviewsByCoupleId(space.id)
   const uiText = buildPublicHomeUiText(t)
   const narrativeSection = buildPublicHomeNarrativeSection({ albums: narrativeAlbums })
+  const reviewSection = buildPublicHomeReviewSection({
+    yearlyReviewTitle: reviews.yearlyReview?.title ?? null,
+    anniversaryReviewTitle: reviews.anniversaryReview?.title ?? null,
+  })
   const sectionOrder = buildPublicHomeSectionOrder({
     hasNarrativeAlbums: narrativeSection.hasNarrativeAlbums,
   })
@@ -216,7 +238,7 @@ export default async function PublicHomePage({
         return (
           <section key="explore" className="pb-24 px-6">
             <div className="max-w-3xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 <NavCard
                   href={`/s/${slug}/photos`}
                   title={uiText.photos}
@@ -253,6 +275,33 @@ export default async function PublicHomePage({
                       <circle cx="12" cy="6" r="2" />
                       <circle cx="12" cy="12" r="2" />
                       <circle cx="12" cy="18" r="2" />
+                    </svg>
+                  }
+                />
+                <NavCard
+                  href={`/s/${slug}/review`}
+                  title={uiText.review}
+                  subtitle={
+                    reviewSection.hasReviews
+                      ? [reviewSection.yearlyReviewTitle, reviewSection.anniversaryReviewTitle]
+                          .filter(Boolean)
+                          .join(' · ')
+                      : uiText.reviewSubtitle
+                  }
+                  icon={
+                    <svg
+                      width="28"
+                      height="28"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                    >
+                      <path d="M7 4h10" />
+                      <path d="M5 8h14" />
+                      <path d="M7 12h10" />
+                      <path d="M7 16h7" />
+                      <path d="M5 20h14" />
                     </svg>
                   }
                 />

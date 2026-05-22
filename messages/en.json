@@ -90,6 +90,12 @@
     "summaryWithoutStartDate": "This space keeps your photos, chapters, and public entry point organized in one place.",
     "publicLinkPublishedHint": "This space is already public, so you can share the entry point directly with visitors.",
     "publicLinkPrivateHint": "The public entry is still disabled. Once enabled, a shareable private link will appear here.",
+    "reviewTitle": "Review Entry",
+    "reviewSubtitle": "Turn yearly and anniversary milestones into something easier to revisit and share.",
+    "annualReview": "Yearly review",
+    "anniversaryReview": "Anniversary review",
+    "reviewUnavailable": "No readable review yet",
+    "openReview": "Open reviews",
     "curationTitle": "Curation Progress",
     "curationSuggestionCount": "{count} suggestions are still available to improve the album structure.",
     "curationStableHint": "The current curation state is stable, so you can keep adding new memories."
@@ -455,11 +461,34 @@
   "PublicPage": {
     "photos": "Photos",
     "photosSubtitle": "Every frame we've captured",
+    "review": "Review",
+    "reviewSubtitle": "Revisit the stories gathered from your year and anniversary milestones.",
     "timeline": "Timeline",
     "timelineSubtitle": "Each milestone that belongs to us",
     "narrativeTitle": "Album Narrative",
     "narrativeSubtitle": "These albums are no longer just stored away. They are starting to read like stories.",
     "narrativeEmpty": "This part of the memory is still being organized. Album descriptions and chapter summaries will appear here soon.",
     "chapterLabel": "Chapter"
+  },
+  "PublicReviewPage": {
+    "back": "Back home",
+    "title": "Memory Reviews",
+    "subtitle": "Read your shared year and anniversary milestones as a clearer memory line.",
+    "yearlyTitle": "Yearly review",
+    "yearlyEmpty": "No public yearly review is ready yet.",
+    "anniversaryTitle": "Anniversary review",
+    "anniversaryEmpty": "No public anniversary review is ready yet."
+  },
+  "ReviewsPage": {
+    "title": "Review Curation",
+    "subtitle": "Turn yearly and anniversary milestones into finished reviews you can revisit and publish.",
+    "generateYearly": "Generate yearly review",
+    "generateAnniversary": "Generate anniversary review",
+    "empty": "No review is ready yet. Generate one to begin.",
+    "yearlyLabel": "Yearly",
+    "anniversaryLabel": "Anniversary"
+  },
+  "ReviewDetailPage": {
+    "back": "Back to reviews"
   }
 }

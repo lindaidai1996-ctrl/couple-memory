@@ -14,6 +14,9 @@ import {
   buildPublicTimelineUiText,
 } from '../../src/app/s/[slug]/timeline/page'
 import {
+  buildPublicReviewUiText,
+} from '../../src/app/s/[slug]/review/page'
+import {
   buildErrorUiText,
 } from '../../src/app/error'
 
@@ -72,6 +75,27 @@ test('public pages ui text uses translated headings', () => {
     back: 'Back',
     title: 'Timeline',
     empty: 'No timeline entries yet',
+  })
+
+  const reviewT = (key: string) =>
+    ({
+      back: 'Back',
+      title: 'Reviews',
+      subtitle: 'Subtitle',
+      yearlyTitle: 'Yearly',
+      yearlyEmpty: 'No yearly review',
+      anniversaryTitle: 'Anniversary',
+      anniversaryEmpty: 'No anniversary review',
+    })[key] ?? key
+
+  assert.deepEqual(buildPublicReviewUiText(reviewT), {
+    back: 'Back',
+    title: 'Reviews',
+    subtitle: 'Subtitle',
+    yearlyTitle: 'Yearly',
+    yearlyEmpty: 'No yearly review',
+    anniversaryTitle: 'Anniversary',
+    anniversaryEmpty: 'No anniversary review',
   })
 })
 

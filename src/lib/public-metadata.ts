@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
 
+import { mapMemoryReview, type MemoryReviewListItem, type MemoryReviewRecord } from './memory-reviews/review-mappers'
+
 const SITE_NAME = 'Couple Memory'
 
-export type PublicPageKind = 'home' | 'photos' | 'timeline'
+export type PublicPageKind = 'home' | 'photos' | 'timeline' | 'review'
 
 export interface PublicSpaceMetadataSource {
   name: string
@@ -60,6 +62,11 @@ export interface PublicTimelineItem {
   } | null
 }
 
+export interface PublicReviewPair {
+  yearlyReview: MemoryReviewListItem | null
+  anniversaryReview: MemoryReviewListItem | null
+}
+
 type PublicNarrativeAlbumSource = {
   id: string
   title: string
@@ -96,6 +103,11 @@ const pageConfig: Record<
     path: slug => `/s/${slug}/timeline`,
     title: name => `${name} 的时间轴 | ${SITE_NAME}`,
     descriptionPrefix: name => `浏览 ${name} 公开空间的时间轴节点。`,
+  },
+  review: {
+    path: slug => `/s/${slug}/review`,
+    title: name => `${name} 的回顾 | ${SITE_NAME}`,
+    descriptionPrefix: name => `阅读 ${name} 公开空间整理出的年度与周年回顾。`,
   },
 }
 
@@ -256,6 +268,28 @@ export async function getPublicTimelineByCoupleId(
     ...milestone,
     date: milestone.date.toISOString(),
   }))
+}
+
+export async function getPublicMemoryReviewsByCoupleId(
+  coupleId: string
+): Promise<PublicReviewPair> {
+  const { prisma } = await import('./prisma')
+  const reviews = await prisma.memoryReview.findMany({
+    where: {
+      coupleId,
+      status: 'READY',
+      publishedAt: { not: null },
+    },
+    orderBy: [{ publishedAt: 'desc' }, { updatedAt: 'desc' }],
+  }) as unknown as MemoryReviewRecord[]
+
+  const items = reviews.map(mapMemoryReview)
+
+  return {
+    yearlyReview: items.find(review => review.type === 'YEARLY') ?? null,
+    anniversaryReview:
+      items.find(review => review.type === 'ANNIVERSARY') ?? null,
+  }
 }
 
 export function mapPublicNarrativeAlbums(

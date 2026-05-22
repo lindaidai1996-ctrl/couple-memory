@@ -37,6 +37,17 @@ enum CoupleCoverMode {
   UPLOAD
 }
 
+enum MemoryReviewType {
+  YEARLY
+  ANNIVERSARY
+}
+
+enum MemoryReviewStatus {
+  PROCESSING
+  READY
+  FAILED
+}
+
 model User {
   id           String       @id @default(cuid())
   email        String       @unique
@@ -68,6 +79,7 @@ model Couple {
   members                CoupleUser[]
   albums                 Album[]
   milestones             Milestone[]
+  memoryReviews          MemoryReview[]
   pipelineRuns           PipelineRun[]
   createdAt              DateTime        @default(now())
   updatedAt              DateTime        @updatedAt
@@ -224,4 +236,32 @@ model PipelineRun {
 
   @@index([photoId])
   @@index([coupleId, startedAt])
+}
+
+model MemoryReview {
+  id              String             @id @default(cuid())
+  couple          Couple             @relation(fields: [coupleId], references: [id])
+  coupleId        String
+  type            MemoryReviewType
+  scopeKey        String
+  year            Int?
+  anniversaryYear Int?
+  periodStart     DateTime
+  periodEnd       DateTime
+  title           String
+  subtitle        String?
+  summary         String
+  closing         String
+  coverPhotoUrl   String?
+  status          MemoryReviewStatus @default(PROCESSING)
+  payload         Json
+  publishedAt     DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([coupleId, type, createdAt])
+  @@index([coupleId, status, publishedAt])
+  @@index([coupleId, type, year])
+  @@index([coupleId, type, anniversaryYear])
+  @@unique([coupleId, scopeKey])
 }

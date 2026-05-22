@@ -90,6 +90,12 @@
     "summaryWithoutStartDate": "这里集中整理你们的照片、章节与对外展示入口。",
     "publicLinkPublishedHint": "当前空间已对外开放，可将入口直接分享给访客查看。",
     "publicLinkPrivateHint": "公开入口仍处于关闭状态，启用后这里会显示可分享的专属链接。",
+    "reviewTitle": "回顾入口",
+    "reviewSubtitle": "把年度与周年节点整理成一份更适合重读和分享的回顾。",
+    "annualReview": "年度回顾",
+    "anniversaryReview": "周年回顾",
+    "reviewUnavailable": "还没有可阅读的回顾",
+    "openReview": "查看回顾",
     "curationTitle": "整理进度",
     "curationSuggestionCount": "还有 {count} 条建议可以继续优化相册结构。",
     "curationStableHint": "当前整理状态稳定，可以继续补充新的回忆内容。"
@@ -455,11 +461,34 @@
   "PublicPage": {
     "photos": "照片",
     "photosSubtitle": "我们拍下的每一帧",
+    "review": "回顾",
+    "reviewSubtitle": "把一年和周年节点重新整理成可重读的故事。",
     "timeline": "时间轴",
     "timelineSubtitle": "属于我们的每一个节点",
     "narrativeTitle": "Album Narrative",
     "narrativeSubtitle": "这些相册不只是被保存下来，也正在慢慢被讲成故事。",
     "narrativeEmpty": "这部分回忆还在整理中，之后会把相册说明和章节摘要带到这里。",
     "chapterLabel": "章节"
+  },
+  "PublicReviewPage": {
+    "back": "返回首页",
+    "title": "Memory Reviews",
+    "subtitle": "把你们共同经历过的一年和周年节点，重新读成一条更清楚的记忆线。",
+    "yearlyTitle": "年度回顾",
+    "yearlyEmpty": "这一部分还没有生成可公开阅读的年度回顾。",
+    "anniversaryTitle": "周年回顾",
+    "anniversaryEmpty": "这一部分还没有生成可公开阅读的周年回顾。"
+  },
+  "ReviewsPage": {
+    "title": "回顾整理",
+    "subtitle": "把年度和周年节点整理成一份可以回看、可以公开展示的成品回顾。",
+    "generateYearly": "生成年度回顾",
+    "generateAnniversary": "生成周年回顾",
+    "empty": "还没有回顾成品，可以先生成一份。",
+    "yearlyLabel": "年度",
+    "anniversaryLabel": "周年"
+  },
+  "ReviewDetailPage": {
+    "back": "返回回顾列表"
   }
 }

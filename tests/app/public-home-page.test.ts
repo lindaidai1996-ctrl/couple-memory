@@ -4,6 +4,7 @@ import test from 'node:test'
 import {
   buildPublicHomeSectionOrder,
   buildPublicHomeNarrativeSection,
+  buildPublicHomeReviewSection,
   buildPublicHomeUiText,
 } from '../../src/app/s/[slug]/page'
 
@@ -14,6 +15,8 @@ test('buildPublicHomeUiText exposes narrative copy keys', () => {
   assert.equal(uiText.narrativeSubtitle, 'narrativeSubtitle')
   assert.equal(uiText.narrativeEmpty, 'narrativeEmpty')
   assert.equal(uiText.chapterLabel, 'chapterLabel')
+  assert.equal(uiText.review, 'review')
+  assert.equal(uiText.reviewSubtitle, 'reviewSubtitle')
 })
 
 test('buildPublicHomeSectionOrder places the narrative section before navigation cards', () => {
@@ -58,4 +61,15 @@ test('buildPublicHomeNarrativeSection summarizes public narrative albums for ren
       { id: 'chapter_2', title: '夜晚散场', summary: '回家的路上还在聊刚刚的晚霞。' },
     ],
   })
+})
+
+test('buildPublicHomeReviewSection exposes review entry state', () => {
+  const section = buildPublicHomeReviewSection({
+    yearlyReviewTitle: '2026 年回顾',
+    anniversaryReviewTitle: null,
+  })
+
+  assert.equal(section.hasReviews, true)
+  assert.equal(section.yearlyReviewTitle, '2026 年回顾')
+  assert.equal(section.anniversaryReviewTitle, null)
 })

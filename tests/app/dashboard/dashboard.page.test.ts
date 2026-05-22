@@ -4,6 +4,7 @@ import test from 'node:test'
 import {
   buildDashboardCoupleUserQuery,
   buildDashboardReadinessCard,
+  buildDashboardReviewCard,
 } from '../../../src/app/(dashboard)/dashboard/page'
 
 test('buildDashboardCoupleUserQuery selects only dashboard fields from couple', () => {
@@ -36,4 +37,18 @@ test('buildDashboardReadinessCard returns readiness copy for dashboard rendering
     hasActions: true,
     actionCount: 1,
   })
+})
+
+test('buildDashboardReviewCard splits yearly and anniversary review state', () => {
+  const card = buildDashboardReviewCard([
+    {
+      id: 'review-1',
+      type: 'YEARLY',
+      title: '2026 年回顾',
+    },
+  ])
+
+  assert.equal(card.hasYearlyReview, true)
+  assert.equal(card.hasAnniversaryReview, false)
+  assert.equal(card.yearlyReview?.title, '2026 年回顾')
 })

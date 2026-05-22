@@ -50,6 +50,12 @@ test('buildPublicMetadata uses page-specific copy for photos and timeline pages'
       '浏览 Sun & Moon 公开空间的时间轴节点。我们在城市和海边记录日常。',
       '/s/sun-moon/timeline',
     ],
+    [
+      'review',
+      'Sun & Moon 的回顾 | Couple Memory',
+      '阅读 Sun & Moon 公开空间整理出的年度与周年回顾。我们在城市和海边记录日常。',
+      '/s/sun-moon/review',
+    ],
   ]
 
   for (const [page, title, description, canonical] of cases) {
