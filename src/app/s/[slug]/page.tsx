@@ -145,6 +145,110 @@ export function buildPublicHomeTopicSection({
   }
 }
 
+function getTopicTitle(
+  kind:
+    | 'yearlyReview'
+    | 'anniversaryReview'
+    | 'yearlyShare'
+    | 'anniversaryShare'
+    | 'firsts'
+    | 'footprints',
+  uiText: ReturnType<typeof buildPublicHomeUiText>
+) {
+  switch (kind) {
+    case 'yearlyReview':
+      return uiText.topicYearlyReview
+    case 'anniversaryReview':
+      return uiText.topicAnniversaryReview
+    case 'yearlyShare':
+      return uiText.topicYearlyShare
+    case 'anniversaryShare':
+      return uiText.topicAnniversaryShare
+    case 'firsts':
+      return uiText.topicFirsts
+    case 'footprints':
+      return uiText.topicFootprints
+  }
+}
+
+function getTopicIcon(
+  kind:
+    | 'yearlyReview'
+    | 'anniversaryReview'
+    | 'yearlyShare'
+    | 'anniversaryShare'
+    | 'firsts'
+    | 'footprints'
+) {
+  switch (kind) {
+    case 'yearlyShare':
+    case 'anniversaryShare':
+      return (
+        <svg
+          width="28"
+          height="28"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <path d="M12 16V4" />
+          <path d="m7 9 5-5 5 5" />
+          <path d="M5 20h14" />
+        </svg>
+      )
+    case 'firsts':
+      return (
+        <svg
+          width="28"
+          height="28"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <path d="M12 6v12" />
+          <path d="M8 10h8" />
+          <path d="M6 18h12" />
+        </svg>
+      )
+    case 'footprints':
+      return (
+        <svg
+          width="28"
+          height="28"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <path d="M7 17c1.2-2.8 2.8-4.2 5-4.2 2.1 0 3.7 1.4 5 4.2" />
+          <circle cx="9" cy="8" r="1.5" />
+          <circle cx="15" cy="8" r="1.5" />
+          <circle cx="12" cy="5" r="1.2" />
+        </svg>
+      )
+    case 'yearlyReview':
+    case 'anniversaryReview':
+      return (
+        <svg
+          width="28"
+          height="28"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <path d="M7 4h10" />
+          <path d="M5 8h14" />
+          <path d="M7 12h10" />
+          <path d="M7 16h7" />
+          <path d="M5 20h14" />
+        </svg>
+      )
+  }
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -340,78 +444,9 @@ export default async function PublicHomePage({
                       <NavCard
                         key={item.id}
                         href={item.href}
-                        title={
-                          item.kind === 'yearlyReview'
-                            ? uiText.topicYearlyReview
-                            : item.kind === 'anniversaryReview'
-                              ? uiText.topicAnniversaryReview
-                              : item.kind === 'yearlyShare'
-                                ? uiText.topicYearlyShare
-                                : item.kind === 'anniversaryShare'
-                                  ? uiText.topicAnniversaryShare
-                                  : item.kind === 'firsts'
-                                    ? uiText.topicFirsts
-                                    : uiText.topicFootprints
-                        }
+                        title={getTopicTitle(item.kind, uiText)}
                         subtitle={item.title || uiText.topicsSubtitle}
-                        icon={
-                          item.kind === 'yearlyShare' || item.kind === 'anniversaryShare' ? (
-                            <svg
-                              width="28"
-                              height="28"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                            >
-                              <path d="M12 16V4" />
-                              <path d="m7 9 5-5 5 5" />
-                              <path d="M5 20h14" />
-                            </svg>
-                          ) : item.kind === 'firsts' ? (
-                            <svg
-                              width="28"
-                              height="28"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                            >
-                              <path d="M12 6v12" />
-                              <path d="M8 10h8" />
-                              <path d="M6 18h12" />
-                            </svg>
-                          ) : item.kind === 'footprints' ? (
-                            <svg
-                              width="28"
-                              height="28"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                            >
-                              <path d="M7 17c1.2-2.8 2.8-4.2 5-4.2 2.1 0 3.7 1.4 5 4.2" />
-                              <circle cx="9" cy="8" r="1.5" />
-                              <circle cx="15" cy="8" r="1.5" />
-                              <circle cx="12" cy="5" r="1.2" />
-                            </svg>
-                          ) : (
-                            <svg
-                              width="28"
-                              height="28"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                            >
-                              <path d="M7 4h10" />
-                              <path d="M5 8h14" />
-                              <path d="M7 12h10" />
-                              <path d="M7 16h7" />
-                              <path d="M5 20h14" />
-                            </svg>
-                          )
-                        }
+                        icon={getTopicIcon(item.kind)}
                       />
                     ))}
                   </div>
