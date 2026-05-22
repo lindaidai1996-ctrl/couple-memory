@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Velvet Plum Login Preview</title>
+  <style>
+    :root {
+      --vp-font-display: "Baskerville", "Times New Roman", "Georgia", "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
+      --vp-font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Source Han Sans SC", "Helvetica Neue", Arial, sans-serif;
+      --vp-radius-xl: 28px;
+      --vp-radius-lg: 20px;
+      --vp-radius-md: 14px;
+      --vp-radius-sm: 12px;
+      --vp-shadow-soft: 0 24px 60px rgba(22, 10, 18, 0.2);
+      --vp-shadow-card: 0 16px 34px rgba(16, 7, 14, 0.16);
+      --vp-transition-fast: 160ms ease;
+      --vp-transition-base: 180ms ease;
+      --vp-transition-soft: 220ms ease;
+    }
+
+    :root,
+    :root[data-theme="light"] {
+      --bg: #f1eded;
+      --bg-2: #faf7f7;
+      --panel: rgba(255, 251, 253, 0.8);
+      --panel-strong: rgba(255, 255, 255, 0.9);
+      --text: #20171c;
+      --text-soft: rgba(32, 23, 28, 0.66);
+      --text-faint: rgba(32, 23, 28, 0.38);
+      --line: rgba(32, 23, 28, 0.1);
+      --accent: #6f4f66;
+      --accent-2: #c9a2a1;
+      --accent-3: #edd9d5;
+      --accent-soft: rgba(111, 79, 102, 0.12);
+      --accent-glow: rgba(111, 79, 102, 0.2);
+      --hero-gradient: linear-gradient(135deg, #4a2f42 0%, #8f607a 42%, #d7bbb7 100%);
+      --active-gradient: linear-gradient(135deg, #5b3a52 0%, #c9a2a1 100%);
+      --surface-gradient: linear-gradient(135deg, rgba(111, 79, 102, 0.12), rgba(201, 162, 161, 0.08));
+      --body-overlay:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.86), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(143, 96, 122, 0.12), transparent 30%);
+      --hero-text: #fffafc;
+      --input-bg: rgba(255, 255, 255, 0.82);
+      --focus-ring: 0 0 0 3px rgba(111, 79, 102, 0.16);
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #161116;
+      --bg-2: #211820;
+      --panel: rgba(35, 24, 33, 0.76);
+      --panel-strong: rgba(42, 28, 39, 0.92);
+      --text: #f7edf3;
+      --text-soft: rgba(247, 237, 243, 0.7);
+      --text-faint: rgba(247, 237, 243, 0.4);
+      --line: rgba(247, 237, 243, 0.1);
+      --accent: #d5a6b5;
+      --accent-2: #8b657e;
+      --accent-3: #33202e;
+      --accent-soft: rgba(213, 166, 181, 0.12);
+      --accent-glow: rgba(213, 166, 181, 0.16);
+      --hero-gradient: linear-gradient(135deg, #2c1625 0%, #5a3550 38%, #a97684 100%);
+      --active-gradient: linear-gradient(135deg, #70455f 0%, #b78795 100%);
+      --surface-gradient: linear-gradient(135deg, rgba(213, 166, 181, 0.1), rgba(91, 53, 80, 0.18));
+      --body-overlay:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.05), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(183, 135, 149, 0.1), transparent 30%);
+      --hero-text: #fff7fb;
+      --input-bg: rgba(255, 247, 252, 0.04);
+      --focus-ring: 0 0 0 3px rgba(213, 166, 181, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--body-overlay), linear-gradient(180deg, var(--bg-2), var(--bg));
+      color: var(--text);
+      font-family: var(--vp-font-sans);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: radial-gradient(circle at center, black 42%, transparent 82%);
+      opacity: 0.22;
+    }
+
+    button,
+    input,
+    a {
+      font: inherit;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      padding: 18px;
+      display: grid;
+      place-items: center;
+    }
+
+    .preview-shell {
+      width: min(1180px, 100%);
+      min-height: min(820px, calc(100vh - 36px));
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(360px, 420px);
+      border-radius: 34px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: var(--vp-shadow-soft);
+      backdrop-filter: blur(22px);
+      overflow: hidden;
+    }
+
+    .story-pane {
+      position: relative;
+      padding: 28px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 18px;
+      background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.16), transparent 24%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+        var(--surface-gradient);
+      border-right: 1px solid var(--line);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: grid;
+      gap: 8px;
+      max-width: 420px;
+    }
+
+    .eyebrow {
+      margin: 0;
+      font-size: 10px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-family: var(--vp-font-display);
+      font-size: clamp(28px, 3vw, 42px);
+      line-height: 0.98;
+      letter-spacing: -0.05em;
+      text-wrap: pretty;
+    }
+
+    .brand p:last-child {
+      margin: 0;
+      color: var(--text-soft);
+      font-size: 13px;
+      line-height: 1.65;
+      max-width: 34ch;
+    }
+
+    .theme-toggle {
+      display: inline-flex;
+      gap: 6px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .theme-toggle button {
+      border: 0;
+      padding: 8px 12px;
+      border-radius: 999px;
+      color: var(--text-soft);
+      background: transparent;
+      cursor: pointer;
+      transition: transform var(--vp-transition-base), background var(--vp-transition-base), color var(--vp-transition-base);
+    }
+
+    .theme-toggle button.active {
+      color: var(--hero-text);
+      background: var(--active-gradient);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 10px 22px var(--accent-glow);
+    }
+
+    .hero {
+      align-self: center;
+      display: grid;
+      gap: 14px;
+      max-width: 640px;
+    }
+
+    .hero-card {
+      padding: 24px 24px 22px;
+      border-radius: 28px;
+      background: var(--hero-gradient);
+      color: var(--hero-text);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: var(--vp-shadow-card);
+    }
+
+    .hero-card p,
+    .hero-caption,
+    .metric span,
+    .quote {
+      color: rgba(255, 247, 251, 0.82);
+    }
+
+    .hero-card h2 {
+      margin: 0 0 12px;
+      font-family: var(--vp-font-display);
+      font-size: clamp(30px, 3.3vw, 46px);
+      line-height: 1;
+      letter-spacing: -0.05em;
+      max-width: 10ch;
+      text-wrap: pretty;
+    }
+
+    .hero-card p {
+      margin: 0;
+      max-width: 41ch;
+      font-size: 14px;
+      line-height: 1.75;
+    }
+
+    .hero-caption {
+      margin-top: 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .hero-caption::before {
+      content: "";
+      width: 34px;
+      height: 1px;
+      background: rgba(255, 250, 252, 0.5);
+    }
+
+    .promise-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .promise-card {
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      box-shadow: var(--vp-shadow-card);
+      display: grid;
+      gap: 8px;
+      min-height: 132px;
+    }
+
+    .promise-card strong {
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .promise-card h3 {
+      margin: 0;
+      font-family: var(--vp-font-display);
+      font-size: 26px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .promise-card p {
+      margin: 0;
+      color: var(--text-soft);
+      font-size: 12px;
+      line-height: 1.68;
+      text-wrap: pretty;
+    }
+
+    .support-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 12px;
+    }
+
+    .note-card,
+    .metric-rail {
+      padding: 18px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      box-shadow: var(--vp-shadow-card);
+    }
+
+    .section-label {
+      margin: 0 0 12px;
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .quote {
+      margin: 0;
+      color: var(--text);
+      font-family: var(--vp-font-display);
+      font-size: 24px;
+      line-height: 1.12;
+      letter-spacing: -0.04em;
+      text-wrap: pretty;
+    }
+
+    .note-card p:last-child {
+      margin: 10px 0 0;
+      color: var(--text-soft);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .metric-rail {
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .metric {
+      display: grid;
+      gap: 6px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .metric:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .metric small {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+
+    .metric strong {
+      font-family: var(--vp-font-display);
+      font-size: 42px;
+      line-height: 0.92;
+      letter-spacing: -0.05em;
+      font-weight: 600;
+    }
+
+    .metric span {
+      color: var(--text-soft);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .footer-note {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--text-faint);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .timeline-note {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .timeline-step {
+      display: grid;
+      grid-template-columns: 24px 1fr;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .timeline-step b {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .timeline-step div {
+      display: grid;
+      gap: 3px;
+    }
+
+    .timeline-step strong {
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .timeline-step span {
+      color: var(--text-soft);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .auth-pane {
+      padding: 22px;
+      display: grid;
+      align-items: center;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+        rgba(0, 0, 0, 0.02);
+    }
+
+    .auth-card {
+      padding: 22px;
+      border-radius: 26px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      box-shadow: var(--vp-shadow-card);
+      display: grid;
+      gap: 18px;
+    }
+
+    .card-head {
+      display: grid;
+      gap: 8px;
+    }
+
+    .card-head h3 {
+      margin: 0;
+      font-family: var(--vp-font-display);
+      font-size: clamp(28px, 4vw, 40px);
+      line-height: 0.94;
+      letter-spacing: -0.05em;
+    }
+
+    .card-head p {
+      margin: 0;
+      color: var(--text-soft);
+      font-size: 13px;
+      line-height: 1.68;
+    }
+
+    .status-badge {
+      width: fit-content;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .login-form {
+      display: grid;
+      gap: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text-soft);
+    }
+
+    .field-head label {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .field-head a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .field input {
+      width: 100%;
+      height: 42px;
+      padding: 0 12px;
+      border-radius: var(--vp-radius-md);
+      border: 1px solid var(--line);
+      background: var(--input-bg);
+      color: var(--text);
+      outline: none;
+      transition: border-color var(--vp-transition-base), box-shadow var(--vp-transition-base), transform var(--vp-transition-fast);
+    }
+
+    .field input::placeholder {
+      color: var(--text-faint);
+    }
+
+    .field input:hover {
+      border-color: color-mix(in srgb, var(--accent) 24%, var(--line));
+    }
+
+    .field input:focus {
+      border-color: color-mix(in srgb, var(--accent) 40%, white 10%);
+      box-shadow: var(--focus-ring);
+      transform: translateY(-1px);
+    }
+
+    .choice-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--text-soft);
+      font-size: 12px;
+    }
+
+    .checkbox {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .checkbox input {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--accent);
+    }
+
+    .primary-button,
+    .secondary-button {
+      height: 42px;
+      border-radius: var(--vp-radius-md);
+      cursor: pointer;
+      transition: transform var(--vp-transition-base), box-shadow var(--vp-transition-base), background var(--vp-transition-base), border-color var(--vp-transition-base);
+    }
+
+    .primary-button {
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: var(--hero-text);
+      background: var(--active-gradient);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 10px 22px var(--accent-glow);
+    }
+
+    .secondary-button {
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: transparent;
+    }
+
+    .primary-button:hover,
+    .secondary-button:hover,
+    .theme-toggle button:hover {
+      transform: translateY(-1px);
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-faint);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+    }
+
+    .trust-panel {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: var(--surface-gradient);
+    }
+
+    .trust-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--text-soft);
+      font-size: 12px;
+    }
+
+    .trust-row strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .register-line {
+      text-align: center;
+      color: var(--text-soft);
+      font-size: 13px;
+    }
+
+    .register-line a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    @media (max-width: 920px) {
+      .preview-shell {
+        min-height: auto;
+        grid-template-columns: 1fr;
+      }
+
+      .story-pane {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .support-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .promise-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 12px;
+      }
+
+      .story-pane,
+      .auth-pane {
+        padding: 14px;
+      }
+
+      .hero-card,
+      .auth-card {
+        padding: 18px;
+      }
+
+      .topbar,
+      .footer-note,
+      .choice-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="preview-shell">
+      <section class="story-pane">
+        <div class="topbar">
+          <div class="brand">
+            <p class="eyebrow">Couple Memory Archive</p>
+            <h1>把你们的日常，收成一份可以慢慢翻阅的私人档案。</h1>
+            <p>如果这块真的迁到登录页，我会让左侧承担品牌气质和产品承诺，而不是做成大面积海报文案。视觉上更克制，结构上也更接近真实可上线界面。</p>
+          </div>
+          <div class="theme-toggle" aria-label="切换主题">
+            <button type="button" class="active" data-theme-button="dark">Night</button>
+            <button type="button" data-theme-button="light">Light</button>
+          </div>
+        </div>
+
+        <div class="hero">
+          <article class="hero-card">
+            <p class="section-label">Final Left Panel Direction</p>
+            <h2>登录前，先让用户知道这里会替他们保存什么。</h2>
+            <p>我会把左侧改成一段短 hero，加上几条明确的价值提示。这样既延续 Velvet Plum 的情绪，又不会抢走右侧表单的主操作优先级，迁到 `tsx` 后也更容易维护。</p>
+            <div class="hero-caption">Velvet Plum UI System · Compact Editorial Rhythm</div>
+          </article>
+
+          <div class="promise-grid">
+            <article class="promise-card">
+              <strong>Archive</strong>
+              <h3>照片</h3>
+              <p>把旅行、日常、纪念日这些时刻，整理成有顺序的共同相册，而不是散落在聊天记录里。</p>
+            </article>
+            <article class="promise-card">
+              <strong>Milestones</strong>
+              <h3>日期</h3>
+              <p>重要的纪念日、第一次、约定和计划，都能留在同一个叙事里，不必分散在多个工具中。</p>
+            </article>
+            <article class="promise-card">
+              <strong>Private</strong>
+              <h3>只属于你们</h3>
+              <p>左侧不强调夸张营销，而是用安静、可信的语气，提醒用户这是一个私密而长期的空间。</p>
+            </article>
+          </div>
+
+          <div class="support-grid">
+            <article class="note-card">
+              <p class="section-label">Why This Works</p>
+              <p class="quote">“它更像一个真实产品的登录入口，而不是一张被放大的概念海报。”</p>
+              <p>标题缩回产品级尺度，内容换成可理解的价值说明，再用一小句情绪化文案收尾。这样后续无论是国际化、响应式，还是和右侧表单做平衡，都会更稳。</p>
+            </article>
+
+            <aside class="metric-rail">
+              <div class="timeline-note">
+                <p class="section-label">Content Structure</p>
+                <div class="timeline-step">
+                  <b>1</b>
+                  <div>
+                    <strong>品牌句</strong>
+                    <span>一行衬线标题，先定情绪和产品归属感。</span>
+                  </div>
+                </div>
+                <div class="timeline-step">
+                  <b>2</b>
+                  <div>
+                    <strong>价值卡片</strong>
+                    <span>用 2 到 3 个短块告诉用户，这里到底帮他们保存什么。</span>
+                  </div>
+                </div>
+                <div class="timeline-step">
+                  <b>3</b>
+                  <div>
+                    <strong>落地说明</strong>
+                    <span>最后再补一句较轻的说明，把“高级感”收回到可信赖的产品语气。</span>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+
+        <div class="footer-note">
+          <span>Preview v0 · Login</span>
+          <span>For Direction Review</span>
+        </div>
+      </section>
+
+      <section class="auth-pane">
+        <article class="auth-card">
+          <div class="card-head">
+            <div class="status-badge">Private Access</div>
+            <h3>欢迎回来</h3>
+            <p>继续整理你们的相册、纪念日与共同生活片段。这里保留了真实登录页需要的效率，但把语气收得更温柔、更有质感。</p>
+          </div>
+
+          <form class="login-form">
+            <div class="field">
+              <div class="field-head">
+                <label for="email">邮箱地址</label>
+                <span>Used for secure sign-in</span>
+              </div>
+              <input id="email" name="email" type="email" placeholder="name@example.com">
+            </div>
+
+            <div class="field">
+              <div class="field-head">
+                <label for="password">密码</label>
+                <a href="/">忘记密码</a>
+              </div>
+              <input id="password" name="password" type="password" placeholder="请输入你的密码">
+            </div>
+
+            <div class="choice-row">
+              <label class="checkbox">
+                <input type="checkbox" checked>
+                <span>记住这台设备</span>
+              </label>
+              <span>Session protected</span>
+            </div>
+
+            <div class="actions">
+              <button type="button" class="primary-button">登录并继续</button>
+              <button type="button" class="secondary-button">使用体验账号预览</button>
+            </div>
+          </form>
+
+          <div class="divider">or</div>
+
+          <section class="trust-panel">
+            <div class="trust-row">
+              <strong>进入后会看到什么</strong>
+              <span>Memories</span>
+            </div>
+            <div class="trust-row">
+              <span>照片时间线、纪念日、共同愿望清单</span>
+              <span>Private</span>
+            </div>
+            <div class="trust-row">
+              <span>酒红色系统在这里继续延伸到卡片、筛选和详情页</span>
+              <span>Consistent</span>
+            </div>
+          </section>
+
+          <p class="register-line">还没有账号？<a href="/">申请加入 Couple Memory</a></p>
+        </article>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const root = document.documentElement;
+    const buttons = Array.from(document.querySelectorAll("[data-theme-button]"));
+
+    function setTheme(theme) {
+      root.setAttribute("data-theme", theme);
+      buttons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.themeButton === theme);
+      });
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => setTheme(button.dataset.themeButton));
+    });
+  </script>
+</body>
+</html>

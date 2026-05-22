@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Couple Memory Dashboard Velvet Plum</title>
+  <style>
+    :root {
+      --font-display: "Baskerville", "Times New Roman", "Georgia", "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
+      --font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Source Han Sans SC", "Helvetica Neue", Arial, sans-serif;
+      --app-max-width: 1460px;
+      --sidebar-width: 220px;
+      --content-max-width: 1180px;
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --shadow-soft: 0 14px 38px rgba(40, 24, 34, 0.08);
+      --shadow-card: 0 8px 22px rgba(40, 24, 34, 0.06);
+    }
+
+    :root,
+    :root[data-theme="light"] {
+      --bg: #f1eded;
+      --bg-2: #faf7f7;
+      --panel: rgba(255, 251, 253, 0.78);
+      --panel-strong: rgba(255, 255, 255, 0.9);
+      --sidebar-bg: rgba(244, 238, 241, 0.84);
+      --text: #20171c;
+      --text-soft: rgba(32, 23, 28, 0.64);
+      --text-faint: rgba(32, 23, 28, 0.36);
+      --line: rgba(32, 23, 28, 0.1);
+      --accent: #6f4f66;
+      --accent-2: #c9a2a1;
+      --accent-3: #edd9d5;
+      --accent-soft: rgba(111, 79, 102, 0.12);
+      --accent-glow: rgba(111, 79, 102, 0.2);
+      --hero-gradient: linear-gradient(135deg, #4a2f42 0%, #8f607a 42%, #d7bbb7 100%);
+      --active-gradient: linear-gradient(135deg, #5b3a52 0%, #c9a2a1 100%);
+      --surface-gradient: linear-gradient(135deg, rgba(111, 79, 102, 0.12), rgba(201, 162, 161, 0.08));
+      --body-overlay:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.82), transparent 22%),
+        radial-gradient(circle at bottom right, rgba(143, 96, 122, 0.08), transparent 28%);
+      --grid-line: rgba(32, 23, 28, 0.016);
+      --hero-text: #fffafc;
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #161116;
+      --bg-2: #211820;
+      --panel: rgba(35, 24, 33, 0.72);
+      --panel-strong: rgba(42, 28, 39, 0.9);
+      --sidebar-bg: rgba(28, 20, 27, 0.88);
+      --text: #f7edf3;
+      --text-soft: rgba(247, 237, 243, 0.68);
+      --text-faint: rgba(247, 237, 243, 0.38);
+      --line: rgba(247, 237, 243, 0.1);
+      --accent: #d5a6b5;
+      --accent-2: #8b657e;
+      --accent-3: #33202e;
+      --accent-soft: rgba(213, 166, 181, 0.12);
+      --accent-glow: rgba(213, 166, 181, 0.16);
+      --hero-gradient: linear-gradient(135deg, #2c1625 0%, #5a3550 38%, #a97684 100%);
+      --active-gradient: linear-gradient(135deg, #70455f 0%, #b78795 100%);
+      --surface-gradient: linear-gradient(135deg, rgba(213, 166, 181, 0.1), rgba(91, 53, 80, 0.18));
+      --body-overlay:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.05), transparent 22%),
+        radial-gradient(circle at bottom right, rgba(183, 135, 149, 0.1), transparent 30%);
+      --grid-line: rgba(255, 240, 248, 0.02);
+      --hero-text: #fff7fb;
+      --shadow-soft: 0 22px 60px rgba(0, 0, 0, 0.28);
+      --shadow-card: 0 12px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--body-overlay), linear-gradient(180deg, var(--bg-2), var(--bg));
+      color: var(--text);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      transition: background 220ms ease, color 220ms ease;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+      background-size: 26px 26px;
+      mask-image: radial-gradient(circle at center, black 46%, transparent 88%);
+    }
+
+    button,
+    a {
+      font: inherit;
+    }
+
+    .app-shell {
+      position: relative;
+      z-index: 1;
+      max-width: var(--app-max-width);
+      margin: 0 auto;
+      padding: 14px;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--sidebar-width) 1fr;
+      gap: 12px;
+    }
+
+    .sidebar,
+    .main-stage {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(18px);
+    }
+
+    .sidebar {
+      border-radius: 22px;
+      padding: 14px 12px 12px;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 12px;
+      min-height: calc(100vh - 28px);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
+        var(--sidebar-bg);
+    }
+
+    .brand-block {
+      padding: 4px 4px 0;
+    }
+
+    .eyebrow {
+      margin: 0 0 6px;
+      font-size: 9px;
+      line-height: 1;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .brand-title {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: 27px;
+      line-height: 0.92;
+      letter-spacing: -0.05em;
+    }
+
+    .brand-copy {
+      margin: 8px 0 0;
+      max-width: 148px;
+      font-size: 11px;
+      line-height: 1.52;
+      color: var(--text-soft);
+    }
+
+    .theme-toggle {
+      display: flex;
+      gap: 6px;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .theme-button {
+      flex: 1;
+      border: 0;
+      border-radius: 999px;
+      padding: 8px 10px;
+      background: transparent;
+      color: var(--text-soft);
+      cursor: pointer;
+      transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+    }
+
+    .theme-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .theme-button.active {
+      background: var(--active-gradient);
+      color: #fffafc;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 10px 22px var(--accent-glow);
+    }
+
+    .nav-list {
+      display: grid;
+      gap: 6px;
+      align-content: start;
+    }
+
+    .nav-item {
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 10px;
+      border-radius: 15px;
+      border: 1px solid transparent;
+      color: var(--text-soft);
+      text-decoration: none;
+      transition: transform 180ms ease, background 180ms ease, border-color 180ms ease, color 180ms ease;
+    }
+
+    .nav-item:hover {
+      transform: translateX(3px);
+      background: rgba(255, 255, 255, 0.04);
+      border-color: var(--line);
+      color: var(--text);
+    }
+
+    .nav-item.active {
+      color: #fffafc;
+      background: var(--active-gradient);
+      border-color: rgba(255, 255, 255, 0.18);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 10px 22px var(--accent-glow);
+    }
+
+    .nav-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.08);
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .nav-label {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .nav-label strong {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+    }
+
+    .nav-label span {
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      opacity: 0.74;
+    }
+
+    .nav-mark {
+      font-family: var(--font-display);
+      font-size: 14px;
+      opacity: 0.74;
+    }
+
+    .sidebar-footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .footer-chip {
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-soft);
+      font-size: 11px;
+    }
+
+    .main-stage {
+      border-radius: 24px;
+      padding: 12px;
+      display: grid;
+      grid-template-rows: auto auto auto;
+      gap: 10px;
+      min-height: calc(100vh - 28px);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+        var(--panel);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 2px;
+    }
+
+    .topbar-label {
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+
+    .topbar-badge {
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-soft);
+      font-size: 11px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius-xl);
+      padding: 16px 18px;
+      min-height: 128px;
+      background: var(--hero-gradient);
+      color: var(--hero-text);
+      box-shadow: var(--shadow-card);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.24), transparent 24%),
+        linear-gradient(120deg, rgba(255, 255, 255, 0.12), transparent 34%, rgba(255, 255, 255, 0.08) 60%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .hero-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 156px;
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .hero-title {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(36px, 4.4vw, 56px);
+      line-height: 0.92;
+      letter-spacing: -0.05em;
+      max-width: 8ch;
+    }
+
+    .hero-copy {
+      margin: 8px 0 0;
+      max-width: 56ch;
+      font-size: 13px;
+      line-height: 1.65;
+      opacity: 0.9;
+      text-wrap: pretty;
+    }
+
+    .hero-side {
+      align-self: stretch;
+      border-radius: 17px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(0, 0, 0, 0.08)),
+        linear-gradient(160deg, rgba(255, 255, 255, 0.16), transparent 48%, rgba(0, 0, 0, 0.18) 100%);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .hero-side strong {
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      opacity: 0.78;
+    }
+
+    .hero-side span {
+      margin-top: 6px;
+      font-family: var(--font-display);
+      font-size: 17px;
+      line-height: 1.12;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .stat-card,
+    .readiness-copy,
+    .readiness-score {
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      box-shadow: var(--shadow-card);
+    }
+
+    .stat-card {
+      border-radius: var(--radius-lg);
+      padding: 12px 13px 13px;
+      min-height: 104px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::after {
+      content: "";
+      position: absolute;
+      left: 13px;
+      right: 13px;
+      bottom: 11px;
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent), transparent 72%);
+      opacity: 0.46;
+    }
+
+    .stat-label {
+      margin: 0;
+      font-size: 9px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+
+    .stat-value {
+      margin: 8px 0 4px;
+      display: flex;
+      align-items: flex-end;
+      gap: 5px;
+      font-family: var(--font-display);
+      font-size: clamp(34px, 3.6vw, 46px);
+      line-height: 0.92;
+      letter-spacing: -0.06em;
+    }
+
+    .stat-unit {
+      margin-bottom: 5px;
+      font-size: 11px;
+      color: var(--text-faint);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .stat-copy {
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--text-soft);
+      max-width: 22ch;
+    }
+
+    .readiness {
+      display: grid;
+      grid-template-columns: minmax(0, 1.58fr) minmax(200px, 0.54fr);
+      gap: 8px;
+      min-height: 0;
+    }
+
+    .readiness-copy {
+      border-radius: var(--radius-xl);
+      padding: 15px 16px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+        var(--panel-strong);
+    }
+
+    .readiness-copy h2 {
+      margin: 0 0 6px;
+      font-family: var(--font-display);
+      font-size: clamp(24px, 2.6vw, 32px);
+      line-height: 0.96;
+      letter-spacing: -0.04em;
+    }
+
+    .readiness-copy > p {
+      margin: 0;
+      max-width: 54ch;
+      font-size: 13px;
+      line-height: 1.62;
+      color: var(--text-soft);
+    }
+
+    .notes {
+      display: grid;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .note {
+      padding: 9px 11px;
+      border-radius: var(--radius-md);
+      background: var(--surface-gradient);
+      border: 1px solid var(--line);
+      color: var(--text-soft);
+      font-size: 11px;
+      line-height: 1.52;
+    }
+
+    .readiness-score {
+      border-radius: var(--radius-xl);
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+        var(--surface-gradient);
+    }
+
+    .score-label {
+      font-size: 9px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+
+    .score-value {
+      margin-top: 8px;
+      font-family: var(--font-display);
+      font-size: clamp(58px, 6.8vw, 82px);
+      line-height: 0.84;
+      letter-spacing: -0.07em;
+    }
+
+    .score-value span {
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+
+    .score-copy {
+      margin-top: 8px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+      color: var(--text-soft);
+      font-size: 11px;
+      line-height: 1.56;
+    }
+
+    .footer-caption {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 0 2px;
+      color: var(--text-faint);
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 1220px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar,
+      .main-stage {
+        min-height: auto;
+      }
+
+      .sidebar {
+        grid-template-rows: auto auto auto auto;
+      }
+    }
+
+    @media (max-width: 940px) {
+      .hero-grid,
+      .readiness {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 680px) {
+      .app-shell {
+        padding: 12px;
+      }
+
+      .sidebar,
+      .main-stage {
+        border-radius: 22px;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-title {
+        font-size: clamp(34px, 12vw, 46px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <section class="brand-block">
+        <p class="eyebrow">Velvet Plum Direction</p>
+        <h1 class="brand-title">Couple<br>Memory</h1>
+        <p class="brand-copy">A tighter editorial dashboard with a romantic nocturne palette, built to fit a full first screen more comfortably.</p>
+      </section>
+
+      <div class="theme-toggle" aria-label="Theme switcher">
+        <button class="theme-button active" data-theme-target="light" type="button">Light</button>
+        <button class="theme-button" data-theme-target="dark" type="button">Dark</button>
+      </div>
+
+      <nav class="nav-list" aria-label="Primary">
+        <a class="nav-item active" href="#">
+          <div class="nav-icon">01</div>
+          <div class="nav-label">
+            <strong>概览</strong>
+            <span>Dashboard</span>
+          </div>
+          <div class="nav-mark">A</div>
+        </a>
+        <a class="nav-item" href="#">
+          <div class="nav-icon">02</div>
+          <div class="nav-label">
+            <strong>相册</strong>
+            <span>Albums</span>
+          </div>
+          <div class="nav-mark">B</div>
+        </a>
+        <a class="nav-item" href="#">
+          <div class="nav-icon">03</div>
+          <div class="nav-label">
+            <strong>时间轴</strong>
+            <span>Timeline</span>
+          </div>
+          <div class="nav-mark">C</div>
+        </a>
+        <a class="nav-item" href="#">
+          <div class="nav-icon">04</div>
+          <div class="nav-label">
+            <strong>Pipeline</strong>
+            <span>Process</span>
+          </div>
+          <div class="nav-mark">D</div>
+        </a>
+        <a class="nav-item" href="#">
+          <div class="nav-icon">05</div>
+          <div class="nav-label">
+            <strong>设置</strong>
+            <span>Settings</span>
+          </div>
+          <div class="nav-mark">E</div>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span class="footer-chip">中文</span>
+        <span class="footer-chip">浅色</span>
+        <span class="footer-chip">编辑视图</span>
+      </div>
+    </aside>
+
+    <main class="main-stage">
+      <div class="topbar">
+        <div class="topbar-label">Overview / Curated Dashboard</div>
+        <div class="topbar-badge">Velvet Plum with compact first-screen fit</div>
+      </div>
+
+      <section class="hero">
+        <div class="hero-grid">
+          <div>
+            <p class="eyebrow" style="color: rgba(255,255,255,0.74);">Welcome Back / May 2026</p>
+            <h2 class="hero-title">LinDaiDai的空间</h2>
+            <p class="hero-copy">欢迎回来，LinDaiDai。这一版完全沿着 Velvet Plum 的方向来收：更偏丝绒夜色、更有杂志式浪漫，但尺寸也整体压缩过，所以 hero、统计卡和准备度区域能更完整地落在首屏里。</p>
+          </div>
+          <div class="hero-side">
+            <strong>Studio Mood</strong>
+            <span>Romantic, editorial, quietly dramatic.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats-grid" aria-label="Key stats">
+        <article class="stat-card">
+          <p class="stat-label">Photographs</p>
+          <div class="stat-value">9 <span class="stat-unit">张</span></div>
+          <div class="stat-copy">统计模块进一步收紧，读起来更像版式里的数字条目。</div>
+        </article>
+        <article class="stat-card">
+          <p class="stat-label">Albums</p>
+          <div class="stat-value">4 <span class="stat-unit">个</span></div>
+          <div class="stat-copy">保持相册空间的亲密感，同时避免大面积甜腻粉感。</div>
+        </article>
+        <article class="stat-card">
+          <p class="stat-label">Chapters</p>
+          <div class="stat-value">2 <span class="stat-unit">章</span></div>
+          <div class="stat-copy">数字比例仍然偏 editorial，但整体更紧凑更接近真实 dashboard。</div>
+        </article>
+        <article class="stat-card">
+          <p class="stat-label">Milestones</p>
+          <div class="stat-value">5 <span class="stat-unit">则</span></div>
+          <div class="stat-copy">首屏信息密度更高，不需要向下滚动就能读完整体骨架。</div>
+        </article>
+      </section>
+
+      <section class="readiness">
+        <div class="readiness-copy">
+          <p class="eyebrow">Organization Readiness</p>
+          <h2>整理准备度</h2>
+          <p>这一块继续保留“策展说明 + 大数字”的双栏结构，但对纵向高度做了明显压缩。现在它更像一个真正的首屏主模块，而不是需要大面积留白来撑场面的视觉展示区。</p>
+          <div class="notes">
+            <div class="note">观察点 A：这组紫李子丝绒色在亮暗两种主题下都能保留情侣空间的亲密感，不会滑向企业蓝或通用科技黑。</div>
+            <div class="note">观察点 B：如果你之后要接真实照片，这套色会更适合衬托暖肤色、人像和纪实影调。</div>
+          </div>
+        </div>
+
+        <div class="readiness-score">
+          <div>
+            <div class="score-label">Current Score</div>
+            <div class="score-value">43 <span>/ 100</span></div>
+          </div>
+          <div class="score-copy">这是压缩版的首屏比例测试。重点不是把所有东西做小，而是把节奏收紧，让页面仍然高级，但更“装得下”。</div>
+        </div>
+      </section>
+
+      <div class="footer-caption">
+        <span>Palette / Velvet Plum</span>
+        <span>Modes / Light and Dark</span>
+        <span>Layout / Compact Editorial Dashboard</span>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const root = document.documentElement;
+    const buttons = Array.from(document.querySelectorAll("[data-theme-target]"));
+
+    function setTheme(theme) {
+      root.setAttribute("data-theme", theme);
+      buttons.forEach(button => {
+        button.classList.toggle("active", button.dataset.themeTarget === theme);
+      });
+    }
+
+    buttons.forEach(button => {
+      button.addEventListener("click", () => setTheme(button.dataset.themeTarget));
+    });
+
+    setTheme("light");
+  </script>
+</body>
+</html>

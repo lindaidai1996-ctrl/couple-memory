@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Couple Memory Theme Palette Selector</title>
+  <style>
+    :root {
+      --bg: #eff1ee;
+      --bg-2: #f7f7f4;
+      --panel: rgba(255, 255, 255, 0.76);
+      --panel-strong: rgba(255, 255, 255, 0.88);
+      --text: #17201d;
+      --muted: rgba(23, 32, 29, 0.62);
+      --faint: rgba(23, 32, 29, 0.34);
+      --line: rgba(23, 32, 29, 0.1);
+      --accent: #6d8a83;
+      --accent-2: #d8b7b0;
+      --accent-glow: rgba(109, 138, 131, 0.22);
+      --hero-gradient: linear-gradient(135deg, #6d8a83 0%, #d8b7b0 48%, #f5eee8 100%);
+      --chip-gradient: linear-gradient(135deg, #6d8a83 0%, #d8b7b0 100%);
+      --surface-gradient: linear-gradient(135deg, rgba(109, 138, 131, 0.12), rgba(216, 183, 176, 0.08));
+      --shadow: 0 18px 48px rgba(28, 36, 34, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.78), transparent 22%),
+        radial-gradient(circle at bottom right, rgba(109, 138, 131, 0.08), transparent 26%),
+        linear-gradient(180deg, var(--bg-2), var(--bg));
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      transition: background 260ms ease, color 260ms ease;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(23, 32, 29, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23, 32, 29, 0.015) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: radial-gradient(circle at center, black 46%, transparent 88%);
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 1560px;
+      margin: 0 auto;
+      padding: 28px 28px 36px;
+      display: grid;
+      grid-template-columns: minmax(360px, 460px) minmax(0, 1fr);
+      gap: 22px;
+      min-height: 100vh;
+    }
+
+    .sidebar,
+    .stage {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .sidebar {
+      border-radius: 32px;
+      padding: 28px 24px 24px;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      gap: 20px;
+      min-height: calc(100vh - 64px);
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      font-size: 11px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Iowan Old Style", "Times New Roman", "Songti SC", serif;
+      font-size: clamp(34px, 4vw, 48px);
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+    }
+
+    .intro {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.8;
+      text-wrap: pretty;
+    }
+
+    .selection-panel {
+      padding: 18px 18px 16px;
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.44)),
+        var(--surface-gradient);
+    }
+
+    .selection-panel h2 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: 0.02em;
+    }
+
+    .selection-name {
+      margin: 8px 0 4px;
+      font-family: "Iowan Old Style", "Times New Roman", "Songti SC", serif;
+      font-size: 28px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .selection-mood {
+      color: var(--accent);
+      font-size: 12px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+    }
+
+    .selection-desc {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.75;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.62);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .palette-list {
+      display: grid;
+      gap: 12px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .palette-card {
+      padding: 14px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.58);
+      transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+      cursor: pointer;
+    }
+
+    .palette-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 30px rgba(28, 36, 34, 0.08);
+    }
+
+    .palette-card.active {
+      border-color: var(--accent);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.56)),
+        var(--surface-gradient);
+      box-shadow: 0 16px 36px var(--accent-glow);
+    }
+
+    .palette-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+
+    .palette-title {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .palette-tone {
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: 1.4fr repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .swatch {
+      height: 42px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    }
+
+    .palette-desc {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .sidebar-footer {
+      display: grid;
+      gap: 10px;
+      color: var(--faint);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .stage {
+      border-radius: 36px;
+      padding: 24px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 18px;
+      min-height: calc(100vh - 64px);
+    }
+
+    .stage-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .stage-title {
+      font-size: 13px;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    .badge {
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.68);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .preview {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr);
+      gap: 18px;
+      min-height: 0;
+    }
+
+    .preview-sidebar,
+    .preview-main {
+      border-radius: 28px;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.5)),
+        var(--surface-gradient);
+      overflow: hidden;
+    }
+
+    .preview-sidebar {
+      padding: 20px 16px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 18px;
+    }
+
+    .preview-brand {
+      display: grid;
+      gap: 8px;
+    }
+
+    .preview-brand small {
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    .preview-brand strong {
+      font-family: "Iowan Old Style", "Times New Roman", "Songti SC", serif;
+      font-size: 30px;
+      line-height: 0.92;
+      letter-spacing: -0.04em;
+    }
+
+    .preview-nav {
+      display: grid;
+      gap: 8px;
+    }
+
+    .preview-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 12px;
+      border-radius: 16px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .preview-nav-item.active {
+      background: var(--chip-gradient);
+      color: white;
+      box-shadow: 0 12px 28px var(--accent-glow);
+    }
+
+    .preview-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.86;
+    }
+
+    .preview-toggle {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .preview-toggle span {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.64);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .preview-main {
+      padding: 20px;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 14px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: 28px;
+      padding: 22px 24px;
+      background: var(--hero-gradient);
+      color: white;
+      min-height: 180px;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(120deg, rgba(255, 255, 255, 0.14), transparent 34%, rgba(255, 255, 255, 0.08) 60%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .hero small {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      opacity: 0.78;
+      margin-bottom: 12px;
+    }
+
+    .hero h2 {
+      margin: 0;
+      font-family: "Iowan Old Style", "Times New Roman", "Songti SC", serif;
+      font-size: clamp(38px, 5vw, 58px);
+      line-height: 0.94;
+      letter-spacing: -0.05em;
+      max-width: 8ch;
+    }
+
+    .hero p {
+      margin: 14px 0 0;
+      max-width: 52ch;
+      font-size: 14px;
+      line-height: 1.8;
+      opacity: 0.9;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat {
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      padding: 16px;
+    }
+
+    .stat small {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin-bottom: 8px;
+    }
+
+    .stat strong {
+      display: block;
+      font-family: "Iowan Old Style", "Times New Roman", "Songti SC", serif;
+      font-size: 42px;
+      line-height: 0.92;
+      letter-spacing: -0.05em;
+      margin-bottom: 6px;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .readiness {
+      display: grid;
+      grid-template-columns: 1.45fr 0.72fr;
+      gap: 12px;
+      min-height: 0;
+    }
+
+    .readiness-copy,
+    .readiness-score {
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+    }
+
+    .readiness-copy {
+      padding: 20px;
+    }
+
+    .readiness-copy h3 {
+      margin: 0 0 10px;
+      font-family: "Iowan Old Style", "Times New Roman", "Songti SC", serif;
+      font-size: 34px;
+      line-height: 0.96;
+      letter-spacing: -0.04em;
+    }
+
+    .readiness-copy p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--muted);
+    }
+
+    .notes {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .note {
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: var(--surface-gradient);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .readiness-score {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.5)),
+        var(--surface-gradient);
+    }
+
+    .readiness-score small {
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    .score {
+      font-family: "Iowan Old Style", "Times New Roman", "Songti SC", serif;
+      font-size: 92px;
+      line-height: 0.84;
+      letter-spacing: -0.06em;
+    }
+
+    .score span {
+      font-size: 16px;
+      color: var(--faint);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .score-text {
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+
+    @media (max-width: 1260px) {
+      .page {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar,
+      .stage {
+        min-height: auto;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .preview {
+        grid-template-columns: 1fr;
+      }
+
+      .stats,
+      .readiness {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .readiness-copy {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        padding: 16px;
+      }
+
+      .sidebar,
+      .stage {
+        border-radius: 24px;
+      }
+
+      .stats,
+      .readiness {
+        grid-template-columns: 1fr;
+      }
+
+      .hero h2 {
+        font-size: clamp(32px, 10vw, 44px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <aside class="sidebar">
+      <section>
+        <p class="eyebrow">Theme Study</p>
+        <h1>情侣空间主题配色<br>10 选 1</h1>
+        <p class="intro">这页不是在比完整 UI，而是在比“气质”。我把 10 组更适合 Couple Memory 的高级渐变方案放在一起，尽量避开常见 AI 产品审美，同时保留情侣空间应有的亲密感、轻情绪和一点作品集质感。</p>
+      </section>
+
+      <section class="selection-panel">
+        <h2>当前选中</h2>
+        <div class="selection-name" id="selection-name">Moonstone Veil</div>
+        <div class="selection-mood" id="selection-mood">quiet / cinematic / intimate</div>
+        <p class="selection-desc" id="selection-desc">冷静的青灰与粉雾奶白组合，像阴天窗边的人像摄影，兼顾克制和温柔，是最稳妥也最不容易“AI 味”的方向。</p>
+        <div class="chips" id="selection-chips"></div>
+      </section>
+
+      <section class="palette-list" id="palette-list"></section>
+
+      <section class="sidebar-footer">
+        <div>建议你先凭第一眼删掉 5 个，再在剩下的 2 到 3 个里比较“是否像你想要的情侣空间”。</div>
+        <div>如果你选定了 1 到 2 个，我下一步可以直接把它们落回真实 dashboard 页面，而不是再继续做抽象视觉稿。</div>
+      </section>
+    </aside>
+
+    <main class="stage">
+      <div class="stage-bar">
+        <div class="stage-title">Interactive Preview</div>
+        <div class="badge" id="selection-badge">推荐优先看：是否高级、是否亲密、是否有记忆感</div>
+      </div>
+
+      <section class="preview">
+        <div class="preview-sidebar">
+          <div class="preview-brand">
+            <small>Curated Space</small>
+            <strong>Couple<br>Memory</strong>
+          </div>
+
+          <div class="preview-nav">
+            <div class="preview-nav-item active"><span class="preview-dot"></span>概览</div>
+            <div class="preview-nav-item"><span class="preview-dot"></span>相册</div>
+            <div class="preview-nav-item"><span class="preview-dot"></span>时间轴</div>
+            <div class="preview-nav-item"><span class="preview-dot"></span>Pipeline</div>
+            <div class="preview-nav-item"><span class="preview-dot"></span>设置</div>
+          </div>
+
+          <div class="preview-toggle">
+            <span>中文</span>
+            <span>浅色</span>
+            <span>编辑视图</span>
+          </div>
+        </div>
+
+        <div class="preview-main">
+          <div class="hero">
+            <small>Overview / Curated Dashboard</small>
+            <h2>LinDaiDai的空间</h2>
+            <p>这里用同一套 dashboard 骨架做配色预览。你现在主要看的是氛围和镜头感，不必在意文字本身。</p>
+          </div>
+
+          <div class="stats">
+            <article class="stat">
+              <small>Photographs</small>
+              <strong>9</strong>
+              <span>更像版面中的数字焦点，而不是普通功能卡片。</span>
+            </article>
+            <article class="stat">
+              <small>Albums</small>
+              <strong>4</strong>
+              <span>决定这个配色是否能支撑相册空间的精致感。</span>
+            </article>
+            <article class="stat">
+              <small>Chapters</small>
+              <strong>2</strong>
+              <span>看它是否同时兼顾叙事感和后台可读性。</span>
+            </article>
+            <article class="stat">
+              <small>Milestones</small>
+              <strong>5</strong>
+              <span>好的配色会让信息层级自然，而不是硬靠大色块。</span>
+            </article>
+          </div>
+
+          <div class="readiness">
+            <div class="readiness-copy">
+              <h3>整理准备度</h3>
+              <p>这一块最适合用来观察配色是否足够耐看。因为它既有正文、又有大数字、又有次级信息，很容易暴露主题色是不是太甜、太俗或者太像默认模板。</p>
+              <div class="notes">
+                <div class="note">观察点 A：这个渐变是否有“作品集 / 摄影书”的感觉，而不是营销页的感觉。</div>
+                <div class="note">观察点 B：它是否让情侣空间显得亲密，而不是偏企业、偏科技或偏 AI 产品。</div>
+              </div>
+            </div>
+
+            <div class="readiness-score">
+              <small>Current Score</small>
+              <div class="score">43 <span>/ 100</span></div>
+              <div class="score-text">理想主题色应该能承接这个大数字，同时不显俗艳，也不显冷漠。</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const themes = [
+      {
+        id: "moonstone-veil",
+        name: "Moonstone Veil",
+        tone: "quiet / cinematic / intimate",
+        desc: "冷静的青灰与粉雾奶白组合，像阴天窗边的人像摄影，兼顾克制和温柔，是最稳妥也最不容易“AI 味”的方向。",
+        tags: ["高级稳妥", "情侣感自然", "适合长期使用"],
+        bg: "#edf0ed",
+        bg2: "#f8f8f5",
+        panel: "rgba(255,255,255,0.78)",
+        panelStrong: "rgba(255,255,255,0.9)",
+        text: "#17201d",
+        muted: "rgba(23,32,29,0.62)",
+        faint: "rgba(23,32,29,0.34)",
+        line: "rgba(23,32,29,0.1)",
+        accent: "#6d8a83",
+        accent2: "#d8b7b0",
+        glow: "rgba(109,138,131,0.22)",
+        hero: "linear-gradient(135deg, #6d8a83 0%, #d8b7b0 48%, #f5eee8 100%)",
+        chip: "linear-gradient(135deg, #6d8a83 0%, #d8b7b0 100%)",
+        surface: "linear-gradient(135deg, rgba(109,138,131,0.12), rgba(216,183,176,0.08))",
+        swatches: ["linear-gradient(135deg, #6d8a83, #d8b7b0)", "#6d8a83", "#d8b7b0", "#f5eee8"]
+      },
+      {
+        id: "velvet-plum",
+        name: "Velvet Plum",
+        tone: "romantic / nocturne / editorial",
+        desc: "带一点深李子酒红的丝绒夜色，适合更偏情绪、更偏杂志感的情侣空间，但仍然保持克制，不会落入婚庆粉。",
+        tags: ["偏时尚", "夜色感", "更有情绪张力"],
+        bg: "#f0ecec",
+        bg2: "#f8f6f6",
+        panel: "rgba(255,250,252,0.78)",
+        panelStrong: "rgba(255,255,255,0.9)",
+        text: "#1f161b",
+        muted: "rgba(31,22,27,0.62)",
+        faint: "rgba(31,22,27,0.34)",
+        line: "rgba(31,22,27,0.1)",
+        accent: "#6f4f66",
+        accent2: "#c9a2a1",
+        glow: "rgba(111,79,102,0.22)",
+        hero: "linear-gradient(135deg, #4a2f42 0%, #8f607a 42%, #d7bbb7 100%)",
+        chip: "linear-gradient(135deg, #5a3a52 0%, #c9a2a1 100%)",
+        surface: "linear-gradient(135deg, rgba(111,79,102,0.14), rgba(201,162,161,0.1))",
+        swatches: ["linear-gradient(135deg, #4a2f42, #d7bbb7)", "#5a3a52", "#c9a2a1", "#f0dfdd"]
+      },
+      {
+        id: "graphite-rose",
+        name: "Graphite Rose",
+        tone: "sharp / chic / intimate",
+        desc: "石墨灰里带一点干玫瑰色，整体更现代，也更容易做出高级的黑白摄影书气质，是偏冷静的浪漫路线。",
+        tags: ["去 Claude 感强", "偏冷静", "适合现代排版"],
+        bg: "#ecebea",
+        bg2: "#f6f5f3",
+        panel: "rgba(255,255,255,0.78)",
+        panelStrong: "rgba(255,255,255,0.9)",
+        text: "#181819",
+        muted: "rgba(24,24,25,0.62)",
+        faint: "rgba(24,24,25,0.34)",
+        line: "rgba(24,24,25,0.1)",
+        accent: "#596168",
+        accent2: "#c89d9b",
+        glow: "rgba(89,97,104,0.2)",
+        hero: "linear-gradient(135deg, #2f353c 0%, #7f8a92 36%, #d6b3ad 100%)",
+        chip: "linear-gradient(135deg, #4b545d 0%, #c89d9b 100%)",
+        surface: "linear-gradient(135deg, rgba(89,97,104,0.12), rgba(200,157,155,0.1))",
+        swatches: ["linear-gradient(135deg, #2f353c, #d6b3ad)", "#4b545d", "#c89d9b", "#ece3de"]
+      },
+      {
+        id: "sea-glass-blush",
+        name: "Sea Glass Blush",
+        tone: "airy / fresh / tender",
+        desc: "海玻璃绿配很轻的腮红粉，清澈、年轻、有呼吸感，适合你如果希望情侣空间看起来更轻盈一点，但仍然不幼态。",
+        tags: ["轻盈", "清透", "更有空气感"],
+        bg: "#edf2f0",
+        bg2: "#f8fbf9",
+        panel: "rgba(255,255,255,0.8)",
+        panelStrong: "rgba(255,255,255,0.92)",
+        text: "#152120",
+        muted: "rgba(21,33,32,0.6)",
+        faint: "rgba(21,33,32,0.32)",
+        line: "rgba(21,33,32,0.1)",
+        accent: "#78a39b",
+        accent2: "#e3bab6",
+        glow: "rgba(120,163,155,0.22)",
+        hero: "linear-gradient(135deg, #6ea094 0%, #bcd6cf 38%, #eed6cf 100%)",
+        chip: "linear-gradient(135deg, #78a39b 0%, #e3bab6 100%)",
+        surface: "linear-gradient(135deg, rgba(120,163,155,0.12), rgba(227,186,182,0.08))",
+        swatches: ["linear-gradient(135deg, #6ea094, #eed6cf)", "#78a39b", "#e3bab6", "#f4ece7"]
+      },
+      {
+        id: "midnight-tea-rose",
+        name: "Midnight Tea Rose",
+        tone: "moody / elegant / cinematic",
+        desc: "偏深的墨绿蓝加茶玫瑰粉，适合做更有戏剧性的情侣空间，如果你想让页面有明显的镜头气氛，它会很出彩。",
+        tags: ["电影感强", "更大胆", "适合封面图区"],
+        bg: "#eceff0",
+        bg2: "#f7f8f8",
+        panel: "rgba(255,255,255,0.78)",
+        panelStrong: "rgba(255,255,255,0.9)",
+        text: "#141b1d",
+        muted: "rgba(20,27,29,0.62)",
+        faint: "rgba(20,27,29,0.34)",
+        line: "rgba(20,27,29,0.1)",
+        accent: "#3f646b",
+        accent2: "#c59792",
+        glow: "rgba(63,100,107,0.2)",
+        hero: "linear-gradient(135deg, #20363a 0%, #5a7b82 40%, #c59792 100%)",
+        chip: "linear-gradient(135deg, #305158 0%, #c59792 100%)",
+        surface: "linear-gradient(135deg, rgba(63,100,107,0.13), rgba(197,151,146,0.1))",
+        swatches: ["linear-gradient(135deg, #20363a, #c59792)", "#305158", "#c59792", "#ead7d3"]
+      },
+      {
+        id: "champagne-stone",
+        name: "Champagne Stone",
+        tone: "soft / gallery / refined",
+        desc: "如果你还想保留一点温度，但不想要现在这种暖棕 AI 感，这个香槟石色会更像展陈空间和纸质画册。",
+        tags: ["偏画册", "温和克制", "不甜"],
+        bg: "#f1eee8",
+        bg2: "#faf8f3",
+        panel: "rgba(255,255,255,0.78)",
+        panelStrong: "rgba(255,255,255,0.9)",
+        text: "#201a15",
+        muted: "rgba(32,26,21,0.6)",
+        faint: "rgba(32,26,21,0.32)",
+        line: "rgba(32,26,21,0.1)",
+        accent: "#9f8a74",
+        accent2: "#d8c0af",
+        glow: "rgba(159,138,116,0.18)",
+        hero: "linear-gradient(135deg, #8b7966 0%, #c8b29c 44%, #f2e6d9 100%)",
+        chip: "linear-gradient(135deg, #9f8a74 0%, #d8c0af 100%)",
+        surface: "linear-gradient(135deg, rgba(159,138,116,0.12), rgba(216,192,175,0.1))",
+        swatches: ["linear-gradient(135deg, #8b7966, #f2e6d9)", "#9f8a74", "#d8c0af", "#f3ece2"]
+      },
+      {
+        id: "iris-smoke",
+        name: "Iris Smoke",
+        tone: "artful / cool / fashion",
+        desc: "低饱和鸢尾灰紫配雾粉，适合更偏时尚摄影与 editorial 的路线，和普通蓝紫科技感不同，它更像面料与胶片。",
+        tags: ["偏艺术时尚", "冷感", "适合 A+C 混合"],
+        bg: "#efedf1",
+        bg2: "#f8f7fa",
+        panel: "rgba(255,255,255,0.78)",
+        panelStrong: "rgba(255,255,255,0.9)",
+        text: "#1b1820",
+        muted: "rgba(27,24,32,0.62)",
+        faint: "rgba(27,24,32,0.34)",
+        line: "rgba(27,24,32,0.1)",
+        accent: "#73708c",
+        accent2: "#d4b8c9",
+        glow: "rgba(115,112,140,0.2)",
+        hero: "linear-gradient(135deg, #4a495b 0%, #8b8aa6 42%, #e0c9d6 100%)",
+        chip: "linear-gradient(135deg, #666480 0%, #d4b8c9 100%)",
+        surface: "linear-gradient(135deg, rgba(115,112,140,0.12), rgba(212,184,201,0.1))",
+        swatches: ["linear-gradient(135deg, #4a495b, #e0c9d6)", "#666480", "#d4b8c9", "#f0e7ee"]
+      },
+      {
+        id: "forest-pearl",
+        name: "Forest Pearl",
+        tone: "organic / intimate / restrained",
+        desc: "森林绿与珍珠白之间带一点杏粉，既有情侣空间的温柔，又不会太甜，适合想要更自然、更像生活摄影的气质。",
+        tags: ["自然感", "生活方式", "适合照片主角"],
+        bg: "#edf1ed",
+        bg2: "#f8faf7",
+        panel: "rgba(255,255,255,0.8)",
+        panelStrong: "rgba(255,255,255,0.92)",
+        text: "#16201a",
+        muted: "rgba(22,32,26,0.62)",
+        faint: "rgba(22,32,26,0.34)",
+        line: "rgba(22,32,26,0.1)",
+        accent: "#5f7f6d",
+        accent2: "#d8beb2",
+        glow: "rgba(95,127,109,0.2)",
+        hero: "linear-gradient(135deg, #4b6657 0%, #9fb7aa 38%, #eddad0 100%)",
+        chip: "linear-gradient(135deg, #5f7f6d 0%, #d8beb2 100%)",
+        surface: "linear-gradient(135deg, rgba(95,127,109,0.12), rgba(216,190,178,0.09))",
+        swatches: ["linear-gradient(135deg, #4b6657, #eddad0)", "#5f7f6d", "#d8beb2", "#f3ece5"]
+      },
+      {
+        id: "cobalt-mist",
+        name: "Cobalt Mist",
+        tone: "clean / premium / modern",
+        desc: "如果你希望整体更现代、更利落，但又不想走企业蓝，这个钴雾蓝会比较合适，适合更偏工具型的高级感。",
+        tags: ["现代", "利落", "更偏产品化"],
+        bg: "#eceff3",
+        bg2: "#f7f9fb",
+        panel: "rgba(255,255,255,0.8)",
+        panelStrong: "rgba(255,255,255,0.92)",
+        text: "#131b24",
+        muted: "rgba(19,27,36,0.62)",
+        faint: "rgba(19,27,36,0.34)",
+        line: "rgba(19,27,36,0.1)",
+        accent: "#5c7ea5",
+        accent2: "#c9b9c8",
+        glow: "rgba(92,126,165,0.2)",
+        hero: "linear-gradient(135deg, #35506f 0%, #7ea0c7 42%, #ddd2dc 100%)",
+        chip: "linear-gradient(135deg, #4d7197 0%, #c9b9c8 100%)",
+        surface: "linear-gradient(135deg, rgba(92,126,165,0.12), rgba(201,185,200,0.1))",
+        swatches: ["linear-gradient(135deg, #35506f, #ddd2dc)", "#4d7197", "#c9b9c8", "#eef1f4"]
+      },
+      {
+        id: "ember-dusk",
+        name: "Ember Dusk",
+        tone: "sensual / warm / cinematic",
+        desc: "很克制的余烬铜和暮色灰粉，适合你如果希望页面仍然有一点温度与亲密感，但绝不想回到传统米棕风格。",
+        tags: ["有温度", "镜头感", "更有记忆氛围"],
+        bg: "#f1ece8",
+        bg2: "#faf7f4",
+        panel: "rgba(255,255,255,0.78)",
+        panelStrong: "rgba(255,255,255,0.9)",
+        text: "#221917",
+        muted: "rgba(34,25,23,0.62)",
+        faint: "rgba(34,25,23,0.34)",
+        line: "rgba(34,25,23,0.1)",
+        accent: "#9a6958",
+        accent2: "#d8b4ad",
+        glow: "rgba(154,105,88,0.2)",
+        hero: "linear-gradient(135deg, #71473c 0%, #b98575 40%, #ecd5cf 100%)",
+        chip: "linear-gradient(135deg, #8e5f50 0%, #d8b4ad 100%)",
+        surface: "linear-gradient(135deg, rgba(154,105,88,0.12), rgba(216,180,173,0.1))",
+        swatches: ["linear-gradient(135deg, #71473c, #ecd5cf)", "#8e5f50", "#d8b4ad", "#f0e4e0"]
+      }
+    ];
+
+    const root = document.documentElement;
+    const listEl = document.getElementById("palette-list");
+    const nameEl = document.getElementById("selection-name");
+    const moodEl = document.getElementById("selection-mood");
+    const descEl = document.getElementById("selection-desc");
+    const chipsEl = document.getElementById("selection-chips");
+    const badgeEl = document.getElementById("selection-badge");
+
+    function applyTheme(theme) {
+      root.style.setProperty("--bg", theme.bg);
+      root.style.setProperty("--bg-2", theme.bg2);
+      root.style.setProperty("--panel", theme.panel);
+      root.style.setProperty("--panel-strong", theme.panelStrong);
+      root.style.setProperty("--text", theme.text);
+      root.style.setProperty("--muted", theme.muted);
+      root.style.setProperty("--faint", theme.faint);
+      root.style.setProperty("--line", theme.line);
+      root.style.setProperty("--accent", theme.accent);
+      root.style.setProperty("--accent-2", theme.accent2);
+      root.style.setProperty("--accent-glow", theme.glow);
+      root.style.setProperty("--hero-gradient", theme.hero);
+      root.style.setProperty("--chip-gradient", theme.chip);
+      root.style.setProperty("--surface-gradient", theme.surface);
+
+      nameEl.textContent = theme.name;
+      moodEl.textContent = theme.tone;
+      descEl.textContent = theme.desc;
+      badgeEl.textContent = `当前预览：${theme.name} / ${theme.tone}`;
+      chipsEl.innerHTML = "";
+      theme.tags.forEach(tag => {
+        const chip = document.createElement("span");
+        chip.className = "chip";
+        chip.textContent = tag;
+        chipsEl.appendChild(chip);
+      });
+
+      document.querySelectorAll(".palette-card").forEach(card => {
+        card.classList.toggle("active", card.dataset.id === theme.id);
+      });
+    }
+
+    themes.forEach(theme => {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "palette-card";
+      card.dataset.id = theme.id;
+      card.innerHTML = `
+        <div class="palette-head">
+          <div class="palette-title">${theme.name}</div>
+          <div class="palette-tone">${theme.tone}</div>
+        </div>
+        <div class="swatches">
+          ${theme.swatches.map(color => `<div class="swatch" style="background:${color}"></div>`).join("")}
+        </div>
+        <div class="palette-desc">${theme.desc}</div>
+      `;
+      card.addEventListener("click", () => applyTheme(theme));
+      listEl.appendChild(card);
+    });
+
+    applyTheme(themes[0]);
+  </script>
+</body>
+</html>
