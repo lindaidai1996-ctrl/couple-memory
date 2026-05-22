@@ -197,7 +197,13 @@ test('createProcessPhoto ignores EXIF takenAt values that are in the future', as
 })
 
 test('createProcessPhoto passes couple caption preferences into the AI pipeline input', async () => {
-  let receivedPipelineInput: Record<string, unknown> | null = null
+  let receivedPipelineInput: {
+    preferences?: {
+      captionStylePreference?: string | null
+      tonePreference?: string | null
+      blockedPhrases?: string[]
+    }
+  } | null = null
 
   const processPhoto = createProcessPhoto({
     cdnDomain: 'cdn.example.com',
@@ -232,7 +238,7 @@ test('createProcessPhoto passes couple caption preferences into the AI pipeline 
     extractExifImpl: async () => null,
     reverseGeocodeImpl: async () => null,
     runAIPipelineImpl: async (input) => {
-      receivedPipelineInput = input as Record<string, unknown>
+      receivedPipelineInput = input
       return {
         status: 'COMPLETED',
         nodeResults: {},

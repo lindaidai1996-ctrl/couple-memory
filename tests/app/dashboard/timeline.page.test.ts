@@ -10,6 +10,14 @@ import {
 
 test('buildTimelineUiText exposes candidate review copy', () => {
   const uiText = buildTimelineUiText((key, values) => {
+    if (key === 'mergeSuggestionHint') {
+      if (!values || !('location' in values) || !('days' in values)) {
+        throw new Error('missing merge suggestion interpolation values')
+      }
+
+      return `${String(values.location)}:${String(values.days)}`
+    }
+
     if (values && 'count' in values) {
       return `${key}:${String(values.count)}`
     }
@@ -23,6 +31,7 @@ test('buildTimelineUiText exposes candidate review copy', () => {
   assert.equal(uiText.relatedPhoto, 'relatedPhoto')
   assert.equal(uiText.recommendationReason, 'recommendationReason')
   assert.equal(uiText.mergeSuggestionTitle, 'mergeSuggestionTitle')
+  assert.equal(uiText.mergeSuggestionHint('厦门', 2), '厦门:2')
   assert.equal(uiText.mergeKeepPrimary, 'mergeKeepPrimary')
   assert.equal(uiText.mergeRemoveDuplicate, 'mergeRemoveDuplicate')
   assert.equal(uiText.pendingReview(2), 'pendingReview:2')

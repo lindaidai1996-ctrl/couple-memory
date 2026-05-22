@@ -12,7 +12,7 @@
 
 ## File Structure
 
-- Create: `.superpowers/plans/2026-05-16-p1-core-implementation.md`
+- Create: `docs/superpowers/plans/2026-05-16-p1-core-implementation.md`
 - Create: `tests/helpers/`
 - Create: `tests/api/`
 - Create: `tests/lib/`

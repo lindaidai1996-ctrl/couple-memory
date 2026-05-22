@@ -14,11 +14,11 @@
 
 | 阶段 | 内容 | 任务数 | 预估时间 | 详细计划 |
 |------|------|--------|---------|---------|
-| Phase 1 | 项目基建 + 数据库 + 认证 | 9 | 2-3 天 | [phase-1-foundation.md](./phase-1-foundation.md) |
-| Phase 2 | 图片上传管道（OSS + 处理） | 5 | 2-3 天 | [phase-2-image-pipeline.md](./phase-2-image-pipeline.md) |
-| Phase 3 | AI Agent Pipeline 引擎 | 6 | 3-4 天 | [phase-3-ai-pipeline.md](./phase-3-ai-pipeline.md) |
-| Phase 4 | 前端页面 + 公开展示 | 10 | 3-4 天 | [phase-4-frontend.md](./phase-4-frontend.md) |
-| Phase 5 | 部署 + 联调 | 7 | 1-2 天 | [phase-5-deployment.md](./phase-5-deployment.md) |
+| Phase 1 | 项目基建 + 数据库 + 认证 | 9 | 2-3 天 | [2026-05-14-couple-memory-phase-1-foundation.md](./2026-05-14-couple-memory-phase-1-foundation.md) |
+| Phase 2 | 图片上传管道（OSS + 处理） | 5 | 2-3 天 | [2026-05-14-couple-memory-phase-2-image-pipeline.md](./2026-05-14-couple-memory-phase-2-image-pipeline.md) |
+| Phase 3 | AI Agent Pipeline 引擎 | 6 | 3-4 天 | [2026-05-14-couple-memory-phase-3-ai-pipeline.md](./2026-05-14-couple-memory-phase-3-ai-pipeline.md) |
+| Phase 4 | 前端页面 + 公开展示 | 10 | 3-4 天 | [2026-05-14-couple-memory-phase-4-frontend.md](./2026-05-14-couple-memory-phase-4-frontend.md) |
+| Phase 5 | 部署 + 联调 | 7 | 1-2 天 | [2026-05-14-couple-memory-phase-5-deployment.md](./2026-05-14-couple-memory-phase-5-deployment.md) |
 
 **P0 合计：37 个任务，预估 11-16 天**
 
@@ -26,7 +26,7 @@
 
 ## P1 任务清单（MVP 后立即迭代）
 
-详见: [p1-p2-backlog.md](./p1-p2-backlog.md)
+详见: [2026-05-14-couple-memory-p1-p2-backlog.md](./2026-05-14-couple-memory-p1-p2-backlog.md)
 
 | # | 任务 | 模块 |
 |---|------|------|

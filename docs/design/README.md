@@ -53,7 +53,8 @@ couple-memory/
 │   │   └── timeline-builder/  # DeepSeek Agent
 │   ├── services/              # 业务逻辑层
 │   └── components/            # React 组件
-├── docs/design/               # 设计文档（本目录）
+├── docs/design/               # 项目级长期设计文档
+├── docs/superpowers/          # Superpowers 正式计划与规格文档
 ├── Dockerfile
 ├── docker-compose.yml
 └── nginx.conf
@@ -70,6 +71,18 @@ couple-memory/
 | 图片处理管道 | 前端压缩、OSS 直传、后端处理、EXIF 提取 | [image-pipeline.md](./image-pipeline.md) |
 | API 设计 | REST 端点、请求响应格式、认证中间件 | [api-design.md](./api-design.md) |
 | 部署方案 | Docker Compose、Nginx、CI/CD、SSL、成本估算 | [deployment.md](./deployment.md) |
+| 阶段路线图 | P0 / P1 / P2 的产品方向、优先级与阶段目标 | [2026-05-19-next-stage-product-roadmap.md](./2026-05-19-next-stage-product-roadmap.md) |
+| 阶段任务清单 | P0 / P1 / P2 的执行清单与当前状态 | [2026-05-22-product-stage-task-checklist.md](./2026-05-22-product-stage-task-checklist.md) |
+| P1 收口结论 | 本轮 P1 叙事层落地结果、剩余验收项、下一步建议 | [2026-05-22-p1-closure-summary.md](./2026-05-22-p1-closure-summary.md) |
+
+## 协作文档入口
+
+Superpowers 相关的正式规格和实施计划已经统一整理到 [docs/superpowers/README.md](/Users/user/Documents/codes/work/docs/superpowers/README.md)：
+
+- 设计规格：`docs/superpowers/specs/`
+- 实施计划：`docs/superpowers/plans/`
+
+`.superpowers/` 目录仅保留工具过程产物，不再作为正式文档入口。
 
 ## MVP 范围声明
 

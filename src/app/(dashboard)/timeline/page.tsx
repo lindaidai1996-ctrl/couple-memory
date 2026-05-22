@@ -28,7 +28,8 @@ export function buildTimelineUiText(t: Translator) {
     relatedPhoto: t('relatedPhoto'),
     recommendationReason: t('recommendationReason'),
     mergeSuggestionTitle: t('mergeSuggestionTitle'),
-    mergeSuggestionHint: t('mergeSuggestionHint'),
+    mergeSuggestionHint: (location: string, days: number) =>
+      t('mergeSuggestionHint', { location, days }),
     mergeKeepPrimary: t('mergeKeepPrimary'),
     mergeRemoveDuplicate: t('mergeRemoveDuplicate'),
     pendingSection: t('pendingSection'),
@@ -301,7 +302,7 @@ export default function TimelinePage() {
                 className="rounded-[var(--radius-md)] border border-warm-border bg-warm-bg px-3 py-3"
               >
                 <p className="text-sm text-warm-muted">
-                  {uiText.mergeSuggestionHint.replace('{location}', suggestion.locationName).replace('{days}', String(suggestion.dateGapDays))}
+                  {uiText.mergeSuggestionHint(suggestion.locationName, suggestion.dateGapDays)}
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-warm-text">
                   <span className="rounded-full bg-success/10 px-2.5 py-1 text-success">
