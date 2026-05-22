@@ -197,12 +197,10 @@ test('createProcessPhoto ignores EXIF takenAt values that are in the future', as
 })
 
 test('createProcessPhoto passes couple caption preferences into the AI pipeline input', async () => {
-  let receivedPipelineInput: {
-    preferences?: {
-      captionStylePreference?: string | null
-      tonePreference?: string | null
-      blockedPhrases?: string[]
-    }
+  let receivedPreferences: {
+    captionStylePreference?: string | null
+    tonePreference?: string | null
+    blockedPhrases?: string[]
   } | null = null
 
   const processPhoto = createProcessPhoto({
@@ -238,7 +236,7 @@ test('createProcessPhoto passes couple caption preferences into the AI pipeline 
     extractExifImpl: async () => null,
     reverseGeocodeImpl: async () => null,
     runAIPipelineImpl: async (input) => {
-      receivedPipelineInput = input
+      receivedPreferences = input.preferences ?? null
       return {
         status: 'COMPLETED',
         nodeResults: {},
@@ -252,7 +250,7 @@ test('createProcessPhoto passes couple caption preferences into the AI pipeline 
 
   await processPhoto('photo_1', 'uploads/couple_1/photo_1/original.jpg')
 
-  assert.deepEqual(receivedPipelineInput?.preferences, {
+  assert.deepEqual(receivedPreferences, {
     captionStylePreference: 'poetic',
     tonePreference: 'gentle',
     blockedPhrases: ['幸福', '永远'],
