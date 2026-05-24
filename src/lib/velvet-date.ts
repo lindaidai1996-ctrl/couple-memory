@@ -73,6 +73,13 @@ export function shiftMonth(year: number, monthIndex: number, offset: number) {
   }
 }
 
+export function shiftYear(year: number, monthIndex: number, offset: number) {
+  return {
+    year: year + offset,
+    monthIndex,
+  }
+}
+
 export function getWeekdayLabels(locale: string) {
   const formatter = new Intl.DateTimeFormat(locale, { weekday: 'short' })
   const start = new Date(2024, 0, 7)

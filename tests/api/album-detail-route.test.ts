@@ -160,3 +160,72 @@ test('createPatchAlbumHandler returns 404 when album does not exist', async () =
   assert.equal(response.status, 404)
   assert.deepEqual(await response.json(), { error: 'Not found' })
 })
+
+test('createDeleteAlbumHandler removes dependent records before deleting the album', async () => {
+  const mod = await import('../../src/app/api/couples/[coupleId]/albums/[albumId]/route')
+  assert.equal(typeof mod.createDeleteAlbumHandler, 'function')
+
+  const calls: string[] = []
+
+  const handler = mod.createDeleteAlbumHandler({
+    prismaClient: {
+      album: {
+        findFirst: async () => ({
+          id: 'album_1',
+          title: '2024',
+          description: null,
+        }),
+      },
+      $transaction: async <T>(callback: (tx: never) => Promise<T>) =>
+        callback({
+          photoAIVariant: {
+            deleteMany: async () => {
+              calls.push('photoAIVariant.deleteMany')
+              return { count: 2 }
+            },
+          },
+          pipelineRun: {
+            deleteMany: async () => {
+              calls.push('pipelineRun.deleteMany')
+              return { count: 2 }
+            },
+          },
+          photo: {
+            deleteMany: async () => {
+              calls.push('photo.deleteMany')
+              return { count: 2 }
+            },
+          },
+          albumChapter: {
+            deleteMany: async () => {
+              calls.push('albumChapter.deleteMany')
+              return { count: 1 }
+            },
+          },
+          album: {
+            delete: async () => {
+              calls.push('album.delete')
+              return {}
+            },
+          },
+        } as never),
+    } as never,
+  })
+
+  const response = await handler(
+    new Request('http://localhost/api/couples/couple_1/albums/album_1', {
+      method: 'DELETE',
+    }),
+    createAuthContext(),
+    { coupleId: 'couple_1', albumId: 'album_1' }
+  )
+
+  assert.equal(response.status, 204)
+  assert.deepEqual(calls, [
+    'photoAIVariant.deleteMany',
+    'pipelineRun.deleteMany',
+    'photo.deleteMany',
+    'albumChapter.deleteMany',
+    'album.delete',
+  ])
+})

@@ -10,6 +10,7 @@ import {
   buildPhotoAssistMeta,
   buildPhotoDetailCopy,
   buildPhotoPreviewNavigationState,
+  buildPhotoRetryRequestInit,
   formatPhotoTakenAt,
 } from './photo-detail-modal'
 
@@ -176,9 +177,7 @@ function PhotoWorkspacePanel({
 
   async function handleRetry() {
     setRetrying(true)
-    await fetch(`/api/couples/${coupleId}/photos/${photo.id}/retry`, {
-      method: 'POST',
-    })
+    await fetch(`/api/couples/${coupleId}/photos/${photo.id}/retry`, buildPhotoRetryRequestInit())
     setRetrying(false)
     onRefreshData()
   }

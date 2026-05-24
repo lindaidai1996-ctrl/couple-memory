@@ -43,6 +43,7 @@ export function buttonClassName({
 }: ButtonClassNameOptions = {}) {
   return joinClassNames(
     'cm-button',
+    'inline-flex',
     `cm-button--${scheme}`,
     `cm-button--${variant}`,
     `cm-button--${size}`,

@@ -1,0 +1,136 @@
+<h2>相册详情页改造方向</h2>
+<p class="subtitle">目标：打开照片详情或编辑章节时，不丢失当前滚动位置；桌面端保持上下文，移动端保证可读和可操作。</p>
+
+<div class="cards">
+  <div class="card" data-choice="recommended" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">推荐方案 A: Desktop 右侧面板</div>
+        <div class="mockup-body" style="padding:16px;background:#f7f0ea;">
+          <div style="display:grid;grid-template-columns:1.2fr 0.8fr;gap:14px;min-height:300px;">
+            <div style="border:1px solid #d8c8bc;border-radius:18px;background:#fffaf6;padding:14px;display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-weight:700;">相册主内容</div>
+                  <div style="font-size:12px;color:#7d6b60;">章节区 + 其他瞬间继续按当前滚动位置停留</div>
+                </div>
+                <div style="padding:6px 10px;border-radius:999px;background:#efe1d4;font-size:12px;">用户仍在原位置</div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                <div class="placeholder" style="height:84px;">章节卡 1</div>
+                <div class="placeholder" style="height:84px;">章节卡 2</div>
+                <div class="placeholder" style="height:84px;">章节卡 3</div>
+                <div class="placeholder" style="height:84px;background:#ead6c8;border-color:#c7aa96;">当前点击的照片</div>
+                <div class="placeholder" style="height:84px;">照片</div>
+                <div class="placeholder" style="height:84px;">照片</div>
+              </div>
+              <div style="font-size:12px;color:#7d6b60;">点击照片后，详情固定出现在右侧，不再漂到页面顶端。</div>
+            </div>
+
+            <div style="border:1px solid #b78b73;border-radius:22px;background:#fff;padding:14px;display:flex;flex-direction:column;gap:12px;box-shadow:0 18px 36px rgba(73,45,33,0.10);">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-weight:700;">详情工作台</div>
+                  <div style="font-size:12px;color:#7d6b60;">照片详情 / 章节编辑共用右侧层</div>
+                </div>
+                <div style="font-size:12px;color:#7d6b60;">Esc 关闭</div>
+              </div>
+              <div class="placeholder" style="height:120px;background:#f0e0d5;border-color:#cfb29f;">大图预览</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div class="placeholder" style="height:44px;">时间</div>
+                <div class="placeholder" style="height:44px;">地点</div>
+              </div>
+              <div class="placeholder" style="height:56px;">Caption / 摘要</div>
+              <div class="placeholder" style="height:72px;">编辑字段区</div>
+              <div style="display:flex;gap:8px;">
+                <button class="mock-button" style="flex:1;">保存</button>
+                <button class="mock-button" style="flex:1;background:#fff;border:1px solid #d8c8bc;color:#5b4b40;">关闭</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>方案 A</h3>
+      <p>桌面端保留列表上下文，右侧面板承接照片详情和章节编辑。最能解决你现在“点了但看不到”的问题。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="mobile" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">推荐方案 B: Mobile 全屏 Sheet</div>
+        <div class="mockup-body" style="padding:16px;background:#f7f0ea;">
+          <div style="display:flex;justify-content:center;">
+            <div style="width:240px;border:1px solid #d8c8bc;border-radius:30px;background:#fffaf6;padding:10px;box-shadow:0 18px 36px rgba(73,45,33,0.10);">
+              <div style="height:18px;width:72px;border-radius:999px;background:#e8d8ca;margin:0 auto 10px;"></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div style="font-weight:700;">照片详情</div>
+                <div style="font-size:12px;color:#7d6b60;">下拉关闭</div>
+              </div>
+              <div class="placeholder" style="height:132px;background:#f0e0d5;border-color:#cfb29f;">大图预览</div>
+              <div style="margin-top:10px;display:flex;gap:6px;font-size:12px;">
+                <div style="padding:4px 8px;border-radius:999px;background:#efe1d4;">信息</div>
+                <div style="padding:4px 8px;border-radius:999px;background:#fff;border:1px solid #d8c8bc;">编辑</div>
+                <div style="padding:4px 8px;border-radius:999px;background:#fff;border:1px solid #d8c8bc;">EXIF</div>
+              </div>
+              <div style="display:grid;gap:8px;margin-top:10px;">
+                <div class="placeholder" style="height:42px;">时间 / 地点</div>
+                <div class="placeholder" style="height:58px;">正文 / Caption</div>
+                <div class="placeholder" style="height:68px;">编辑表单</div>
+                <button class="mock-button">底部保存</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>方案 B</h3>
+      <p>移动端改成全屏 sheet，避免窄侧栏；头部固定关闭和标题，底部固定主操作，内容区域独立滚动。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="problem" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">当前问题示意</div>
+        <div class="mockup-body" style="padding:16px;background:#f7f0ea;">
+          <div style="border:1px solid #d8c8bc;border-radius:18px;background:#fffaf6;padding:14px;display:flex;flex-direction:column;gap:10px;">
+            <div style="font-weight:700;">长列表页面</div>
+            <div class="placeholder" style="height:52px;">相册头部</div>
+            <div class="placeholder" style="height:52px;">章节 1</div>
+            <div class="placeholder" style="height:52px;">章节 2</div>
+            <div class="placeholder" style="height:52px;">章节 3</div>
+            <div class="placeholder" style="height:52px;background:#ead6c8;border-color:#c7aa96;">当前点击区域在页面下方</div>
+            <div style="padding:8px 10px;border-radius:12px;background:#4c3428;color:#fff;font-size:12px;">
+              弹层/抽屉出现在页面顶部或脱离当前视口，用户感知为“没打开”。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>当前症状</h3>
+      <p>主滚动容器是 dashboard 内层滚动区，当前详情层没有和这个阅读上下文形成稳定关系，所以在长页面里体验断裂。</p>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="same-shell" onclick="toggleSelect(this)">
+    <div class="letter">1</div>
+    <div class="content">
+      <h3>照片详情和章节编辑共用同一详情层</h3>
+      <p>认知更统一，层级更少，后续也方便扩展到章节摘要、移动照片等操作。我推荐这个。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="separate-shell" onclick="toggleSelect(this)">
+    <div class="letter">2</div>
+    <div class="content">
+      <h3>照片详情和章节编辑分成两个独立层</h3>
+      <p>代码职责更直白，但用户会看到两套不同的打开/关闭体验，整体会更碎。</p>
+    </div>
+  </div>
+</div>

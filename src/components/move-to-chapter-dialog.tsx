@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button'
+import { Modal } from '@/components/ui/modal'
 
 type MoveChapterOption = {
   id: string
@@ -26,27 +27,27 @@ export function MoveToChapterDialog({
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative w-full max-w-md rounded-[var(--radius-lg)] bg-warm-surface border border-warm-border p-5 space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold text-warm-text">{copy.title}</h2>
-          <p className="text-sm text-warm-muted mt-1">{copy.description}</p>
-        </div>
-        <div className="space-y-2">
-          {chapters.map(chapter => (
-            <Button
-              key={chapter.id}
-              fullWidth
-              variant="secondary"
-              onClick={() => onSelect(chapter.id)}
-              className="justify-start"
-            >
-              {chapter.title}
-            </Button>
-          ))}
-        </div>
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={copy.title}
+      description={copy.description}
+      width="md"
+      hideFooter
+    >
+      <div className="space-y-2">
+        {chapters.map(chapter => (
+          <Button
+            key={chapter.id}
+            fullWidth
+            variant="secondary"
+            onClick={() => onSelect(chapter.id)}
+            className="justify-start"
+          >
+            {chapter.title}
+          </Button>
+        ))}
       </div>
-    </div>
+    </Modal>
   )
 }

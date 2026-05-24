@@ -267,6 +267,7 @@
     "narrativeGenerateTitleDraft": "生成标题草稿",
     "narrativeGenerateDescriptionDraft": "生成说明草稿",
     "narrativeCoverCandidates": "封面候选",
+    "coverRecentPhotosEmpty": "还没有可直接作为封面的照片。先上传并等待照片处理完成。",
     "narrativeSetAsCover": "设为封面",
     "narrativeCurrentCover": "当前封面",
     "narrativeAiTitleLabel": "AI 标题草稿",

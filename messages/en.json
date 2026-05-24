@@ -267,6 +267,7 @@
     "narrativeGenerateTitleDraft": "Generate title draft",
     "narrativeGenerateDescriptionDraft": "Generate description draft",
     "narrativeCoverCandidates": "Cover candidates",
+    "coverRecentPhotosEmpty": "No photos are ready to use as a cover yet. Upload photos and wait for processing.",
     "narrativeSetAsCover": "Set as cover",
     "narrativeCurrentCover": "Current cover",
     "narrativeAiTitleLabel": "AI title draft",

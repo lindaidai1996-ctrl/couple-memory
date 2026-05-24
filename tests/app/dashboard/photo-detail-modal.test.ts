@@ -3,6 +3,7 @@ import test from 'node:test'
 
 import {
   buildPhotoAssistMeta,
+  buildPhotoRetryRequestInit,
   buildPhotoPreviewNavigationState,
 } from '../../../src/components/photo-detail-modal'
 
@@ -56,4 +57,12 @@ test('buildPhotoPreviewNavigationState disables navigation at chapter boundaries
     previousPhotoId: null,
     nextPhotoId: 'photo_2',
   })
+})
+
+test('buildPhotoRetryRequestInit always requests a full retry scope for manual reprocessing', async () => {
+  const init = buildPhotoRetryRequestInit()
+
+  assert.equal(init.method, 'POST')
+  assert.deepEqual(init.headers, { 'Content-Type': 'application/json' })
+  assert.equal(init.body, JSON.stringify({ scope: 'FULL' }))
 })

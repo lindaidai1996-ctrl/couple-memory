@@ -7,6 +7,7 @@ import { VelvetSelect } from '@/components/forms/velvet-select'
 import { SettingsFormSkeleton } from '@/components/skeleton/settings-form-skeleton'
 import { ArrowRightIcon, Button, EditIcon, PlusIcon, RefreshIcon } from '@/components/ui/button'
 import { mediaTileButtonClassName } from '@/components/ui/media-tile'
+import { Modal } from '@/components/ui/modal'
 import { resolveUserAvatarUrl } from '@/lib/default-avatar'
 import { compressAndUploadAvatar, type UploadStage } from '@/lib/upload'
 import {
@@ -1359,6 +1360,7 @@ function InviteSection({
 }) {
   const t = useTranslations('SettingsPage')
   const [copied, setCopied] = useState(false)
+  const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false)
 
   const daysLeft = useMemo(() => {
     if (!couple.inviteExpiresAt) return null
@@ -1374,8 +1376,7 @@ function InviteSection({
   }
 
   function handleRegenerate() {
-    if (!confirm(t('inviteRegenerateConfirm'))) return
-    onRegenerate()
+    setShowRegenerateConfirm(true)
   }
 
   if (!couple.inviteCode) {
@@ -1401,36 +1402,56 @@ function InviteSection({
   })
 
   return (
-    <div className="space-y-3">
-      <div className="rounded-[24px] border border-[var(--line)] bg-[linear-gradient(135deg,rgba(111,79,102,0.08),rgba(201,162,161,0.14))] p-4">
-        <p className="text-[10px] uppercase tracking-[0.3em] text-[var(--text-faint)]">{t('invite')}</p>
-        <code className="mt-3 block break-all rounded-[18px] border border-white/45 bg-white/70 px-3 py-3 text-sm leading-6 text-[var(--text)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
-          {typeof window !== 'undefined' ? window.location.origin : ''}/invite/{couple.inviteCode}
-        </code>
-        <div className="mt-3 flex flex-wrap gap-2.5">
-          <Button
-            type="button"
-            onClick={handleCopy}
-            size={actionButtons.copy.size}
-            variant={actionButtons.copy.variant}
-          >
-            {actionButtons.copy.label}
-          </Button>
-          <Button
-            type="button"
-            onClick={handleRegenerate}
-            size={actionButtons.regenerate.size}
-            variant={actionButtons.regenerate.variant}
-          >
-            {actionButtons.regenerate.label}
-          </Button>
+    <>
+      <div className="space-y-3">
+        <div className="rounded-[24px] border border-[var(--line)] bg-[linear-gradient(135deg,rgba(111,79,102,0.08),rgba(201,162,161,0.14))] p-4">
+          <p className="text-[10px] uppercase tracking-[0.3em] text-[var(--text-faint)]">{t('invite')}</p>
+          <code className="mt-3 block break-all rounded-[18px] border border-white/45 bg-white/70 px-3 py-3 text-sm leading-6 text-[var(--text)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
+            {typeof window !== 'undefined' ? window.location.origin : ''}/invite/{couple.inviteCode}
+          </code>
+          <div className="mt-3 flex flex-wrap gap-2.5">
+            <Button
+              type="button"
+              onClick={handleCopy}
+              size={actionButtons.copy.size}
+              variant={actionButtons.copy.variant}
+            >
+              {actionButtons.copy.label}
+            </Button>
+            <Button
+              type="button"
+              onClick={handleRegenerate}
+              size={actionButtons.regenerate.size}
+              variant={actionButtons.regenerate.variant}
+            >
+              {actionButtons.regenerate.label}
+            </Button>
+          </div>
         </div>
+        {daysLeft !== null && (
+          <p className="text-xs uppercase tracking-[0.22em] text-[var(--text-faint)]">
+            {t('inviteExpires', { days: daysLeft })}
+          </p>
+        )}
       </div>
-      {daysLeft !== null && (
-        <p className="text-xs uppercase tracking-[0.22em] text-[var(--text-faint)]">
-          {t('inviteExpires', { days: daysLeft })}
+
+      <Modal
+        open={showRegenerateConfirm}
+        onClose={() => setShowRegenerateConfirm(false)}
+        title={t('inviteRegenerate')}
+        description={t('inviteRegenerateConfirm')}
+        confirmText={t('inviteRegenerate')}
+        cancelText={t('cancelAvatarChange')}
+        confirmVariant="danger"
+        onConfirm={() => {
+          setShowRegenerateConfirm(false)
+          onRegenerate()
+        }}
+      >
+        <p className="text-sm text-[var(--text-soft)]">
+          {couple.inviteCode}
         </p>
-      )}
-    </div>
+      </Modal>
+    </>
   )
 }

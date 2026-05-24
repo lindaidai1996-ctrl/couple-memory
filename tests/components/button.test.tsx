@@ -13,9 +13,19 @@ test('buttonClassName returns velvet semantic classes with requested size', () =
   })
 
   assert.match(className, /\bcm-button\b/)
+  assert.match(className, /\binline-flex\b/)
   assert.match(className, /\bcm-button--velvet\b/)
   assert.match(className, /\bcm-button--danger\b/)
   assert.match(className, /\bcm-button--sm\b/)
+})
+
+test('buttonClassName keeps utility-driven visibility overrides available', () => {
+  const className = buttonClassName({
+    className: 'xl:hidden',
+  })
+
+  assert.match(className, /\binline-flex\b/)
+  assert.match(className, /\bxl:hidden\b/)
 })
 
 test('buttonClassName returns film classes and honors full width links', () => {

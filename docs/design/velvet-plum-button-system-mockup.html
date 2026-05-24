@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Velvet Plum Button System Mockup</title>
+  <style>
+    :root {
+      --vp-font-display: "Baskerville", "Times New Roman", "Georgia", "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
+      --vp-font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Source Han Sans SC", "Helvetica Neue", Arial, sans-serif;
+
+      --vp-radius-xl: 24px;
+      --vp-radius-lg: 18px;
+      --vp-radius-md: 14px;
+      --vp-radius-sm: 12px;
+      --vp-radius-xs: 10px;
+
+      --vp-shadow-soft: 0 14px 38px rgba(40, 24, 34, 0.08);
+      --vp-shadow-card: 0 8px 22px rgba(40, 24, 34, 0.06);
+      --vp-shadow-focus-light: 0 0 0 3px rgba(111, 79, 102, 0.16);
+      --vp-shadow-focus-dark: 0 0 0 3px rgba(213, 166, 181, 0.18);
+
+      --vp-control-height-lg: 44px;
+      --vp-control-height-md: 40px;
+      --vp-control-height-sm: 36px;
+
+      --vp-text-ui: 14px;
+      --vp-text-ui-small: 12px;
+      --vp-text-caption: 11px;
+
+      --brand-start-light: #5b3a52;
+      --brand-end-light: #c9a2a1;
+      --brand-glow-light: rgba(111, 79, 102, 0.22);
+
+      --success-start-light: #4f6d5d;
+      --success-end-light: #9fc3ad;
+      --success-glow-light: rgba(79, 109, 93, 0.2);
+
+      --warning-start-light: #7a5732;
+      --warning-end-light: #d4af85;
+      --warning-glow-light: rgba(122, 87, 50, 0.22);
+
+      --danger-start-light: #7d3947;
+      --danger-end-light: #d699a6;
+      --danger-glow-light: rgba(125, 57, 71, 0.22);
+
+      --brand-start-dark: #70455f;
+      --brand-end-dark: #b78795;
+      --brand-glow-dark: rgba(213, 166, 181, 0.18);
+
+      --success-start-dark: #5d7f6c;
+      --success-end-dark: #91b39f;
+      --success-glow-dark: rgba(145, 179, 159, 0.18);
+
+      --warning-start-dark: #886245;
+      --warning-end-dark: #d0a67f;
+      --warning-glow-dark: rgba(208, 166, 127, 0.18);
+
+      --danger-start-dark: #9f5b69;
+      --danger-end-dark: #cf97a5;
+      --danger-glow-dark: rgba(207, 151, 165, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--vp-font-sans);
+      background:
+        radial-gradient(circle at top left, rgba(111, 79, 102, 0.11), transparent 32%),
+        radial-gradient(circle at right 18% top 12%, rgba(201, 162, 161, 0.18), transparent 20%),
+        #e9e1e4;
+      color: #20171c;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .page {
+      width: min(1480px, calc(100vw - 40px));
+      margin: 0 auto;
+      padding: 28px 0 48px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: rgba(32, 23, 28, 0.54);
+      font-size: var(--vp-text-caption);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: var(--vp-font-display);
+      font-size: clamp(30px, 4vw, 52px);
+      line-height: 0.98;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .lede {
+      max-width: 720px;
+      margin: 12px 0 0;
+      color: rgba(32, 23, 28, 0.68);
+      font-size: 14px;
+      line-height: 1.7;
+      text-wrap: pretty;
+    }
+
+    .theme-switch {
+      display: inline-flex;
+      gap: 6px;
+      padding: 4px;
+      border: 1px solid rgba(32, 23, 28, 0.1);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.5);
+      box-shadow: var(--vp-shadow-card);
+    }
+
+    .theme-switch button {
+      min-width: 88px;
+      height: 36px;
+      padding: 0 14px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: rgba(32, 23, 28, 0.62);
+      cursor: pointer;
+      transition: transform 180ms ease, background 180ms ease, color 180ms ease, box-shadow 180ms ease;
+    }
+
+    .theme-switch button.active {
+      color: #fffafc;
+      background: linear-gradient(135deg, #5b3a52 0%, #c9a2a1 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 10px 22px rgba(111, 79, 102, 0.18);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 16px;
+    }
+
+    .panel {
+      border: 1px solid rgba(32, 23, 28, 0.1);
+      border-radius: 28px;
+      background: rgba(255, 251, 253, 0.78);
+      box-shadow: var(--vp-shadow-soft);
+      backdrop-filter: blur(20px);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid rgba(32, 23, 28, 0.08);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0));
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-family: var(--vp-font-display);
+      font-size: 24px;
+      font-weight: 600;
+      line-height: 1.08;
+    }
+
+    .panel-header p {
+      margin: 6px 0 0;
+      color: rgba(32, 23, 28, 0.6);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .label {
+      color: rgba(32, 23, 28, 0.46);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .panel-body {
+      display: grid;
+      gap: 14px;
+      padding: 18px 20px 20px;
+    }
+
+    .theme-stage {
+      --bg: #f1eded;
+      --bg-2: #faf7f7;
+      --panel: rgba(255, 251, 253, 0.78);
+      --panel-strong: rgba(255, 255, 255, 0.9);
+      --text: #20171c;
+      --text-soft: rgba(32, 23, 28, 0.64);
+      --text-faint: rgba(32, 23, 28, 0.36);
+      --line: rgba(32, 23, 28, 0.1);
+      --focus-ring: var(--vp-shadow-focus-light);
+      --surface-gradient: linear-gradient(135deg, rgba(111, 79, 102, 0.12), rgba(201, 162, 161, 0.08));
+      padding: 16px;
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at top left, rgba(111, 79, 102, 0.12), transparent 34%),
+        linear-gradient(180deg, var(--bg-2), var(--bg));
+      border: 1px solid var(--line);
+    }
+
+    .theme-stage.dark {
+      --bg: #161116;
+      --bg-2: #211820;
+      --panel: rgba(35, 24, 33, 0.72);
+      --panel-strong: rgba(42, 28, 39, 0.9);
+      --text: #f7edf3;
+      --text-soft: rgba(247, 237, 243, 0.68);
+      --text-faint: rgba(247, 237, 243, 0.38);
+      --line: rgba(247, 237, 243, 0.1);
+      --focus-ring: var(--vp-shadow-focus-dark);
+      --surface-gradient: linear-gradient(135deg, rgba(213, 166, 181, 0.1), rgba(91, 53, 80, 0.18));
+      --dark-float-shadow: 0 16px 30px rgba(5, 3, 6, 0.34);
+      --dark-soft-edge: 0 6px 14px rgba(255, 240, 246, 0.06);
+      background:
+        radial-gradient(circle at top left, rgba(213, 166, 181, 0.12), transparent 32%),
+        linear-gradient(180deg, var(--bg-2), var(--bg));
+    }
+
+    .theme-stage[hidden] {
+      display: none;
+    }
+
+    .stage-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .stage-head h3 {
+      margin: 0;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .stage-head p {
+      margin: 4px 0 0;
+      color: var(--text-soft);
+      font-size: 12px;
+    }
+
+    .tiny-chip {
+      padding: 6px 9px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--text-soft);
+      background: rgba(255, 255, 255, 0.05);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .showcase-card {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+      box-shadow: var(--vp-shadow-card);
+    }
+
+    .showcase-card.surface {
+      background: var(--surface-gradient);
+    }
+
+    .row-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--text-soft);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .vp-btn {
+      --btn-height: var(--vp-control-height-md);
+      --btn-radius: var(--vp-radius-md);
+      --btn-padding-x: 14px;
+      --btn-font-size: var(--vp-text-ui);
+      --btn-start: var(--brand-start-light);
+      --btn-end: var(--brand-end-light);
+      --btn-glow: var(--brand-glow-light);
+      --btn-text: #fffafc;
+      --btn-border: rgba(255, 255, 255, 0.18);
+      --btn-bg: linear-gradient(135deg, var(--btn-start) 0%, var(--btn-end) 100%);
+      --btn-hover-shift: translateY(-1px);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-width: max-content;
+      height: var(--btn-height);
+      padding: 0 var(--btn-padding-x);
+      border-radius: var(--btn-radius);
+      border: 1px solid var(--btn-border);
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      font-size: var(--btn-font-size);
+      line-height: 1;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      cursor: pointer;
+      transition:
+        transform 180ms ease,
+        box-shadow 180ms ease,
+        background 180ms ease,
+        border-color 180ms ease,
+        color 180ms ease,
+        opacity 180ms ease;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 10px 22px var(--btn-glow);
+    }
+
+    .vp-btn:hover {
+      transform: var(--btn-hover-shift);
+    }
+
+    .vp-btn:focus-visible {
+      outline: none;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 10px 22px var(--btn-glow),
+        var(--focus-ring);
+    }
+
+    .vp-btn.secondary {
+      --btn-bg: var(--panel-strong);
+      --btn-border: var(--line);
+      --btn-text: var(--text);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 8px 18px rgba(40, 24, 34, 0.06);
+    }
+
+    .vp-btn.ghost {
+      --btn-bg: transparent;
+      --btn-border: transparent;
+      --btn-text: var(--text-soft);
+      box-shadow: none;
+    }
+
+    .vp-btn.ghost:hover,
+    .vp-btn.subtle:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: var(--line);
+    }
+
+    .vp-btn.subtle {
+      --btn-bg: rgba(255, 255, 255, 0.02);
+      --btn-border: var(--line);
+      --btn-text: var(--text-soft);
+      box-shadow: none;
+    }
+
+    .vp-btn.brand {
+      --btn-start: var(--brand-start-light);
+      --btn-end: var(--brand-end-light);
+      --btn-glow: var(--brand-glow-light);
+    }
+
+    .vp-btn.success {
+      --btn-start: var(--success-start-light);
+      --btn-end: var(--success-end-light);
+      --btn-glow: var(--success-glow-light);
+    }
+
+    .vp-btn.warning {
+      --btn-start: var(--warning-start-light);
+      --btn-end: var(--warning-end-light);
+      --btn-glow: var(--warning-glow-light);
+      --btn-text: #fff9f3;
+    }
+
+    .vp-btn.danger {
+      --btn-start: var(--danger-start-light);
+      --btn-end: var(--danger-end-light);
+      --btn-glow: var(--danger-glow-light);
+    }
+
+    .dark .vp-btn.brand {
+      --btn-start: var(--brand-start-dark);
+      --btn-end: var(--brand-end-dark);
+      --btn-glow: var(--brand-glow-dark);
+    }
+
+    .dark .vp-btn.success {
+      --btn-start: var(--success-start-dark);
+      --btn-end: var(--success-end-dark);
+      --btn-glow: var(--success-glow-dark);
+    }
+
+    .dark .vp-btn.warning {
+      --btn-start: var(--warning-start-dark);
+      --btn-end: var(--warning-end-dark);
+      --btn-glow: var(--warning-glow-dark);
+    }
+
+    .dark .vp-btn.danger {
+      --btn-start: var(--danger-start-dark);
+      --btn-end: var(--danger-end-dark);
+      --btn-glow: var(--danger-glow-dark);
+    }
+
+    .dark .vp-btn {
+      box-shadow:
+        inset 0 1px 0 rgba(255, 247, 250, 0.28),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+        var(--dark-soft-edge),
+        var(--dark-float-shadow),
+        0 0 0 1px rgba(18, 12, 17, 0.18),
+        0 10px 22px var(--btn-glow);
+    }
+
+    .dark .vp-btn:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 247, 250, 0.32),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+        0 8px 18px rgba(255, 240, 246, 0.07),
+        0 22px 38px rgba(5, 3, 6, 0.42),
+        0 0 0 1px rgba(18, 12, 17, 0.16),
+        0 14px 28px var(--btn-glow);
+    }
+
+    .dark .vp-btn.secondary,
+    .dark .vp-btn.subtle {
+      background:
+        linear-gradient(180deg, rgba(255, 250, 252, 0.06), rgba(255, 250, 252, 0.015)),
+        var(--btn-bg);
+    }
+
+    .dark .vp-btn.ghost {
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.24);
+    }
+
+    .vp-btn.sm {
+      --btn-height: var(--vp-control-height-sm);
+      --btn-radius: var(--vp-radius-sm);
+      --btn-padding-x: 12px;
+      --btn-font-size: var(--vp-text-ui-small);
+    }
+
+    .vp-btn.lg {
+      --btn-height: var(--vp-control-height-lg);
+      --btn-padding-x: 16px;
+    }
+
+    .vp-btn.icon-only {
+      width: var(--btn-height);
+      min-width: 0;
+      padding: 0;
+    }
+
+    .vp-btn[disabled] {
+      transform: none;
+      opacity: 0.48;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .vp-btn.loading {
+      position: relative;
+      color: rgba(255, 250, 252, 0.8);
+    }
+
+    .vp-btn.secondary.loading,
+    .vp-btn.subtle.loading {
+      color: var(--text-soft);
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 1.6px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .icon {
+      display: inline-grid;
+      place-items: center;
+      width: 16px;
+      height: 16px;
+      color: currentColor;
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+    }
+
+    .toolbar .button-row {
+      gap: 8px;
+    }
+
+    .meta {
+      display: grid;
+      gap: 6px;
+      color: var(--text-soft);
+      font-size: 12px;
+    }
+
+    .list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      color: var(--text-soft);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .list strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .danger-zone {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(157, 89, 108, 0.22);
+      background: linear-gradient(135deg, rgba(125, 57, 71, 0.12), rgba(255, 255, 255, 0.03));
+    }
+
+    .dark .danger-zone {
+      border-color: rgba(207, 151, 165, 0.18);
+      background: linear-gradient(135deg, rgba(159, 91, 105, 0.16), rgba(20, 12, 17, 0.18));
+    }
+
+    .footer-note {
+      display: grid;
+      gap: 8px;
+      color: rgba(32, 23, 28, 0.62);
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .dark .footer-note {
+      color: rgba(247, 237, 243, 0.62);
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 1120px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        width: min(100vw - 20px, 1480px);
+        padding-top: 18px;
+      }
+
+      .topbar,
+      .panel-header,
+      .stage-head,
+      .toolbar {
+        align-items: start;
+        flex-direction: column;
+      }
+
+      .split {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <div>
+        <p class="eyebrow">Velvet Plum / Component Design / Button</p>
+        <h1>公共 Button 体系 mockup</h1>
+        <p class="lede">
+          方向采用“品牌骨架 + 语义点缀”。所有按钮共享同一套材质、密度、圆角、内高光与 focus ring，
+          再通过颜色分出品牌主操作、成功、警示、危险，以及 secondary、ghost、subtle 等表层形态。
+        </p>
+      </div>
+      <div class="theme-switch" aria-label="Theme switch">
+        <button class="active" data-theme-target="light" type="button">Light</button>
+        <button data-theme-target="dark" type="button">Dark</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="label">Preview Stage</div>
+            <h2>系统预览</h2>
+            <p>同一份按钮体系，平行查看亮色与暗色主题下的层次、对比和语义强度。</p>
+          </div>
+          <div class="label">Full scope: variant / size / icon / loading / disabled / destructive</div>
+        </div>
+        <div class="panel-body">
+          <div class="theme-stage" data-theme-stage="light">
+            <div class="stage-head">
+              <div>
+                <h3>Light Theme</h3>
+                <p>浅底下保持柔和材质感，语义色不脱离 Velvet Plum 的整体气质。</p>
+              </div>
+              <div class="tiny-chip">Compact editorial</div>
+            </div>
+
+            <div class="showcase-card">
+              <div class="row-title"><span>Core variants</span><span>brand / semantic / surface</span></div>
+              <div class="button-row">
+                <button class="vp-btn brand"><span class="icon">✦</span><span>保存更改</span></button>
+                <button class="vp-btn success"><span class="icon">✓</span><span>发布章节</span></button>
+                <button class="vp-btn warning"><span class="icon">!</span><span>提醒协作者</span></button>
+                <button class="vp-btn danger"><span class="icon">−</span><span>删除相册</span></button>
+              </div>
+              <div class="button-row">
+                <button class="vp-btn secondary">取消</button>
+                <button class="vp-btn subtle">稍后处理</button>
+                <button class="vp-btn ghost"><span class="icon">↗</span><span>查看详情</span></button>
+              </div>
+            </div>
+
+            <div class="split">
+              <div class="showcase-card surface">
+                <div class="row-title"><span>Sizes</span><span>sm / md / lg</span></div>
+                <div class="stack">
+                  <div class="button-row">
+                    <button class="vp-btn brand sm">新建</button>
+                    <button class="vp-btn secondary sm">筛选</button>
+                    <button class="vp-btn ghost sm">更多</button>
+                  </div>
+                  <div class="button-row">
+                    <button class="vp-btn brand">保存本页</button>
+                    <button class="vp-btn secondary">预览布局</button>
+                  </div>
+                  <div class="button-row">
+                    <button class="vp-btn brand lg"><span class="icon">✦</span><span>确认并继续下一步</span></button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="showcase-card">
+                <div class="row-title"><span>Icon patterns</span><span>leading / trailing / icon-only</span></div>
+                <div class="button-row">
+                  <button class="vp-btn brand"><span class="icon">＋</span><span>添加照片</span></button>
+                  <button class="vp-btn secondary"><span>管理章节</span><span class="icon">→</span></button>
+                  <button class="vp-btn ghost icon-only" aria-label="share"><span class="icon">↗</span></button>
+                  <button class="vp-btn subtle icon-only" aria-label="more"><span class="icon">⋯</span></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="showcase-card">
+              <div class="row-title"><span>State spectrum</span><span>hover / focus / loading / disabled</span></div>
+              <div class="button-row">
+                <button class="vp-btn brand loading"><span class="spinner" aria-hidden="true"></span><span>保存中</span></button>
+                <button class="vp-btn secondary loading"><span class="spinner" aria-hidden="true"></span><span>同步中</span></button>
+                <button class="vp-btn success" disabled><span class="icon">✓</span><span>已完成</span></button>
+                <button class="vp-btn danger" disabled><span class="icon">−</span><span>不可删除</span></button>
+              </div>
+            </div>
+
+            <div class="showcase-card">
+              <div class="row-title"><span>Context usage</span><span>toolbar / card / danger zone</span></div>
+              <div class="toolbar">
+                <div class="meta">
+                  <strong>批量工具栏</strong>
+                  <span>ghost 用于低优先级动作，secondary 用于普通工具动作。</span>
+                </div>
+                <div class="button-row">
+                  <button class="vp-btn ghost sm">全选</button>
+                  <button class="vp-btn secondary sm">移动到章节</button>
+                  <button class="vp-btn brand sm">创建章节</button>
+                </div>
+              </div>
+              <div class="danger-zone">
+                <div class="meta">
+                  <strong style="color: var(--text);">危险操作区域</strong>
+                  <span>危险按钮依然保留 Velvet Plum 的材质语言，但语义显著高于普通品牌按钮。</span>
+                </div>
+                <div class="button-row">
+                  <button class="vp-btn secondary">取消</button>
+                  <button class="vp-btn danger"><span class="icon">−</span><span>确认永久删除</span></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="theme-stage dark" data-theme-stage="dark" hidden>
+            <div class="stage-head">
+              <div>
+                <h3>Dark Theme</h3>
+                <p>暗底下用更轻的玫瑰 focus ring 和更深的面板对比，避免霓虹感。</p>
+              </div>
+              <div class="tiny-chip">No browser blue focus</div>
+            </div>
+
+            <div class="showcase-card">
+              <div class="row-title"><span>Core variants</span><span>brand / semantic / surface</span></div>
+              <div class="button-row">
+                <button class="vp-btn brand"><span class="icon">✦</span><span>保存更改</span></button>
+                <button class="vp-btn success"><span class="icon">✓</span><span>发布章节</span></button>
+                <button class="vp-btn warning"><span class="icon">!</span><span>提醒协作者</span></button>
+                <button class="vp-btn danger"><span class="icon">−</span><span>删除相册</span></button>
+              </div>
+              <div class="button-row">
+                <button class="vp-btn secondary">取消</button>
+                <button class="vp-btn subtle">稍后处理</button>
+                <button class="vp-btn ghost"><span class="icon">↗</span><span>查看详情</span></button>
+              </div>
+            </div>
+
+            <div class="split">
+              <div class="showcase-card surface">
+                <div class="row-title"><span>Sizes</span><span>sm / md / lg</span></div>
+                <div class="stack">
+                  <div class="button-row">
+                    <button class="vp-btn brand sm">新建</button>
+                    <button class="vp-btn secondary sm">筛选</button>
+                    <button class="vp-btn ghost sm">更多</button>
+                  </div>
+                  <div class="button-row">
+                    <button class="vp-btn brand">保存本页</button>
+                    <button class="vp-btn secondary">预览布局</button>
+                  </div>
+                  <div class="button-row">
+                    <button class="vp-btn brand lg"><span class="icon">✦</span><span>确认并继续下一步</span></button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="showcase-card">
+                <div class="row-title"><span>Icon patterns</span><span>leading / trailing / icon-only</span></div>
+                <div class="button-row">
+                  <button class="vp-btn brand"><span class="icon">＋</span><span>添加照片</span></button>
+                  <button class="vp-btn secondary"><span>管理章节</span><span class="icon">→</span></button>
+                  <button class="vp-btn ghost icon-only" aria-label="share"><span class="icon">↗</span></button>
+                  <button class="vp-btn subtle icon-only" aria-label="more"><span class="icon">⋯</span></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="showcase-card">
+              <div class="row-title"><span>State spectrum</span><span>hover / focus / loading / disabled</span></div>
+              <div class="button-row">
+                <button class="vp-btn brand loading"><span class="spinner" aria-hidden="true"></span><span>保存中</span></button>
+                <button class="vp-btn secondary loading"><span class="spinner" aria-hidden="true"></span><span>同步中</span></button>
+                <button class="vp-btn success" disabled><span class="icon">✓</span><span>已完成</span></button>
+                <button class="vp-btn danger" disabled><span class="icon">−</span><span>不可删除</span></button>
+              </div>
+            </div>
+
+            <div class="showcase-card">
+              <div class="row-title"><span>Context usage</span><span>toolbar / card / danger zone</span></div>
+              <div class="toolbar">
+                <div class="meta">
+                  <strong>批量工具栏</strong>
+                  <span>次级操作压在面板层里，主动作保持更明确的光泽与浮起。</span>
+                </div>
+                <div class="button-row">
+                  <button class="vp-btn ghost sm">全选</button>
+                  <button class="vp-btn secondary sm">移动到章节</button>
+                  <button class="vp-btn brand sm">创建章节</button>
+                </div>
+              </div>
+              <div class="danger-zone">
+                <div class="meta">
+                  <strong style="color: var(--text);">危险操作区域</strong>
+                  <span>danger 在暗色里更强调边界与渐变对比，避免与 brand 按钮混淆。</span>
+                </div>
+                <div class="button-row">
+                  <button class="vp-btn secondary">取消</button>
+                  <button class="vp-btn danger"><span class="icon">−</span><span>确认永久删除</span></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="label">Design Decisions</div>
+            <h2>按钮体系定义</h2>
+            <p>这一版是为了确认公共组件边界和视觉语言，后续再沉淀成真实 tokens 与组件 API。</p>
+          </div>
+          <div class="label">Recommended</div>
+        </div>
+        <div class="panel-body">
+          <div class="showcase-card">
+            <div class="row-title"><span>Variant map</span><span>proposal</span></div>
+            <ul class="list">
+              <li><strong>brand:</strong> 默认主操作，沿用现有 `--vp-active-gradient-*` 的酒红材质。</li>
+              <li><strong>success:</strong> 成功或完成动作，色相偏鼠尾草绿，但保留同样的内高光与阴影结构。</li>
+              <li><strong>warning:</strong> 提醒、催办、谨慎继续，色相偏温琥珀，不做互联网橙黄高饱和。</li>
+              <li><strong>danger:</strong> 删除、清空、不可逆操作，色相偏酒红玫瑰，和品牌色同宗但危险度更高。</li>
+              <li><strong>secondary / subtle / ghost:</strong> 不承担强语义，只作为表层优先级差异。</li>
+            </ul>
+          </div>
+
+          <div class="showcase-card">
+            <div class="row-title"><span>API shape</span><span>draft</span></div>
+            <ul class="list">
+              <li><strong>variant:</strong> `brand | success | warning | danger | secondary | subtle | ghost`</li>
+              <li><strong>size:</strong> `sm | md | lg`，默认 `md`</li>
+              <li><strong>icon:</strong> 支持 `leadingIcon`、`trailingIcon` 和 `icon-only`</li>
+              <li><strong>state:</strong> `loading`、`disabled`、`aria-busy`、`data-destructive`</li>
+            </ul>
+          </div>
+
+          <div class="showcase-card">
+            <div class="row-title"><span>Interaction rules</span><span>must keep</span></div>
+            <ul class="list">
+              <li><strong>Hover:</strong> 只允许轻微上浮或对比加深，不做夸张缩放。</li>
+              <li><strong>Focus:</strong> 统一使用 plum / rose ring，禁止浏览器默认蓝色。</li>
+              <li><strong>Disabled:</strong> 保留形态轮廓，但取消浮起和强阴影。</li>
+              <li><strong>Loading:</strong> 文案和 spinner 一起存在，不只留一个旋转图标。</li>
+            </ul>
+          </div>
+
+          <div class="showcase-card">
+            <div class="row-title"><span>Implementation note</span><span>next step</span></div>
+            <div class="footer-note">
+              <div>如果你确认方向没问题，下一步我会把这套视觉映射成真实公共组件，包括 token 命名、variant API、暗亮主题变量和状态类。</div>
+              <div>如果你想调整，我建议优先决定两件事：`warning 是否太暖`，以及 `danger 和 brand 是否还需要更大区分`。</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const themeButtons = Array.from(document.querySelectorAll("[data-theme-target]"));
+    const stages = Array.from(document.querySelectorAll("[data-theme-stage]"));
+
+    function setTheme(theme) {
+      themeButtons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.themeTarget === theme);
+      });
+
+      stages.forEach((stage) => {
+        stage.hidden = stage.dataset.themeStage !== theme;
+      });
+    }
+
+    themeButtons.forEach((button) => {
+      button.addEventListener("click", () => setTheme(button.dataset.themeTarget));
+    });
+  </script>
+</body>
+</html>

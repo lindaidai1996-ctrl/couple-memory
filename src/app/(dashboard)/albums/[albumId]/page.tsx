@@ -83,6 +83,7 @@ export function buildAlbumDetailUiText(t: Translator) {
       generateTitleDraft: t('narrativeGenerateTitleDraft'),
       generateDescriptionDraft: t('narrativeGenerateDescriptionDraft'),
       coverCandidates: t('narrativeCoverCandidates'),
+      coverCandidatesEmpty: t('coverRecentPhotosEmpty'),
       setAsCover: t('narrativeSetAsCover'),
       currentCover: t('narrativeCurrentCover'),
       aiTitleLabel: t('narrativeAiTitleLabel'),
@@ -158,6 +159,16 @@ export function buildAlbumCoverCandidates(photos: PhotoData[]) {
       label: photo.userCaption || photo.aiCaption || photo.fileName,
       isCurrent: Boolean(photo.isAlbumCover),
     }))
+}
+
+export function buildAlbumCoverSectionState(photos: PhotoData[]) {
+  const candidates = buildAlbumCoverCandidates(photos)
+
+  return {
+    candidates,
+    hasCandidates: candidates.length > 0,
+    shouldShowEmptyState: candidates.length === 0,
+  }
 }
 
 export function buildAlbumNarrativeSnapshot({
@@ -754,7 +765,7 @@ export default function AlbumDetailPage() {
     ungroupedPhotos: album.ungroupedPhotos,
   })
   const narrativeComparison = buildAlbumNarrativeComparison({ album })
-  const coverCandidates = buildAlbumCoverCandidates(allVisiblePhotos)
+  const coverSectionState = buildAlbumCoverSectionState(allVisiblePhotos)
   const albumSelectionState = buildAlbumSelectionState({
     selectionMode: albumSelectionMode,
     selectedPhotoIds,
@@ -952,15 +963,15 @@ export default function AlbumDetailPage() {
           ) : null}
         </div>
 
-        {coverCandidates.length > 0 ? (
-          <div className="space-y-3 border-t border-warm-border pt-4">
-            <div className="space-y-1">
-              <h3 className="text-sm font-semibold text-warm-text">{uiText.narrative.coverCandidates}</h3>
-              <p className="text-sm text-warm-muted">{uiText.narrative.description}</p>
-            </div>
+        <div className="space-y-3 border-t border-warm-border pt-4">
+          <div className="space-y-1">
+            <h3 className="text-sm font-semibold text-warm-text">{uiText.narrative.coverCandidates}</h3>
+            <p className="text-sm text-warm-muted">{uiText.narrative.description}</p>
+          </div>
 
+          {coverSectionState.hasCandidates ? (
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {coverCandidates.map(candidate => (
+              {coverSectionState.candidates.map(candidate => (
                 <div
                   key={candidate.id}
                   className="overflow-hidden rounded-[var(--radius-md)] border border-warm-border bg-warm-bg"
@@ -993,8 +1004,12 @@ export default function AlbumDetailPage() {
                 </div>
               ))}
             </div>
-          </div>
-        ) : null}
+          ) : (
+            <div className="rounded-[var(--radius-md)] border border-dashed border-warm-border bg-warm-bg px-4 py-4 text-sm text-warm-muted">
+              {uiText.narrative.coverCandidatesEmpty}
+            </div>
+          )}
+        </div>
       </section>
 
       {actionError && (

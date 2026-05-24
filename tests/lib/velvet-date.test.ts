@@ -8,6 +8,7 @@ import {
   normalizeIsoDate,
   parseIsoDate,
   shiftMonth,
+  shiftYear,
 } from '../../src/lib/velvet-date'
 
 test('parseIsoDate accepts valid yyyy-mm-dd values', () => {
@@ -31,6 +32,11 @@ test('normalizeIsoDate returns empty string for invalid dates', () => {
 test('shiftMonth crosses year boundaries', () => {
   assert.deepEqual(shiftMonth(2026, 0, -1), { year: 2025, monthIndex: 11 })
   assert.deepEqual(shiftMonth(2026, 11, 1), { year: 2027, monthIndex: 0 })
+})
+
+test('shiftYear preserves month while moving across calendar years', () => {
+  assert.deepEqual(shiftYear(2026, 4, -1), { year: 2025, monthIndex: 4 })
+  assert.deepEqual(shiftYear(2026, 4, 1), { year: 2027, monthIndex: 4 })
 })
 
 test('buildCalendarMonth returns a six-week grid including leading and trailing days', () => {

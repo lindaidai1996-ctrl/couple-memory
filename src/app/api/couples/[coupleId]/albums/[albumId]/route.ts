@@ -15,7 +15,27 @@ type AlbumRouteDeps = {
       updateMany: (args: Record<string, unknown>) => Promise<{ count: number }>
       findUnique: (args: Record<string, unknown>) => Promise<unknown>
       deleteMany: (args: Record<string, unknown>) => Promise<unknown>
+      delete?: (args: Record<string, unknown>) => Promise<unknown>
     }
+    photo?: {
+      deleteMany: (args: Record<string, unknown>) => Promise<unknown>
+    }
+    albumChapter?: {
+      deleteMany: (args: Record<string, unknown>) => Promise<unknown>
+    }
+    photoAIVariant?: {
+      deleteMany: (args: Record<string, unknown>) => Promise<unknown>
+    }
+    pipelineRun?: {
+      deleteMany: (args: Record<string, unknown>) => Promise<unknown>
+    }
+    $transaction?: <T>(callback: (tx: {
+      album: { delete: (args: Record<string, unknown>) => Promise<unknown> }
+      photo: { deleteMany: (args: Record<string, unknown>) => Promise<unknown> }
+      albumChapter: { deleteMany: (args: Record<string, unknown>) => Promise<unknown> }
+      photoAIVariant: { deleteMany: (args: Record<string, unknown>) => Promise<unknown> }
+      pipelineRun: { deleteMany: (args: Record<string, unknown>) => Promise<unknown> }
+    }) => Promise<T>) => Promise<T>
   }
 }
 
@@ -108,12 +128,38 @@ export function createPatchAlbumHandler(deps: AlbumRouteDeps = {}) {
 
 export const PATCH = withAuth(createPatchAlbumHandler())
 
-export const DELETE = withAuth(
-  async (req, { coupleUser }, params) => {
-    await prisma.album.deleteMany({
+export function createDeleteAlbumHandler(deps: AlbumRouteDeps = {}) {
+  return async (_req: Request, { coupleUser }: AuthContext, params: Record<string, string>) => {
+    const prismaClient = deps.prismaClient ?? await loadPrismaClient()
+    const album = await prismaClient.album.findFirst({
       where: { id: params.albumId, coupleId: coupleUser.coupleId },
+      select: { id: true },
     })
+
+    if (!album) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
+    await prismaClient.$transaction!(async tx => {
+      await tx.photoAIVariant.deleteMany({
+        where: { photo: { albumId: params.albumId } },
+      })
+      await tx.pipelineRun.deleteMany({
+        where: { photo: { albumId: params.albumId } },
+      })
+      await tx.photo.deleteMany({
+        where: { albumId: params.albumId },
+      })
+      await tx.albumChapter.deleteMany({
+        where: { albumId: params.albumId },
+      })
+      await tx.album.delete({
+        where: { id: params.albumId },
+      })
+    })
+
     return new Response(null, { status: 204 })
-  },
-  { requiredRole: 'OWNER' }
-)
+  }
+}
+
+export const DELETE = withAuth(createDeleteAlbumHandler(), { requiredRole: 'OWNER' })

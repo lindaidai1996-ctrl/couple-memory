@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import {
   ALBUM_NARRATIVE_HIGHLIGHT_CARD_CLASS,
   ALBUM_NARRATIVE_STAT_CARD_CLASS,
+  buildAlbumCoverSectionState,
   buildAlbumDetailWorkspaceState,
   buildAlbumCoverCandidates,
   buildAlbumDescriptionDraftSuggestion,
@@ -57,6 +58,7 @@ test('buildAlbumDetailUiText exposes localized chapter page copy', () => {
   assert.equal(uiText.narrative.generateDescriptionDraft, 'narrativeGenerateDescriptionDraft')
   assert.equal(uiText.narrative.generateTitleDraft, 'narrativeGenerateTitleDraft')
   assert.equal(uiText.narrative.coverCandidates, 'narrativeCoverCandidates')
+  assert.equal(uiText.narrative.coverCandidatesEmpty, 'coverRecentPhotosEmpty')
   assert.equal(uiText.narrative.setAsCover, 'narrativeSetAsCover')
   assert.equal(uiText.narrative.currentCover, 'narrativeCurrentCover')
   assert.equal(uiText.narrative.aiTitleLabel, 'narrativeAiTitleLabel')
@@ -408,6 +410,70 @@ test('buildAlbumCoverCandidates keeps only ready photos and prioritizes the curr
       isCurrent: false,
     },
   ])
+})
+
+test('buildAlbumCoverSectionState keeps the cover section visible with an empty-state message when no candidate is eligible', () => {
+  const state = buildAlbumCoverSectionState([
+    {
+      id: 'photo_1',
+      fileName: 'processing.jpg',
+      thumbnailUrl: null,
+      displayUrl: null,
+      status: 'PROCESSING',
+      aiCaption: null,
+      userCaption: null,
+      takenAt: null,
+      locationName: null,
+      aiLayout: 'story-card',
+      aiScene: null,
+      aiMood: null,
+      cameraMake: null,
+      cameraModel: null,
+      focalLength: null,
+      aperture: null,
+      shutterSpeed: null,
+      iso: null,
+      isAlbumCover: false,
+      canBeCover: false,
+    },
+  ])
+
+  assert.deepEqual(state, {
+    candidates: [],
+    hasCandidates: false,
+    shouldShowEmptyState: true,
+  })
+})
+
+test('buildAlbumCoverSectionState suppresses the empty-state message once cover candidates exist', () => {
+  const state = buildAlbumCoverSectionState([
+    {
+      id: 'photo_1',
+      fileName: 'candidate.jpg',
+      thumbnailUrl: 'https://img.example.com/candidate-thumb.jpg',
+      displayUrl: 'https://img.example.com/candidate.jpg',
+      status: 'READY',
+      aiCaption: '候选封面',
+      userCaption: null,
+      takenAt: null,
+      locationName: null,
+      aiLayout: 'story-card',
+      aiScene: null,
+      aiMood: null,
+      cameraMake: null,
+      cameraModel: null,
+      focalLength: null,
+      aperture: null,
+      shutterSpeed: null,
+      iso: null,
+      isAlbumCover: false,
+      canBeCover: true,
+    },
+  ])
+
+  assert.equal(state.hasCandidates, true)
+  assert.equal(state.shouldShowEmptyState, false)
+  assert.equal(state.candidates.length, 1)
 })
 
 test('buildAlbumChapterCardMeta shows summary when available', () => {

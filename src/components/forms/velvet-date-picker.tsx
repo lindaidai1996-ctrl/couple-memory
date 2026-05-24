@@ -14,6 +14,7 @@ import {
   normalizeIsoDate,
   parseIsoDate,
   shiftMonth,
+  shiftYear,
 } from '@/lib/velvet-date'
 
 type VelvetDatePickerProps = {
@@ -84,6 +85,10 @@ export function VelvetDatePicker({
   )
   const todayLabel = locale.startsWith('zh') ? '今天' : 'Today'
   const closeLabel = locale.startsWith('zh') ? '关闭' : 'Close'
+  const previousYearLabel = locale.startsWith('zh') ? '上一年' : 'Previous year'
+  const nextYearLabel = locale.startsWith('zh') ? '下一年' : 'Next year'
+  const previousMonthLabel = locale.startsWith('zh') ? '上个月' : 'Previous month'
+  const nextMonthLabel = locale.startsWith('zh') ? '下个月' : 'Next month'
 
   function commitValue(nextValue: string) {
     if (!controlled) {
@@ -149,33 +154,69 @@ export function VelvetDatePicker({
           className="velvet-date-panel overflow-hidden rounded-[22px]"
         >
           <div className="flex items-center justify-between border-b border-[var(--color-warm-border)]/80 px-4 py-3">
-            <button
-              type="button"
-              className={buttonClassName({
-                size: 'xs',
-                iconOnly: true,
-                variant: 'secondary',
-                className: 'velvet-date-nav-button grid h-8 w-8 place-items-center rounded-[10px]',
-              })}
-              onClick={() => setViewMonth(current => shiftMonth(current.year, current.monthIndex, -1))}
-            >
-              ‹
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                aria-label={previousYearLabel}
+                title={previousYearLabel}
+                className={buttonClassName({
+                  size: 'xs',
+                  iconOnly: true,
+                  variant: 'secondary',
+                  className: 'velvet-date-nav-button grid h-8 w-8 place-items-center rounded-[10px]',
+                })}
+                onClick={() => setViewMonth(current => shiftYear(current.year, current.monthIndex, -1))}
+              >
+                «
+              </button>
+              <button
+                type="button"
+                aria-label={previousMonthLabel}
+                title={previousMonthLabel}
+                className={buttonClassName({
+                  size: 'xs',
+                  iconOnly: true,
+                  variant: 'secondary',
+                  className: 'velvet-date-nav-button grid h-8 w-8 place-items-center rounded-[10px]',
+                })}
+                onClick={() => setViewMonth(current => shiftMonth(current.year, current.monthIndex, -1))}
+              >
+                ‹
+              </button>
+            </div>
             <div className="text-sm font-medium text-[var(--color-warm-text)]">
               {getMonthLabel(viewMonth.year, viewMonth.monthIndex, locale)}
             </div>
-            <button
-              type="button"
-              className={buttonClassName({
-                size: 'xs',
-                iconOnly: true,
-                variant: 'secondary',
-                className: 'velvet-date-nav-button grid h-8 w-8 place-items-center rounded-[10px]',
-              })}
-              onClick={() => setViewMonth(current => shiftMonth(current.year, current.monthIndex, 1))}
-            >
-              ›
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                aria-label={nextMonthLabel}
+                title={nextMonthLabel}
+                className={buttonClassName({
+                  size: 'xs',
+                  iconOnly: true,
+                  variant: 'secondary',
+                  className: 'velvet-date-nav-button grid h-8 w-8 place-items-center rounded-[10px]',
+                })}
+                onClick={() => setViewMonth(current => shiftMonth(current.year, current.monthIndex, 1))}
+              >
+                ›
+              </button>
+              <button
+                type="button"
+                aria-label={nextYearLabel}
+                title={nextYearLabel}
+                className={buttonClassName({
+                  size: 'xs',
+                  iconOnly: true,
+                  variant: 'secondary',
+                  className: 'velvet-date-nav-button grid h-8 w-8 place-items-center rounded-[10px]',
+                })}
+                onClick={() => setViewMonth(current => shiftYear(current.year, current.monthIndex, 1))}
+              >
+                »
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-7 gap-1 px-4 pb-2 pt-3">
             {weekdayLabels.map(label => (

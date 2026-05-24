@@ -68,6 +68,14 @@ export function buildPhotoPreviewNavigationState({
   }
 }
 
+export function buildPhotoRetryRequestInit(): RequestInit {
+  return {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ scope: 'FULL' }),
+  }
+}
+
 export function PhotoDetailModal({
   photo,
   coupleId,
@@ -144,9 +152,7 @@ export function PhotoDetailModal({
 
   async function handleRetry() {
     setRetrying(true)
-    await fetch(`/api/couples/${coupleId}/photos/${photo.id}/retry`, {
-      method: 'POST',
-    })
+    await fetch(`/api/couples/${coupleId}/photos/${photo.id}/retry`, buildPhotoRetryRequestInit())
     setRetrying(false)
     onUpdated()
   }

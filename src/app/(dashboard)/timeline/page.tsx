@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Button, EditIcon, PlusIcon, RefreshIcon, TrashIcon, XIcon } from '@/components/ui/button'
 import { VelvetDatePicker } from '@/components/forms/velvet-date-picker'
+import { Modal } from '@/components/ui/modal'
 
 interface Milestone {
   id: string
@@ -447,6 +448,8 @@ export default function TimelinePage() {
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [pendingDeleteMilestoneId, setPendingDeleteMilestoneId] = useState<string | null>(null)
+  const [deletingMilestoneId, setDeletingMilestoneId] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
@@ -512,8 +515,15 @@ export default function TimelinePage() {
   }
 
   async function handleDelete(id: string) {
-    if (!coupleId || !confirm(t('deleteConfirm'))) return
-    await fetch(`/api/couples/${coupleId}/milestones/${id}`, { method: 'DELETE' })
+    setPendingDeleteMilestoneId(id)
+  }
+
+  async function confirmDeleteMilestone() {
+    if (!coupleId || !pendingDeleteMilestoneId) return
+    setDeletingMilestoneId(pendingDeleteMilestoneId)
+    await fetch(`/api/couples/${coupleId}/milestones/${pendingDeleteMilestoneId}`, { method: 'DELETE' })
+    setDeletingMilestoneId(null)
+    setPendingDeleteMilestoneId(null)
     setRefreshKey(k => k + 1)
   }
 
@@ -726,44 +736,60 @@ export default function TimelinePage() {
       )}
 
       {/* 创建弹窗 */}
-      {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setShowCreate(false)} />
-          <div className="relative bg-warm-surface rounded-[var(--radius-xl)] shadow-2xl p-6 w-full max-w-md mx-4">
-            <h2 className="text-lg font-bold text-warm-text mb-4">{t('createTitle')}</h2>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-warm-text mb-1.5">{t('fieldTitle')}</label>
-                <input name="title" required autoFocus className={inputClass} placeholder={t('fieldTitlePlaceholder')} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-warm-text mb-1.5">{t('fieldDate')}</label>
-                <VelvetDatePicker
-                  ariaLabel={t('fieldDate')}
-                  locale={locale}
-                  name="date"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-warm-text mb-1.5">{t('fieldLocation')}</label>
-                <input name="locationName" className={inputClass} placeholder={t('fieldLocationPlaceholder')} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-warm-text mb-1.5">{t('fieldDescription')}</label>
-                <textarea name="description" rows={2} className={inputClass + ' resize-none'} placeholder={t('fieldDescriptionPlaceholder')} />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <Button type="button" onClick={() => setShowCreate(false)} className="flex-1" fullWidth variant="secondary">
-                  {t('cancel')}
-                </Button>
-                <Button type="submit" className="flex-1" fullWidth variant="brand" leadingIcon={<PlusIcon />}>
-                  {t('submit')}
-                </Button>
-              </div>
-            </form>
+      <Modal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        title={t('createTitle')}
+        width="md"
+        hideFooter
+      >
+        <form onSubmit={handleCreate} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-warm-text mb-1.5">{t('fieldTitle')}</label>
+            <input name="title" required autoFocus className={inputClass} placeholder={t('fieldTitlePlaceholder')} />
           </div>
-        </div>
-      )}
+          <div>
+            <label className="block text-sm font-medium text-warm-text mb-1.5">{t('fieldDate')}</label>
+            <VelvetDatePicker
+              ariaLabel={t('fieldDate')}
+              locale={locale}
+              name="date"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-warm-text mb-1.5">{t('fieldLocation')}</label>
+            <input name="locationName" className={inputClass} placeholder={t('fieldLocationPlaceholder')} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-warm-text mb-1.5">{t('fieldDescription')}</label>
+            <textarea name="description" rows={2} className={inputClass + ' resize-none'} placeholder={t('fieldDescriptionPlaceholder')} />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <Button type="button" onClick={() => setShowCreate(false)} className="flex-1" fullWidth variant="secondary">
+              {t('cancel')}
+            </Button>
+            <Button type="submit" className="flex-1" fullWidth variant="brand" leadingIcon={<PlusIcon />}>
+              {t('submit')}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        open={pendingDeleteMilestoneId !== null}
+        onClose={() => setPendingDeleteMilestoneId(null)}
+        title={t('deleteTitle')}
+        description={t('deleteConfirm')}
+        confirmText={t('deleteTitle')}
+        cancelText={t('cancel')}
+        confirmVariant="danger"
+        confirmLoading={deletingMilestoneId !== null}
+        onConfirm={confirmDeleteMilestone}
+      >
+        <p className="text-sm text-warm-muted">
+          {milestones.find(milestone => milestone.id === pendingDeleteMilestoneId)?.title ?? ''}
+        </p>
+      </Modal>
     </div>
   )
 }

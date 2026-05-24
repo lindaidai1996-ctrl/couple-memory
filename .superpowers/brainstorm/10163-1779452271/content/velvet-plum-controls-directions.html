@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Velvet Plum Controls</title>
+  <style>
+    :root {
+      --font-display: "Baskerville", "Times New Roman", "Georgia", "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
+      --font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Source Han Sans SC", "Helvetica Neue", Arial, sans-serif;
+      --bg: #f1eded;
+      --bg-2: #faf7f7;
+      --panel: rgba(255, 251, 253, 0.78);
+      --panel-strong: rgba(255, 255, 255, 0.92);
+      --text: #20171c;
+      --text-soft: rgba(32, 23, 28, 0.64);
+      --text-faint: rgba(32, 23, 28, 0.36);
+      --line: rgba(32, 23, 28, 0.1);
+      --accent: #6f4f66;
+      --accent-2: #c9a2a1;
+      --accent-soft: rgba(111, 79, 102, 0.12);
+      --accent-glow: rgba(111, 79, 102, 0.18);
+      --surface-gradient: linear-gradient(135deg, rgba(111, 79, 102, 0.12), rgba(201, 162, 161, 0.08));
+      --active-gradient: linear-gradient(135deg, #5b3a52 0%, #c9a2a1 100%);
+      --hero-gradient: linear-gradient(135deg, #4a2f42 0%, #8f607a 42%, #d7bbb7 100%);
+      --shadow-soft: 0 14px 38px rgba(40, 24, 34, 0.08);
+      --shadow-card: 0 8px 22px rgba(40, 24, 34, 0.06);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --control-height: 40px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font-sans);
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.82), transparent 22%),
+        radial-gradient(circle at bottom right, rgba(143,96,122,0.08), transparent 28%),
+        linear-gradient(180deg, var(--bg-2), var(--bg));
+      padding: 32px;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(32, 23, 28, 0.016) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(32, 23, 28, 0.016) 1px, transparent 1px);
+      background-size: 26px 26px;
+      mask-image: radial-gradient(circle at center, black 46%, transparent 88%);
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 1380px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      margin-bottom: 18px;
+      border: 1px solid rgba(255,255,255,0.32);
+      border-radius: 30px;
+      background: var(--hero-gradient);
+      box-shadow: var(--shadow-soft);
+      padding: 26px 28px;
+      color: #fffafc;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      font-size: 11px;
+      letter-spacing: 0.34em;
+      text-transform: uppercase;
+      opacity: 0.72;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 4vw, 3.8rem);
+      line-height: 0.94;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p {
+      margin: 14px 0 0;
+      max-width: 760px;
+      font-size: 14px;
+      line-height: 1.75;
+      color: rgba(255,250,252,0.8);
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(250,244,246,0.84));
+      box-shadow: var(--shadow-card);
+      padding: 14px;
+      cursor: pointer;
+      transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(111,79,102,0.22);
+      box-shadow: 0 16px 30px rgba(40,24,34,0.08);
+    }
+
+    .card.recommended {
+      border-color: rgba(111,79,102,0.24);
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .card-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 30px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(111,79,102,0.12);
+      background: rgba(255,255,255,0.68);
+      font-size: 10px;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: rgba(91,58,82,0.82);
+    }
+
+    .recommend {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: var(--active-gradient);
+      color: white;
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.24), 0 10px 18px var(--accent-glow);
+    }
+
+    .card h2 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: 29px;
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .card-copy {
+      margin: 10px 0 14px;
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text-soft);
+    }
+
+    .mockup {
+      border: 1px solid rgba(111,79,102,0.12);
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at top right, rgba(255,255,255,0.7), transparent 36%),
+        linear-gradient(180deg, rgba(255,255,255,0.76), rgba(247,239,242,0.88));
+      padding: 14px;
+    }
+
+    .field-label {
+      margin-bottom: 8px;
+      font-size: 10px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+    }
+
+    .control {
+      height: var(--control-height);
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      color: var(--text);
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.44);
+      font-size: 14px;
+    }
+
+    .control.active {
+      border-color: rgba(111,79,102,0.34);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.46),
+        0 0 0 4px rgba(111,79,102,0.08);
+    }
+
+    .control span:last-child {
+      color: var(--text-faint);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+    }
+
+    .calendar {
+      margin-top: 10px;
+      border: 1px solid rgba(111,79,102,0.12);
+      border-radius: 20px;
+      background: var(--panel-strong);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+    }
+
+    .calendar-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 14px 10px;
+      border-bottom: 1px solid rgba(111,79,102,0.08);
+    }
+
+    .calendar-title {
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .calendar-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .mini-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 10px;
+      border: 1px solid rgba(111,79,102,0.1);
+      background: linear-gradient(180deg, rgba(255,255,255,0.86), rgba(245,237,240,0.9));
+      color: var(--text-soft);
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+    }
+
+    .weekdays,
+    .days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      padding: 0 14px 14px;
+    }
+
+    .weekdays {
+      padding-top: 10px;
+      padding-bottom: 8px;
+    }
+
+    .weekday {
+      text-align: center;
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+
+    .day {
+      height: 38px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      color: var(--text);
+      background: transparent;
+      border: 1px solid transparent;
+    }
+
+    .day.muted {
+      color: rgba(32,23,28,0.28);
+    }
+
+    .day.hovered {
+      background: var(--surface-gradient);
+      border-color: rgba(111,79,102,0.1);
+    }
+
+    .day.today {
+      border-color: rgba(111,79,102,0.28);
+      color: var(--accent);
+    }
+
+    .day.selected {
+      background: var(--active-gradient);
+      color: #fffafc;
+      border-color: rgba(255,255,255,0.18);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.24), 0 8px 16px rgba(111,79,102,0.18);
+    }
+
+    .select-panel {
+      margin-top: 12px;
+      border: 1px solid rgba(111,79,102,0.12);
+      border-radius: 20px;
+      background: var(--panel-strong);
+      box-shadow: var(--shadow-card);
+      padding: 8px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .option-row {
+      min-height: 38px;
+      border-radius: 14px;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--text);
+      background: transparent;
+      border: 1px solid transparent;
+    }
+
+    .option-row.soft {
+      background: var(--surface-gradient);
+      border-color: rgba(111,79,102,0.08);
+    }
+
+    .option-row.selected {
+      background: var(--active-gradient);
+      color: #fffafc;
+      border-color: rgba(255,255,255,0.18);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+    }
+
+    .tokens {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .token {
+      padding: 6px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(111,79,102,0.12);
+      background: rgba(255,255,255,0.68);
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+    }
+
+    .footnote {
+      margin-top: 18px;
+      color: var(--text-soft);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 1120px) {
+      .options { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <p class="eyebrow">Velvet Plum / Controls Draft</p>
+      <h1>日期与 Select 的酒红色风格草稿</h1>
+      <p>这里先不讨论代码实现，先确认控件气质。三种方向都遵循你指定的 Velvet Plum UI System，只调整密度、强调程度和月历面板的戏剧感。推荐 A，因为它最接近当前设置页的编辑型后台气质。</p>
+    </section>
+
+    <div class="options">
+      <article class="card recommended option" data-choice="a" onclick="toggleSelect(this)">
+        <div class="card-head">
+          <div class="card-kicker">A / Cellar Ledger</div>
+          <div class="recommend">Recommended</div>
+        </div>
+        <h2>紧凑编辑型</h2>
+        <p class="card-copy">最适合设置页。输入框薄、月历面板紧、选中态克制，像一本高质感酒庄登记簿。</p>
+        <div class="mockup">
+          <div class="field-label">Start Date</div>
+          <div class="control active"><span>2024-05-20</span><span>CAL</span></div>
+          <div class="calendar">
+            <div class="calendar-head">
+              <div class="calendar-title">May 2024</div>
+              <div class="calendar-actions">
+                <div class="mini-btn">‹</div>
+                <div class="mini-btn">›</div>
+              </div>
+            </div>
+            <div class="weekdays">
+              <div class="weekday">Su</div><div class="weekday">Mo</div><div class="weekday">Tu</div><div class="weekday">We</div><div class="weekday">Th</div><div class="weekday">Fr</div><div class="weekday">Sa</div>
+            </div>
+            <div class="days">
+              <div class="day muted">28</div><div class="day muted">29</div><div class="day muted">30</div><div class="day">1</div><div class="day">2</div><div class="day">3</div><div class="day">4</div>
+              <div class="day">5</div><div class="day">6</div><div class="day hovered">7</div><div class="day">8</div><div class="day today">9</div><div class="day">10</div><div class="day">11</div>
+              <div class="day">12</div><div class="day">13</div><div class="day">14</div><div class="day">15</div><div class="day">16</div><div class="day">17</div><div class="day">18</div>
+              <div class="day">19</div><div class="day selected">20</div><div class="day">21</div><div class="day">22</div><div class="day">23</div><div class="day">24</div><div class="day">25</div>
+              <div class="day">26</div><div class="day">27</div><div class="day">28</div><div class="day">29</div><div class="day">30</div><div class="day">31</div><div class="day muted">1</div>
+            </div>
+          </div>
+          <div class="field-label" style="margin-top:12px;">Caption Style</div>
+          <div class="control"><span>Poetic</span><span>⌄</span></div>
+          <div class="select-panel">
+            <div class="option-row">System Default</div>
+            <div class="option-row selected">Poetic <span>Current</span></div>
+            <div class="option-row soft">Warm Documentary</div>
+            <div class="option-row">Minimal</div>
+          </div>
+        </div>
+        <div class="tokens">
+          <span class="token">compact</span>
+          <span class="token">editorial</span>
+          <span class="token">subtle focus</span>
+        </div>
+      </article>
+
+      <article class="card option" data-choice="b" onclick="toggleSelect(this)">
+        <div class="card-head">
+          <div class="card-kicker">B / Tasting Room</div>
+        </div>
+        <h2>柔光陈列型</h2>
+        <p class="card-copy">保留同样的 token，但面板更柔、更亮，适合偏叙事和展示感更强的表单区域。</p>
+        <div class="mockup">
+          <div class="field-label">Start Date</div>
+          <div class="control active" style="background:linear-gradient(180deg,rgba(255,255,255,0.94),rgba(248,241,244,0.9));"><span>2024-05-20</span><span>CAL</span></div>
+          <div class="calendar" style="background:linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,240,244,0.94));">
+            <div class="calendar-head">
+              <div class="calendar-title" style="font-family:var(--font-display); font-size:18px;">May 2024</div>
+              <div class="calendar-actions"><div class="mini-btn">‹</div><div class="mini-btn">›</div></div>
+            </div>
+            <div class="weekdays">
+              <div class="weekday">Su</div><div class="weekday">Mo</div><div class="weekday">Tu</div><div class="weekday">We</div><div class="weekday">Th</div><div class="weekday">Fr</div><div class="weekday">Sa</div>
+            </div>
+            <div class="days">
+              <div class="day muted">28</div><div class="day muted">29</div><div class="day muted">30</div><div class="day hovered">1</div><div class="day">2</div><div class="day">3</div><div class="day">4</div>
+              <div class="day">5</div><div class="day">6</div><div class="day">7</div><div class="day">8</div><div class="day today">9</div><div class="day">10</div><div class="day">11</div>
+              <div class="day">12</div><div class="day">13</div><div class="day">14</div><div class="day">15</div><div class="day">16</div><div class="day">17</div><div class="day">18</div>
+              <div class="day">19</div><div class="day selected">20</div><div class="day">21</div><div class="day">22</div><div class="day">23</div><div class="day">24</div><div class="day">25</div>
+              <div class="day">26</div><div class="day">27</div><div class="day">28</div><div class="day">29</div><div class="day">30</div><div class="day">31</div><div class="day muted">1</div>
+            </div>
+          </div>
+          <div class="field-label" style="margin-top:12px;">Caption Style</div>
+          <div class="control"><span>Poetic</span><span>⌄</span></div>
+          <div class="select-panel">
+            <div class="option-row soft">System Default</div>
+            <div class="option-row selected">Poetic</div>
+            <div class="option-row">Warm Documentary</div>
+            <div class="option-row">Minimal</div>
+          </div>
+        </div>
+        <div class="tokens">
+          <span class="token">soft glow</span>
+          <span class="token">serif accent</span>
+          <span class="token">lighter panel</span>
+        </div>
+      </article>
+
+      <article class="card option" data-choice="c" onclick="toggleSelect(this)">
+        <div class="card-head">
+          <div class="card-kicker">C / Reserve Night</div>
+        </div>
+        <h2>深色收藏型</h2>
+        <p class="card-copy">更像夜间私密档案柜。对比更强，激活态更浓，适合如果你想让控件更“藏酒窖”一点。</p>
+        <div class="mockup" style="background:linear-gradient(180deg,rgba(50,32,45,0.98),rgba(31,21,30,0.98)); border-color:rgba(213,166,181,0.12);">
+          <div class="field-label" style="color:rgba(247,237,243,0.56);">Start Date</div>
+          <div class="control active" style="background:rgba(42,28,39,0.94); border-color:rgba(213,166,181,0.18); color:#f7edf3; box-shadow:inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 4px rgba(213,166,181,0.08);"><span>2024-05-20</span><span style="color:rgba(247,237,243,0.42);">CAL</span></div>
+          <div class="calendar" style="background:rgba(42,28,39,0.98); border-color:rgba(213,166,181,0.12);">
+            <div class="calendar-head" style="border-color:rgba(213,166,181,0.08);">
+              <div class="calendar-title" style="color:#f7edf3;">May 2024</div>
+              <div class="calendar-actions"><div class="mini-btn" style="background:rgba(58,38,52,0.9); border-color:rgba(213,166,181,0.1); color:rgba(247,237,243,0.72);">‹</div><div class="mini-btn" style="background:rgba(58,38,52,0.9); border-color:rgba(213,166,181,0.1); color:rgba(247,237,243,0.72);">›</div></div>
+            </div>
+            <div class="weekdays">
+              <div class="weekday" style="color:rgba(247,237,243,0.3);">Su</div><div class="weekday" style="color:rgba(247,237,243,0.3);">Mo</div><div class="weekday" style="color:rgba(247,237,243,0.3);">Tu</div><div class="weekday" style="color:rgba(247,237,243,0.3);">We</div><div class="weekday" style="color:rgba(247,237,243,0.3);">Th</div><div class="weekday" style="color:rgba(247,237,243,0.3);">Fr</div><div class="weekday" style="color:rgba(247,237,243,0.3);">Sa</div>
+            </div>
+            <div class="days">
+              <div class="day muted" style="color:rgba(247,237,243,0.18);">28</div><div class="day muted" style="color:rgba(247,237,243,0.18);">29</div><div class="day muted" style="color:rgba(247,237,243,0.18);">30</div><div class="day" style="color:#f7edf3;">1</div><div class="day" style="color:#f7edf3;">2</div><div class="day" style="color:#f7edf3;">3</div><div class="day" style="color:#f7edf3;">4</div>
+              <div class="day" style="color:#f7edf3;">5</div><div class="day" style="color:#f7edf3;">6</div><div class="day hovered" style="background:linear-gradient(135deg, rgba(213,166,181,0.1), rgba(91,53,80,0.18)); border-color:rgba(213,166,181,0.08); color:#f7edf3;">7</div><div class="day" style="color:#f7edf3;">8</div><div class="day today" style="border-color:rgba(213,166,181,0.3); color:#d5a6b5;">9</div><div class="day" style="color:#f7edf3;">10</div><div class="day" style="color:#f7edf3;">11</div>
+              <div class="day" style="color:#f7edf3;">12</div><div class="day" style="color:#f7edf3;">13</div><div class="day" style="color:#f7edf3;">14</div><div class="day" style="color:#f7edf3;">15</div><div class="day" style="color:#f7edf3;">16</div><div class="day" style="color:#f7edf3;">17</div><div class="day" style="color:#f7edf3;">18</div>
+              <div class="day" style="color:#f7edf3;">19</div><div class="day selected">20</div><div class="day" style="color:#f7edf3;">21</div><div class="day" style="color:#f7edf3;">22</div><div class="day" style="color:#f7edf3;">23</div><div class="day" style="color:#f7edf3;">24</div><div class="day" style="color:#f7edf3;">25</div>
+              <div class="day" style="color:#f7edf3;">26</div><div class="day" style="color:#f7edf3;">27</div><div class="day" style="color:#f7edf3;">28</div><div class="day" style="color:#f7edf3;">29</div><div class="day" style="color:#f7edf3;">30</div><div class="day" style="color:#f7edf3;">31</div><div class="day muted" style="color:rgba(247,237,243,0.18);">1</div>
+            </div>
+          </div>
+          <div class="field-label" style="margin-top:12px; color:rgba(247,237,243,0.56);">Caption Style</div>
+          <div class="control" style="background:rgba(42,28,39,0.94); border-color:rgba(213,166,181,0.12); color:#f7edf3;"><span>Poetic</span><span style="color:rgba(247,237,243,0.42);">⌄</span></div>
+          <div class="select-panel" style="background:rgba(42,28,39,0.98); border-color:rgba(213,166,181,0.12);">
+            <div class="option-row" style="color:#f7edf3;">System Default</div>
+            <div class="option-row selected">Poetic</div>
+            <div class="option-row soft" style="background:linear-gradient(135deg, rgba(213,166,181,0.1), rgba(91,53,80,0.18)); color:#f7edf3; border-color:rgba(213,166,181,0.08);">Warm Documentary</div>
+            <div class="option-row" style="color:#f7edf3;">Minimal</div>
+          </div>
+        </div>
+        <div class="tokens">
+          <span class="token">higher contrast</span>
+          <span class="token">night mode first</span>
+          <span class="token">deeper tone</span>
+        </div>
+      </article>
+    </div>
+
+    <p class="footnote">推荐你先看 A。如果你确认这个方向，我下一步就按它落地成全局可复用的 `date picker` 和 `select` 组件，并同步替换设置页、时间线页里现有原生控件。</p>
+  </div>
+</body>
+</html>

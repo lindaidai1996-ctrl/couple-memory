@@ -3,6 +3,8 @@ import test from 'node:test'
 
 import {
   buildAlbumsUiText,
+  buildAlbumFallbackCover,
+  buildAlbumCardVisual,
 } from '../../../src/app/(dashboard)/albums/page'
 import {
   buildPendingGeneratedMilestoneIds,
@@ -23,6 +25,45 @@ test('buildAlbumsUiText returns translated primary copy', () => {
     title: 'Albums',
     create: 'New album',
     empty: 'No albums yet. Create one to get started.',
+  })
+})
+
+test('buildAlbumFallbackCover returns a stable recipe for the same album seed', () => {
+  const first = buildAlbumFallbackCover({ id: 'album_1', title: '2024 夏天' })
+  const second = buildAlbumFallbackCover({ id: 'album_1', title: '2024 夏天' })
+
+  assert.deepEqual(second, first)
+})
+
+test('buildAlbumFallbackCover can vary recipes for same-title albums with different ids', () => {
+  const first = buildAlbumFallbackCover({ id: 'album_1', title: '2024 夏天' })
+  const second = buildAlbumFallbackCover({ id: 'album_2', title: '2024 夏天' })
+
+  assert.notEqual(`${first.recipeKey}:${first.accentKey}`, `${second.recipeKey}:${second.accentKey}`)
+})
+
+test('buildAlbumCardVisual returns a generated fallback cover when no coverPhotoUrl exists', () => {
+  const visual = buildAlbumCardVisual({
+    id: 'album_1',
+    title: '2024 夏天',
+    coverPhotoUrl: null,
+  })
+
+  assert.equal(visual.kind, 'fallback')
+  assert.equal(typeof visual.coverClassName, 'string')
+  assert.equal(visual.coverClassName.includes('linear-gradient'), true)
+})
+
+test('buildAlbumCardVisual preserves the image path when coverPhotoUrl exists', () => {
+  const visual = buildAlbumCardVisual({
+    id: 'album_1',
+    title: '2024 夏天',
+    coverPhotoUrl: 'https://example.com/cover.jpg',
+  })
+
+  assert.deepEqual(visual, {
+    kind: 'image',
+    url: 'https://example.com/cover.jpg',
   })
 })
 

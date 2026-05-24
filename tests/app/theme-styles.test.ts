@@ -29,3 +29,19 @@ test('dashboard theme defines dark-aware shared surface tokens', () => {
   assert.equal(css.includes('.dashboard-surface-card-soft {'), true)
   assert.equal(css.includes('.dashboard-inset-panel {'), true)
 })
+
+test('dashboard theme defines shared modal surface classes', () => {
+  const css = readFileSync('src/app/globals.css', 'utf8')
+
+  assert.equal(css.includes('.cm-modal-overlay {'), true)
+  assert.equal(css.includes('.cm-modal {'), true)
+  assert.equal(css.includes('.cm-modal__footer {'), true)
+  assert.equal(css.includes('var(--color-warm-surface)'), true)
+  assert.equal(css.includes('var(--dashboard-shadow-soft)'), true)
+})
+
+test('button base styles do not hardcode display so responsive visibility utilities can win', () => {
+  const css = readFileSync('src/app/globals.css', 'utf8')
+
+  assert.equal(/\.cm-button\s*\{[^}]*display:\s*inline-flex;/s.test(css), false)
+})

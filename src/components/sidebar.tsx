@@ -5,6 +5,12 @@ import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { Button, MenuIcon as ButtonMenuIcon } from '@/components/ui/button'
+import {
+  mobileNavButtonClassName,
+  mobileNavOverlayClassName,
+  sidebarAsideClassName,
+  sidebarClosedClassName,
+} from '@/components/dashboard-shell-classes'
 
 export function Sidebar() {
   const t = useTranslations('Sidebar')
@@ -23,7 +29,7 @@ export function Sidebar() {
       {/* 移动端触发按钮 */}
       <Button
         onClick={() => setMobileOpen(true)}
-        className="lg:hidden fixed left-4 top-4 z-50 shadow-sm"
+        className={mobileNavButtonClassName}
         aria-label={t('openNavigation')}
         variant="secondary"
         size="sm"
@@ -35,16 +41,15 @@ export function Sidebar() {
 
       {/* 移动端遮罩 */}
       <div
-        className={`lg:hidden fixed inset-0 z-40 bg-black/30 transition-opacity duration-300
+        className={`${mobileNavOverlayClassName}
           ${mobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => setMobileOpen(false)}
       />
 
       {/* 侧边栏 */}
       <aside
-        className={`dashboard-panel-soft fixed inset-y-0 left-0 z-50 flex w-60 flex-col rounded-r-[22px]
-          transition-transform duration-300 ease-out lg:static lg:min-h-[calc(100vh-24px)] lg:rounded-[22px]
-          ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        className={`${sidebarAsideClassName}
+          ${mobileOpen ? 'translate-x-0' : sidebarClosedClassName}`}
       >
         <div className="border-b border-warm-border px-5 pb-4 pt-5">
           <p className="mb-2 text-[9px] uppercase tracking-[0.28em] text-warm-accent">
