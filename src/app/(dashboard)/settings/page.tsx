@@ -440,11 +440,12 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!couple?.id) return
+    const coupleId = couple.id
 
     let cancelled = false
 
     async function fetchStyleMemoryProfile() {
-      const res = await fetch(`/api/couples/${couple.id}/style-memory`)
+      const res = await fetch(`/api/couples/${coupleId}/style-memory`)
       if (!res.ok) return
 
       const data = await res.json()
