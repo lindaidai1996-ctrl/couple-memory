@@ -483,6 +483,7 @@
     "topicAnniversaryReview": "Anniversary review",
     "topicYearlyShare": "Yearly share card",
     "topicAnniversaryShare": "Anniversary share card",
+    "topicPhases": "Relationship phases",
     "topicFirsts": "Our firsts",
     "topicFootprints": "Footprints",
     "timeline": "Timeline",
@@ -524,6 +525,13 @@
     "subtitle": "See which places hold the most memories and how that trail built up over time.",
     "countLabel": "{count} public photo(s) were left here",
     "empty": "There is not enough location data yet to build a footprint summary."
+  },
+  "PublicPhaseTopicPage": {
+    "back": "Back home",
+    "title": "Relationship phases",
+    "subtitle": "Read your organized albums again as distinct stages, and see how the story has unfolded over time.",
+    "chapterCount": "{count} chapters",
+    "empty": "There is not enough narrative album content yet to build a phase topic page."
   },
   "ReviewsPage": {
     "title": "Review Curation",

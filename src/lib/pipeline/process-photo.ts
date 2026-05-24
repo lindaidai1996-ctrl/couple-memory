@@ -1,5 +1,10 @@
 import { logger } from '@/lib/logger'
 import { downloadFromOSS } from '@/lib/oss'
+import {
+  buildStyleMemoryPromptLines,
+  getStyleMemoryProfileByCoupleId,
+  type StyleMemoryProfile,
+} from '@/lib/style-memory'
 import { generateSizes } from './image-resize'
 import { extractExif, type ExifData } from './exif-extract'
 import { reverseGeocode } from './geocode'
@@ -62,6 +67,7 @@ type RunAIPipelineInput = {
     captionStylePreference?: string | null
     tonePreference?: string | null
     blockedPhrases?: string[]
+    longTermMemory?: string[]
   }
 }
 
@@ -86,6 +92,7 @@ type ProcessPhotoDeps = {
   reverseGeocodeImpl?: typeof reverseGeocode
   runAIPipelineImpl?: RunAIPipelineFn
   applyPipelineResultsImpl?: ApplyPipelineResultsFn
+  resolveStyleMemoryProfileImpl?: (coupleId: string) => Promise<StyleMemoryProfile | null>
   cdnDomain?: string
 }
 
@@ -158,6 +165,11 @@ async function loadPipelineFns() {
   }
 }
 
+async function resolveStyleMemoryProfile(coupleId: string) {
+  const { prisma } = await import('@/lib/prisma')
+  return getStyleMemoryProfileByCoupleId(prisma as never, coupleId)
+}
+
 export function createProcessPhoto(deps: ProcessPhotoDeps = {}) {
   const loggerClient = deps.loggerClient ?? logger
   const downloadFromOSSImpl = deps.downloadFromOSSImpl ?? downloadFromOSS
@@ -222,6 +234,15 @@ export function createProcessPhoto(deps: ProcessPhotoDeps = {}) {
         where: { id: photoId },
         include: { album: { include: { couple: true } } },
       })
+      const styleMemoryProfile = photo?.album.coupleId
+        ? await (
+            deps.resolveStyleMemoryProfileImpl
+              ? deps.resolveStyleMemoryProfileImpl(photo.album.coupleId)
+              : deps.prismaClient
+                ? Promise.resolve(null)
+                : resolveStyleMemoryProfile(photo.album.coupleId).catch(() => null)
+          )
+        : null
 
       loggerClient.info(TAG, 'AI Pipeline 开始', { photoId, triggerType })
       const pipelineResult = await runAIPipeline({
@@ -235,6 +256,9 @@ export function createProcessPhoto(deps: ProcessPhotoDeps = {}) {
           captionStylePreference: photo?.album.couple?.captionStylePreference ?? null,
           tonePreference: photo?.album.couple?.tonePreference ?? null,
           blockedPhrases: photo?.album.couple?.blockedPhrases ?? [],
+          longTermMemory: styleMemoryProfile
+            ? buildStyleMemoryPromptLines(styleMemoryProfile)
+            : [],
         },
       }, photo!.album.coupleId, { triggerType })
 

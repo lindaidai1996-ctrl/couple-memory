@@ -5,6 +5,7 @@ import {
   applyCoverPhotoSelection,
   buildAvatarInputInitialValue,
   buildMemoryPreferenceSummary,
+  buildStyleMemoryInsightCards,
   buildResetMemoryPreferencesInput,
   buildSettingsHeroCards,
   buildRecentCoverPhotoOptions,
@@ -299,6 +300,31 @@ test('buildResetMemoryPreferencesInput clears stored AI memory preferences', () 
       inviteCode: null,
       inviteExpiresAt: null,
     }
+  )
+})
+
+test('buildStyleMemoryInsightCards exposes long-term memory hints for settings surfaces', () => {
+  assert.deepEqual(
+    buildStyleMemoryInsightCards({
+      preferredStyle: 'poetic',
+      preferredTone: 'gentle',
+      blockedPhrases: ['命中注定'],
+      anchorKeywords: ['晚风', '散步'],
+      anchorLocations: ['广州'],
+      selectedStyleCounts: [{ style: 'poetic', count: 3 }],
+      userEditedCount: 2,
+      keptAICount: 1,
+      sourceSampleCount: 4,
+      summaryLines: ['长期风格优先参考：poetic'],
+      coupleId: 'couple_1',
+    }),
+    [
+      { id: 'style', value: 'poetic' },
+      { id: 'tone', value: 'gentle' },
+      { id: 'keywords', value: '晚风、散步' },
+      { id: 'locations', value: '广州' },
+      { id: 'edits', value: '2 / 4' },
+    ]
   )
 })
 

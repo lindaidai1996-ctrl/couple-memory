@@ -201,6 +201,7 @@ test('createProcessPhoto passes couple caption preferences into the AI pipeline 
     captionStylePreference?: string | null
     tonePreference?: string | null
     blockedPhrases?: string[]
+    longTermMemory?: string[]
   } | null = null
 
   const processPhoto = createProcessPhoto({
@@ -235,6 +236,18 @@ test('createProcessPhoto passes couple caption preferences into the AI pipeline 
     }),
     extractExifImpl: async () => null,
     reverseGeocodeImpl: async () => null,
+    resolveStyleMemoryProfileImpl: async () => ({
+      preferredStyle: 'poetic',
+      preferredTone: 'gentle',
+      blockedPhrases: ['幸福', '永远'],
+      anchorKeywords: ['晚风', '散步'],
+      anchorLocations: ['广州'],
+      selectedStyleCounts: [{ style: 'poetic', count: 2 }],
+      userEditedCount: 1,
+      keptAICount: 1,
+      sourceSampleCount: 2,
+      summaryLines: [],
+    }),
     runAIPipelineImpl: async (input) => {
       receivedPreferences = input.preferences ?? null
       return {
@@ -254,5 +267,12 @@ test('createProcessPhoto passes couple caption preferences into the AI pipeline 
     captionStylePreference: 'poetic',
     tonePreference: 'gentle',
     blockedPhrases: ['幸福', '永远'],
+    longTermMemory: [
+      '长期风格优先参考：poetic',
+      '长期语气延续：gentle',
+      '长期保留的意象：晚风、散步',
+      '长期重复出现的地点：广州',
+      '长期避用表达：幸福、永远',
+    ],
   })
 })

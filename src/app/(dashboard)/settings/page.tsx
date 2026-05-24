@@ -84,6 +84,20 @@ interface MemoryPreferenceSummary {
   hasCustomPreferences: boolean
 }
 
+interface StyleMemoryProfileSnapshot {
+  preferredStyle: string | null
+  preferredTone: string | null
+  blockedPhrases: string[]
+  anchorKeywords: string[]
+  anchorLocations: string[]
+  selectedStyleCounts: Array<{ style: string; count: number }>
+  userEditedCount: number
+  keptAICount: number
+  sourceSampleCount: number
+  summaryLines: string[]
+  coupleId?: string
+}
+
 type CoupleUpdateInput = {
   name: string
   slug: string
@@ -270,6 +284,18 @@ export function buildResetMemoryPreferencesInput(couple: CoupleData): CoupleData
   }
 }
 
+export function buildStyleMemoryInsightCards(profile: StyleMemoryProfileSnapshot | null) {
+  if (!profile) return []
+
+  return [
+    { id: 'style', value: profile.preferredStyle || 'default' },
+    { id: 'tone', value: profile.preferredTone || 'default' },
+    { id: 'keywords', value: profile.anchorKeywords.join('、') || 'None yet' },
+    { id: 'locations', value: profile.anchorLocations.join('、') || 'None yet' },
+    { id: 'edits', value: `${profile.userEditedCount} / ${profile.sourceSampleCount}` },
+  ]
+}
+
 export function buildRecentCoverPhotoOptions(
   photos: CoverPhotoCandidate[],
   limit = 8
@@ -342,6 +368,7 @@ export default function SettingsPage() {
   const [avatarInput, setAvatarInput] = useState('')
   const [blockedPhrasesDraft, setBlockedPhrasesDraft] = useState('')
   const [recentCoverPhotos, setRecentCoverPhotos] = useState<CoverPhotoOption[]>([])
+  const [styleMemoryProfile, setStyleMemoryProfile] = useState<StyleMemoryProfileSnapshot | null>(null)
   const [recentCoverPhotosLoading, setRecentCoverPhotosLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -405,6 +432,28 @@ export default function SettingsPage() {
     }
 
     void fetchRecentCoverPhotos()
+
+    return () => {
+      cancelled = true
+    }
+  }, [couple?.id])
+
+  useEffect(() => {
+    if (!couple?.id) return
+
+    let cancelled = false
+
+    async function fetchStyleMemoryProfile() {
+      const res = await fetch(`/api/couples/${couple.id}/style-memory`)
+      if (!res.ok) return
+
+      const data = await res.json()
+      if (!cancelled) {
+        setStyleMemoryProfile(data.profile ?? null)
+      }
+    }
+
+    void fetchStyleMemoryProfile()
 
     return () => {
       cancelled = true
@@ -595,6 +644,7 @@ export default function SettingsPage() {
     tonePreference: couple.tonePreference,
     blockedPhrases: couple.blockedPhrases,
   })
+  const styleMemoryCards = buildStyleMemoryInsightCards(styleMemoryProfile)
 
   return (
     <div className={pageShellClass}>
@@ -899,6 +949,19 @@ export default function SettingsPage() {
               {t('memoryPreferenceResetAction')}
             </button>
           </div>
+
+          {styleMemoryCards.length > 0 ? (
+            <div className="mt-5 grid gap-3 rounded-[24px] border border-[var(--line)] bg-[var(--panel-soft)] px-4 py-4 sm:grid-cols-2 xl:grid-cols-5">
+              {styleMemoryCards.map(card => (
+                <div key={card.id}>
+                  <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--text-faint)]">
+                    {card.id}
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-[var(--text)]">{card.value}</p>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </Section>
 
         <Section

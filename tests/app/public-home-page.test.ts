@@ -22,6 +22,7 @@ test('buildPublicHomeUiText exposes narrative copy keys', () => {
   assert.equal(uiText.topicsSubtitle, 'topicsSubtitle')
   assert.equal(uiText.topicFirsts, 'topicFirsts')
   assert.equal(uiText.topicFootprints, 'topicFootprints')
+  assert.equal(uiText.topicPhases, 'topicPhases')
 })
 
 test('buildPublicHomeSectionOrder places the narrative section before navigation cards', () => {
@@ -102,6 +103,7 @@ test('buildPublicHomeTopicSection exposes available topic navigation items', () 
 
   assert.equal(section.hasTopics, true)
   assert.deepEqual(section.items.map(item => item.href), [
+    '/s/sun-moon/topics/phases',
     '/s/sun-moon/topics/firsts',
     '/s/sun-moon/topics/footprints',
     '/s/sun-moon/review',

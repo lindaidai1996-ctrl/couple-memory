@@ -20,6 +20,7 @@ export interface PipelineInput {
     captionStylePreference?: string | null
     tonePreference?: string | null
     blockedPhrases?: string[]
+    longTermMemory?: string[]
   }
 }
 

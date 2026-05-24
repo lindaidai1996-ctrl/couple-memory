@@ -29,6 +29,9 @@ function buildCaptionPreferencePrompt(preferences: PipelineInput['preferences'])
   if (preferences?.blockedPhrases && preferences.blockedPhrases.length > 0) {
     lines.push(`禁用表达：${preferences.blockedPhrases.join('、')}`)
   }
+  if (preferences?.longTermMemory && preferences.longTermMemory.length > 0) {
+    lines.push(...preferences.longTermMemory)
+  }
 
   return lines
 }

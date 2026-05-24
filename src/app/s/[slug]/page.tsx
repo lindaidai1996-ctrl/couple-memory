@@ -30,6 +30,7 @@ export function buildPublicHomeUiText(t: Translator) {
     topicAnniversaryReview: t('topicAnniversaryReview'),
     topicYearlyShare: t('topicYearlyShare'),
     topicAnniversaryShare: t('topicAnniversaryShare'),
+    topicPhases: t('topicPhases'),
     topicFirsts: t('topicFirsts'),
     topicFootprints: t('topicFootprints'),
   }
@@ -89,10 +90,19 @@ export function buildPublicHomeTopicSection({
       | 'anniversaryReview'
       | 'yearlyShare'
       | 'anniversaryShare'
+      | 'phases'
+      | 'firsts'
+      | 'footprints'
     title: string
   }
 
   const items = [
+    {
+      id: 'phases-topic',
+      href: `/s/${slug}/topics/phases`,
+      kind: 'phases' as const,
+      title: '',
+    },
     {
       id: 'firsts-topic',
       href: `/s/${slug}/topics/firsts`,
@@ -151,6 +161,7 @@ function getTopicTitle(
     | 'anniversaryReview'
     | 'yearlyShare'
     | 'anniversaryShare'
+    | 'phases'
     | 'firsts'
     | 'footprints',
   uiText: ReturnType<typeof buildPublicHomeUiText>
@@ -164,6 +175,8 @@ function getTopicTitle(
       return uiText.topicYearlyShare
     case 'anniversaryShare':
       return uiText.topicAnniversaryShare
+    case 'phases':
+      return uiText.topicPhases
     case 'firsts':
       return uiText.topicFirsts
     case 'footprints':
@@ -177,6 +190,7 @@ function getTopicIcon(
     | 'anniversaryReview'
     | 'yearlyShare'
     | 'anniversaryShare'
+    | 'phases'
     | 'firsts'
     | 'footprints'
 ) {
@@ -195,6 +209,22 @@ function getTopicIcon(
           <path d="M12 16V4" />
           <path d="m7 9 5-5 5 5" />
           <path d="M5 20h14" />
+        </svg>
+      )
+    case 'phases':
+      return (
+        <svg
+          width="28"
+          height="28"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <path d="M5 6h14" />
+          <path d="M5 12h10" />
+          <path d="M5 18h14" />
+          <circle cx="18" cy="12" r="2" />
         </svg>
       )
     case 'firsts':

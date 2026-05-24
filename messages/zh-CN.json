@@ -483,6 +483,7 @@
     "topicAnniversaryReview": "周年回顾",
     "topicYearlyShare": "年度分享卡",
     "topicAnniversaryShare": "周年分享卡",
+    "topicPhases": "关系阶段",
     "topicFirsts": "我们的第一次",
     "topicFootprints": "足迹总结",
     "timeline": "时间轴",
@@ -524,6 +525,13 @@
     "subtitle": "从地点分布里看，这段回忆最常停留在哪里，又是怎样慢慢展开的。",
     "countLabel": "这里留下了 {count} 张公开照片",
     "empty": "目前还没有足够的地点信息可以整理出足迹总结。"
+  },
+  "PublicPhaseTopicPage": {
+    "back": "返回首页",
+    "title": "关系阶段",
+    "subtitle": "把已经整理过的相册当作不同阶段重新阅读，看看你们的故事是怎样一段段展开的。",
+    "chapterCount": "{count} 个章节",
+    "empty": "还没有足够的相册叙事内容来生成阶段专题。"
   },
   "ReviewsPage": {
     "title": "回顾整理",
