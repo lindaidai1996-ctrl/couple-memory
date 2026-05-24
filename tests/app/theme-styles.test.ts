@@ -43,5 +43,5 @@ test('dashboard theme defines shared modal surface classes', () => {
 test('button base styles do not hardcode display so responsive visibility utilities can win', () => {
   const css = readFileSync('src/app/globals.css', 'utf8')
 
-  assert.equal(/\.cm-button\s*\{[^}]*display:\s*inline-flex;/s.test(css), false)
+  assert.equal(/\.cm-button\s*\{[^}]*display:\s*inline-flex;/.test(css), false)
 })
