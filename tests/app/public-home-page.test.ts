@@ -111,12 +111,20 @@ test('buildPublicHomeNarrativeSection alternates card rhythm and trims overly de
     ],
   })
 
-  assert.equal(section.items[0]?.layout, 'imageLeft')
-  assert.equal(section.items[1]?.layout, 'imageRight')
-  assert.equal(section.items[0]?.description.endsWith('…'), true)
-  assert.equal(section.items[0]?.chapters[0]?.summary.endsWith('…'), true)
-  assert.equal(section.items[0]?.description.length <= 97, true)
-  assert.equal(section.items[0]?.chapters[0]?.summary.length <= 73, true)
+  const firstItem = section.items[0]
+  const secondItem = section.items[1]
+
+  assert.ok(firstItem)
+  assert.ok(secondItem)
+  assert.ok(firstItem.description)
+  assert.ok(firstItem.chapters[0])
+
+  assert.equal(firstItem.layout, 'imageLeft')
+  assert.equal(secondItem.layout, 'imageRight')
+  assert.equal(firstItem.description.endsWith('…'), true)
+  assert.equal(firstItem.chapters[0].summary.endsWith('…'), true)
+  assert.equal(firstItem.description.length <= 97, true)
+  assert.equal(firstItem.chapters[0].summary.length <= 73, true)
 })
 
 test('buildPublicHomeReviewSection exposes review entry state', () => {
