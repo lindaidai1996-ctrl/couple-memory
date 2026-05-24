@@ -1092,15 +1092,6 @@ export default function AlbumDetailPage() {
                   deletingPhotoId={deletingPhotoId}
                   settingCoverPhotoId={settingCoverPhotoId}
                 />
-                {albumSelectionMode && sections.chapterGridMode === 'card-with-selection-grid' ? (
-                  <PhotoSelectionGrid
-                    photos={chapter.photos}
-                    selectedIds={selectedPhotoIds}
-                    selectionMode={albumSelectionMode}
-                    onToggle={toggleAlbumSelection}
-                    onOpen={photo => openChapterPhotoPreview(photo.id, chapter.photos.map(item => item.id))}
-                  />
-                ) : null}
               </div>
             ))}
           </div>

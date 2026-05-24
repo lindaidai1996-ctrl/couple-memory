@@ -160,6 +160,7 @@ export function AlbumChapterCard({
               const isSettingCover = settingCoverPhotoId === photo.id
               const shouldShowDeleteAction = !selectionMode && Boolean(onDeletePhoto) && Boolean(photoActionCopy)
               const shouldShowCoverAction = !selectionMode && Boolean(onRequestSetCover) && Boolean(photoActionCopy) && (canSetCover || isCurrentCover)
+              const deleteActionLabel = deletingPhotoId === photo.id ? photoActionCopy?.deletingPhoto ?? '' : photoActionCopy?.deletePhoto ?? ''
 
               return (
                 <div key={photo.id} className={buildAlbumChapterPreviewTileClassName()}>
@@ -239,13 +240,13 @@ export function AlbumChapterCard({
                         shouldShowDeleteAction ? (
                         <button
                           type="button"
-                          aria-label={deletingPhotoId === photo.id ? photoActionCopy.deletingPhoto : photoActionCopy.deletePhoto}
-                          title={deletingPhotoId === photo.id ? photoActionCopy.deletingPhoto : photoActionCopy.deletePhoto}
+                          aria-label={deleteActionLabel}
+                          title={deleteActionLabel}
                           className={buildPhotoHoverActionButtonClassName()}
                           disabled={deletingPhotoId === photo.id}
                           onClick={event => {
                             event.stopPropagation()
-                            onDeletePhoto(photo.id)
+                            onDeletePhoto?.(photo.id)
                           }}
                         >
                           <TrashIcon className="h-4 w-4" />
