@@ -36,6 +36,20 @@ export function buildPublicHomeUiText(t: Translator) {
   }
 }
 
+function clampNarrativeCopy(text: string | null, maxLength: number) {
+  const normalized = text?.trim()
+
+  if (!normalized) {
+    return null
+  }
+
+  if (normalized.length <= maxLength) {
+    return normalized
+  }
+
+  return `${normalized.slice(0, maxLength).trimEnd()}…`
+}
+
 export function buildPublicHomeNarrativeSection({
   albums,
 }: {
@@ -43,10 +57,15 @@ export function buildPublicHomeNarrativeSection({
 }) {
   return {
     hasNarrativeAlbums: albums.length > 0,
-    items: albums.map(album => ({
+    items: albums.map((album, index) => ({
       ...album,
+      layout: index % 2 === 0 ? 'imageLeft' : 'imageRight',
+      description: clampNarrativeCopy(album.description, 40),
       chapterPreviewCount: Math.min(album.chapters.length, 2),
-      chapters: album.chapters.slice(0, 2),
+      chapters: album.chapters.slice(0, 2).map(chapter => ({
+        ...chapter,
+        summary: clampNarrativeCopy(chapter.summary, 48) ?? '',
+      })),
     })),
   }
 }
@@ -59,6 +78,12 @@ export function buildPublicHomeSectionOrder({
   return hasNarrativeAlbums
     ? (['hero', 'narrative', 'explore'] as const)
     : (['hero', 'narrative', 'explore'] as const)
+}
+
+export function buildPublicHomeNarrativeShellClassName(hasCoverPhoto: boolean) {
+  return hasCoverPhoto
+    ? 'relative z-10 -mt-16 rounded-t-[2rem] border-t border-white/8 bg-[linear-gradient(180deg,rgba(9,10,14,0.82),rgba(9,10,14,0.96))] px-6 pb-24 pt-28'
+    : 'px-6 pb-24 pt-24'
 }
 
 export function buildPublicHomeReviewSection({
@@ -370,7 +395,10 @@ export default async function PublicHomePage({
 
         if (section === 'narrative') {
           return (
-            <section key="narrative" className="px-6 py-24">
+            <section
+              key="narrative"
+              className={buildPublicHomeNarrativeShellClassName(Boolean(space.coverPhotoUrl))}
+            >
               <div className="max-w-5xl mx-auto">
                 <div className="mb-8 max-w-2xl">
                   <p className="text-sm uppercase tracking-[0.24em] text-film-accent/80 mb-3">
@@ -392,7 +420,12 @@ export default async function PublicHomePage({
                         className="overflow-hidden rounded-[var(--radius-xl)] border border-film-surface bg-film-surface/70"
                       >
                         <div className="grid gap-0 md:grid-cols-[1.1fr_1fr]">
-                          <div className="relative min-h-[240px] bg-film-surface">
+                          <div
+                            className={[
+                              'relative min-h-[240px] bg-film-surface',
+                              album.layout === 'imageRight' ? 'md:order-2' : '',
+                            ].join(' ').trim()}
+                          >
                             {album.coverPhotoUrl ? (
                               <>
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -408,7 +441,12 @@ export default async function PublicHomePage({
                             )}
                           </div>
 
-                          <div className="p-6 md:p-8">
+                          <div
+                            className={[
+                              'p-6 md:p-8',
+                              album.layout === 'imageRight' ? 'md:order-1' : '',
+                            ].join(' ').trim()}
+                          >
                             <h3
                               className="text-2xl font-bold text-white"
                               style={{ fontFamily: 'var(--font-display)' }}

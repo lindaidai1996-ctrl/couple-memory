@@ -71,8 +71,9 @@ couple-memory/
 | 图片处理管道 | 前端压缩、OSS 直传、后端处理、EXIF 提取 | [image-pipeline.md](./image-pipeline.md) |
 | API 设计 | REST 端点、请求响应格式、认证中间件 | [api-design.md](./api-design.md) |
 | 部署方案 | Docker Compose、Nginx、CI/CD、SSL、成本估算 | [deployment.md](./deployment.md) |
+| 当前任务清单 | 当前窗口的主任务入口，聚焦 P1 验收、公开页打磨和 P2 启动决策 | [2026-05-24-current-task-checklist.md](./2026-05-24-current-task-checklist.md) |
 | 阶段路线图 | P0 / P1 / P2 的产品方向、优先级与阶段目标 | [2026-05-19-next-stage-product-roadmap.md](./2026-05-19-next-stage-product-roadmap.md) |
-| 阶段任务清单 | P0 / P1 / P2 的执行清单与当前状态 | [2026-05-22-product-stage-task-checklist.md](./2026-05-22-product-stage-task-checklist.md) |
+| 历史阶段任务清单 | P0 / P1 / P2 已收口阶段的执行清单与历史状态 | [2026-05-22-product-stage-task-checklist.md](./2026-05-22-product-stage-task-checklist.md) |
 | P1 收口结论 | 本轮 P1 叙事层落地结果、剩余验收项、下一步建议 | [2026-05-22-p1-closure-summary.md](./2026-05-22-p1-closure-summary.md) |
 
 ## 协作文档入口
