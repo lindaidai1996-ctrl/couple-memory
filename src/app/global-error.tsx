@@ -1,6 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
+import { Button } from '@/components/ui/button'
 
 export default function GlobalError({
   reset,
@@ -35,36 +36,12 @@ export default function GlobalError({
           {t('subtitle')}
         </p>
         <div style={{ display: 'flex', gap: '12px' }}>
-          <button
-            onClick={reset}
-            style={{
-              padding: '10px 20px',
-              fontSize: '14px',
-              fontWeight: 500,
-              color: '#fff',
-              background: '#c4956a',
-              border: 'none',
-              borderRadius: '12px',
-              cursor: 'pointer',
-            }}
-          >
+          <Button onClick={reset} scheme="film" variant="brand">
             {t('retry')}
-          </button>
-          <button
-            onClick={() => (window.location.href = '/')}
-            style={{
-              padding: '10px 20px',
-              fontSize: '14px',
-              fontWeight: 500,
-              color: '#9c8e82',
-              background: 'transparent',
-              border: '1px solid #ede8e3',
-              borderRadius: '12px',
-              cursor: 'pointer',
-            }}
-          >
+          </Button>
+          <Button onClick={() => (window.location.href = '/')} scheme="film" variant="secondary">
             {t('backHome')}
-          </button>
+          </Button>
         </div>
       </body>
     </html>

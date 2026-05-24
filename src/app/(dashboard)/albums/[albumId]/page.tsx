@@ -9,16 +9,17 @@ import {
   buildSummaryActionState,
   type AlbumChapterCardData,
 } from '@/components/album-chapter-card'
+import { AlbumDetailWorkspace } from '@/components/album-detail-workspace'
 import { AlbumEmptyChapters } from '@/components/album-empty-chapters'
 import { ChapterComposerDrawer } from '@/components/chapter-composer-drawer'
-import { ChapterDetailDrawer } from '@/components/chapter-detail-drawer'
 import { ChapterSelectionToolbar } from '@/components/chapter-selection-toolbar'
 import { MoveToChapterDialog } from '@/components/move-to-chapter-dialog'
-import { PhotoDetailModal } from '@/components/photo-detail-modal'
 import { PhotoSelectionGrid } from '@/components/photo-selection-grid'
 import { type PhotoData } from '@/components/photo-card'
 import { PhotoUploader } from '@/components/photo-uploader'
 import { PhotoGridSkeleton } from '@/components/skeleton/photo-grid-skeleton'
+import { Button, EditIcon, PlusIcon, RefreshIcon } from '@/components/ui/button'
+import { ResponsiveDrawer } from '@/components/ui/responsive-drawer'
 
 type Photo = PhotoData
 
@@ -29,6 +30,18 @@ interface AlbumDetailResponse {
   chapters: AlbumChapterCardData[]
   ungroupedPhotos: Photo[]
 }
+
+export type AlbumDetailSurfaceState =
+  | {
+      kind: 'photo'
+      photoId: string
+      chapterPhotoIds: string[]
+    }
+  | {
+      kind: 'chapter'
+      chapterId: string
+    }
+  | null
 
 type Translator = (key: string, values?: Record<string, string | number>) => string
 
@@ -115,6 +128,15 @@ export function buildAlbumDetailUiText(t: Translator) {
     moveDialog: {
       title: t('moveDialogTitle'),
       description: t('moveDialogDescription'),
+    },
+    workspace: {
+      emptyTitle: t('workspaceEmptyTitle'),
+      emptyDescription: t('workspaceEmptyDescription'),
+      close: t('workspaceClose'),
+      photoTitle: t('workspacePhotoTitle'),
+      photoDescription: t('workspacePhotoDescription'),
+      chapterTitle: t('workspaceChapterTitle'),
+      chapterDescription: t('workspaceChapterDescription'),
     },
     detailDrawer: {
       title: t('detailDrawerTitle'),
@@ -344,6 +366,65 @@ export function buildAlbumSelectionState({
   }
 }
 
+export function buildAlbumDetailWorkspaceState({
+  detailSurface,
+  album,
+}: {
+  detailSurface: AlbumDetailSurfaceState
+  album: AlbumDetailResponse | null
+}) {
+  if (!detailSurface || !album) {
+    return {
+      isOpen: false,
+      kind: null,
+      activePhoto: null,
+      activeChapter: null,
+    }
+  }
+
+  if (detailSurface.kind === 'photo') {
+    const photos = [
+      ...album.ungroupedPhotos,
+      ...album.chapters.flatMap(chapter => chapter.photos),
+    ]
+    const activePhoto = photos.find(photo => photo.id === detailSurface.photoId) ?? null
+
+    if (!activePhoto) {
+      return {
+        isOpen: false,
+        kind: null,
+        activePhoto: null,
+        activeChapter: null,
+      }
+    }
+
+    return {
+      isOpen: true,
+      kind: 'photo' as const,
+      activePhoto,
+      activeChapter: null,
+    }
+  }
+
+  const activeChapter = album.chapters.find(chapter => chapter.id === detailSurface.chapterId) ?? null
+
+  if (!activeChapter) {
+    return {
+      isOpen: false,
+      kind: null,
+      activePhoto: null,
+      activeChapter: null,
+    }
+  }
+
+  return {
+    isOpen: true,
+    kind: 'chapter' as const,
+    activePhoto: null,
+    activeChapter,
+  }
+}
+
 export default function AlbumDetailPage() {
   const t = useTranslations('AlbumDetailPage')
   const params = useParams()
@@ -353,10 +434,7 @@ export default function AlbumDetailPage() {
   const [coupleId, setCoupleId] = useState<string | null>(null)
   const [album, setAlbum] = useState<AlbumDetailResponse | null>(null)
   const [loading, setLoading] = useState(true)
-  const [photoPreview, setPhotoPreview] = useState<{
-    photoId: string
-    chapterPhotoIds: string[]
-  } | null>(null)
+  const [detailSurface, setDetailSurface] = useState<AlbumDetailSurfaceState>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [selectionMode, setSelectionMode] = useState(false)
   const [albumSelectionMode, setAlbumSelectionMode] = useState(false)
@@ -364,7 +442,6 @@ export default function AlbumDetailPage() {
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<string[]>([])
   const [chapterComposerOpen, setChapterComposerOpen] = useState(false)
   const [moveDialogOpen, setMoveDialogOpen] = useState(false)
-  const [editingChapter, setEditingChapter] = useState<AlbumChapterCardData | null>(null)
   const [titleSuggestions, setTitleSuggestions] = useState<string[]>([])
   const [actionError, setActionError] = useState<string | null>(null)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
@@ -402,10 +479,10 @@ export default function AlbumDetailPage() {
     ]
   }, [album])
 
-  const selectedPhoto = useMemo(() => {
-    if (!photoPreview) return null
-    return allVisiblePhotos.find(photo => photo.id === photoPreview.photoId) ?? null
-  }, [allVisiblePhotos, photoPreview])
+  const workspaceState = useMemo(() => buildAlbumDetailWorkspaceState({
+    detailSurface,
+    album,
+  }), [detailSurface, album])
 
   useEffect(() => {
     if (!coupleId || !album) return
@@ -427,6 +504,20 @@ export default function AlbumDetailPage() {
     if (!loading && !album) router.push('/albums')
   }, [loading, album, router])
 
+  useEffect(() => {
+    if (!detailSurface) return
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        setDetailSurface(null)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [detailSurface])
+
   function toggleUngroupedSelection(photoId: string) {
     setSelectedUngroupedIds(prev =>
       prev.includes(photoId)
@@ -444,7 +535,8 @@ export default function AlbumDetailPage() {
   }
 
   function openChapterPhotoPreview(photoId: string, chapterPhotoIds: string[]) {
-    setPhotoPreview({
+    setDetailSurface({
+      kind: 'photo',
       photoId,
       chapterPhotoIds,
     })
@@ -567,10 +659,10 @@ export default function AlbumDetailPage() {
     setRefreshKey(key => key + 1)
   }
 
-  async function handleSaveChapter(payload: { title: string; backgroundNote: string }) {
-    if (!coupleId || !editingChapter) return
+  async function handleSaveChapter(chapterId: string, payload: { title: string; backgroundNote: string }) {
+    if (!coupleId) return
 
-    const res = await fetch(`/api/couples/${coupleId}/albums/${albumId}/chapters/${editingChapter.id}`, {
+    const res = await fetch(`/api/couples/${coupleId}/albums/${albumId}/chapters/${chapterId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -582,7 +674,6 @@ export default function AlbumDetailPage() {
       return
     }
 
-    setEditingChapter(null)
     setRefreshKey(key => key + 1)
   }
 
@@ -669,7 +760,8 @@ export default function AlbumDetailPage() {
     selectedPhotoIds,
   })
   return (
-    <div className="space-y-8">
+    <>
+    <div className="min-w-0 space-y-8">
       <div className="flex items-center gap-3">
         <Link
           href="/albums"
@@ -697,16 +789,18 @@ export default function AlbumDetailPage() {
         </div>
 
         <div className="flex justify-end">
-          <button
+          <Button
             type="button"
             onClick={() => {
               setAlbumMetaDraft(buildAlbumMetaDraft(album))
               setEditingAlbumMeta(prev => !prev)
             }}
-            className="px-3 py-2 rounded-[var(--radius-md)] border border-warm-border text-sm text-warm-text"
+            variant="secondary"
+            size="sm"
+            leadingIcon={<EditIcon />}
           >
             {uiText.narrative.editAlbum}
-          </button>
+          </Button>
         </div>
 
         <div className="grid gap-3 lg:grid-cols-2">
@@ -767,25 +861,29 @@ export default function AlbumDetailPage() {
               />
             </label>
             <div className="flex justify-end gap-2">
-              <button
+              <Button
                 type="button"
                 onClick={() => {
                   setAlbumMetaDraft(buildAlbumMetaDraft(album))
                   setEditingAlbumMeta(false)
                 }}
-                className="px-3 py-2 rounded-[var(--radius-md)] border border-warm-border text-sm text-warm-text"
+                size="sm"
+                variant="secondary"
               >
                 {uiText.cancel}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleSaveAlbumMeta}
                 disabled={savingAlbumMeta || !albumMetaDraft.title.trim()}
-                className="px-3 py-2 rounded-[var(--radius-md)] bg-warm-accent text-sm text-white disabled:opacity-50"
+                loading={savingAlbumMeta}
+                size="sm"
+                variant="brand"
+                leadingIcon={<RefreshIcon />}
               >
                 {savingAlbumMeta ? uiText.narrative.savingAlbum : uiText.narrative.saveAlbum}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => {
                   const suggestion = buildAlbumTitleDraftSuggestion({
@@ -796,11 +894,12 @@ export default function AlbumDetailPage() {
                   setAlbumMetaDraft(prev => ({ ...prev, title: suggestion }))
                 }}
                 disabled={album.chapters.length === 0}
-                className="px-3 py-2 rounded-[var(--radius-md)] border border-warm-border text-sm text-warm-text disabled:opacity-50"
+                size="sm"
+                variant="subtle"
               >
                 {uiText.narrative.generateTitleDraft}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => {
                   const suggestion = buildAlbumDescriptionDraftSuggestion({
@@ -811,10 +910,11 @@ export default function AlbumDetailPage() {
                   setAlbumMetaDraft(prev => ({ ...prev, description: suggestion }))
                 }}
                 disabled={album.chapters.length === 0}
-                className="px-3 py-2 rounded-[var(--radius-md)] border border-warm-border text-sm text-warm-text disabled:opacity-50"
+                size="sm"
+                variant="subtle"
               >
                 {uiText.narrative.generateDescriptionDraft}
-              </button>
+              </Button>
             </div>
           </div>
         ) : null}
@@ -880,13 +980,14 @@ export default function AlbumDetailPage() {
                         {uiText.narrative.currentCover}
                       </span>
                     ) : (
-                      <button
+                      <Button
                         type="button"
                         onClick={() => handleSetCover(candidate.id)}
-                        className="inline-flex rounded-[var(--radius-md)] border border-warm-border px-3 py-1.5 text-sm text-warm-text"
+                        size="sm"
+                        variant="secondary"
                       >
                         {uiText.narrative.setAsCover}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -925,13 +1026,15 @@ export default function AlbumDetailPage() {
             <p className="text-sm text-warm-muted">{uiText.chapterSectionDescription}</p>
           </div>
           {sections.ungroupedCount > 0 ? (
-            <button
+            <Button
               type="button"
               onClick={() => setAlbumSelectionMode(true)}
-              className="px-3 py-2 rounded-[var(--radius-md)] border border-warm-border text-sm text-warm-text"
+              size="sm"
+              variant="secondary"
+              leadingIcon={<PlusIcon />}
             >
               {uiText.organizeAllPhotos}
-            </button>
+            </Button>
           ) : null}
         </div>
 
@@ -952,7 +1055,7 @@ export default function AlbumDetailPage() {
                     generatingSummary: uiText.chapterCard.generatingSummary,
                   }}
                   onOpenPhoto={photo => openChapterPhotoPreview(photo.id, chapter.photos.map(item => item.id))}
-                  onEditChapter={() => setEditingChapter(chapter)}
+                  onEditChapter={() => setDetailSurface({ kind: 'chapter', chapterId: chapter.id })}
                   onRefreshSummary={() => handleGenerateSummary(chapter.id)}
                   isRefreshingSummary={summaryActionChapterId === chapter.id}
                 />
@@ -980,24 +1083,27 @@ export default function AlbumDetailPage() {
           {selectionMode ? (
             <div className="flex items-center gap-2">
               <span className="text-sm text-warm-muted">{uiText.selectionCount(selectedUngroupedIds.length)}</span>
-              <button
+              <Button
                 type="button"
                 onClick={openComposerFromUngrouped}
                 disabled={selectedUngroupedIds.length === 0}
-                className="px-3 py-2 rounded-[var(--radius-md)] bg-warm-accent text-white text-sm disabled:opacity-50"
+                size="sm"
+                variant="brand"
+                leadingIcon={<PlusIcon />}
               >
                 {uiText.createChapter}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => {
                   setSelectionMode(false)
                   setSelectedUngroupedIds([])
                 }}
-                className="px-3 py-2 rounded-[var(--radius-md)] border border-warm-border text-sm text-warm-text"
+                size="sm"
+                variant="secondary"
               >
                 {uiText.cancel}
-              </button>
+              </Button>
             </div>
           ) : (
             <div className="text-sm text-warm-muted">
@@ -1016,7 +1122,7 @@ export default function AlbumDetailPage() {
             selectedIds={albumSelectionMode ? selectedPhotoIds : selectedUngroupedIds}
             selectionMode={albumSelectionMode ? albumSelectionMode : selectionMode}
             onToggle={albumSelectionMode ? toggleAlbumSelection : toggleUngroupedSelection}
-            onOpen={photo => setPhotoPreview({ photoId: photo.id, chapterPhotoIds: [photo.id] })}
+            onOpen={photo => setDetailSurface({ kind: 'photo', photoId: photo.id, chapterPhotoIds: [photo.id] })}
           />
         )}
       </section>
@@ -1045,28 +1151,6 @@ export default function AlbumDetailPage() {
         />
       ) : null}
 
-      {selectedPhoto && (
-        <PhotoDetailModal
-          key={selectedPhoto.id}
-          photo={selectedPhoto}
-          coupleId={coupleId ?? ''}
-          chapterPhotoIds={photoPreview?.chapterPhotoIds ?? [selectedPhoto.id]}
-          onNavigate={photoId => {
-            if (!photoPreview) return
-            setPhotoPreview({
-              photoId,
-              chapterPhotoIds: photoPreview.chapterPhotoIds,
-            })
-          }}
-          onClose={() => setPhotoPreview(null)}
-          onUpdated={() => {
-            setPhotoPreview(null)
-            setRefreshKey(key => key + 1)
-          }}
-          onSetCover={handleSetCover}
-        />
-      )}
-
       <ChapterComposerDrawer
         key={selectedUngroupedIds.join(',') || 'empty'}
         open={chapterComposerOpen}
@@ -1084,15 +1168,34 @@ export default function AlbumDetailPage() {
         onSelect={handleMoveSelected}
         onClose={() => setMoveDialogOpen(false)}
       />
-
-      <ChapterDetailDrawer
-        key={editingChapter?.id ?? 'closed'}
-        chapter={editingChapter}
-        open={Boolean(editingChapter)}
-        copy={uiText.detailDrawer}
-        onClose={() => setEditingChapter(null)}
-        onSave={handleSaveChapter}
-      />
     </div>
+
+    {workspaceState.isOpen ? (
+      <ResponsiveDrawer
+        open={workspaceState.isOpen}
+        onClose={() => setDetailSurface(null)}
+        ariaLabel={workspaceState.kind === 'photo' ? uiText.workspace.photoTitle : uiText.workspace.chapterTitle}
+      >
+          <AlbumDetailWorkspace
+            state={workspaceState}
+            chapterPhotoIds={detailSurface?.kind === 'photo' ? detailSurface.chapterPhotoIds : []}
+            copy={uiText.workspace}
+            coupleId={coupleId ?? ''}
+            onClose={() => setDetailSurface(null)}
+            onPhotoNavigate={photoId => {
+              if (detailSurface?.kind !== 'photo') return
+              setDetailSurface({
+                kind: 'photo',
+                photoId,
+                chapterPhotoIds: detailSurface.chapterPhotoIds,
+              })
+            }}
+            onRefreshData={() => setRefreshKey(key => key + 1)}
+            onSetCover={handleSetCover}
+            onSaveChapter={handleSaveChapter}
+          />
+      </ResponsiveDrawer>
+    ) : null}
+    </>
   )
 }

@@ -74,7 +74,48 @@ test('createProfilePatchHandler updates current user avatar', async () => {
   })
 })
 
-test('createProfilePatchHandler rejects update when avatar is omitted', async () => {
+test('createProfilePatchHandler updates current user name without requiring avatar', async () => {
+  const { createProfilePatchHandler } = await loadProfileRoute()
+  let updateArgs: unknown
+
+  const handler = createProfilePatchHandler({
+    auth: async () => ({ user: { id: 'user-1' } }),
+    prisma: {
+      user: {
+        update: async (args: unknown) => {
+          updateArgs = args
+          return {
+            id: 'user-1',
+            email: 'alice@example.com',
+            name: 'Alice Cooper',
+            avatar: 'https://cdn.example.com/avatar.jpg',
+          }
+        },
+      },
+    },
+  })
+
+  const response = await handler(new Request('http://localhost/api/users/me/profile', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: ' Alice Cooper ' }),
+  }))
+
+  assert.equal(response.status, 200)
+  assert.deepEqual(updateArgs, {
+    where: { id: 'user-1' },
+    data: { name: 'Alice Cooper' },
+    select: { id: true, email: true, name: true, avatar: true },
+  })
+  assert.deepEqual(await response.json(), {
+    id: 'user-1',
+    email: 'alice@example.com',
+    name: 'Alice Cooper',
+    avatar: 'https://cdn.example.com/avatar.jpg',
+  })
+})
+
+test('createProfilePatchHandler rejects update when neither name nor avatar is provided', async () => {
   const { createProfilePatchHandler } = await loadProfileRoute()
 
   const handler = createProfilePatchHandler({
@@ -96,8 +137,8 @@ test('createProfilePatchHandler rejects update when avatar is omitted', async ()
 
   assert.equal(response.status, 400)
   const payload = await response.json()
-  assert.equal(payload.error.code, 'AVATAR_REQUIRED')
-  assert.equal(payload.error.message, 'avatar is required')
+  assert.equal(payload.error.code, 'PROFILE_UPDATE_REQUIRED')
+  assert.equal(payload.error.message, 'name or avatar is required')
   assert.equal(payload.error.retryable, false)
   assert.equal(typeof payload.error.requestId, 'string')
   assert.ok(payload.error.requestId.length > 0)

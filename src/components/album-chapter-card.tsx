@@ -1,3 +1,5 @@
+import { Button, EditIcon, RefreshIcon, SparklesIcon } from '@/components/ui/button'
+import { mediaTileButtonClassName } from '@/components/ui/media-tile'
 import type { PhotoData } from './photo-card'
 
 export type AlbumChapterCardData = {
@@ -53,6 +55,12 @@ export function buildSummaryActionState({
   }
 }
 
+export function buildAlbumChapterPreviewTileClassName() {
+  return mediaTileButtonClassName({
+    className: 'aspect-square overflow-hidden rounded-[var(--radius-md)] bg-warm-skeleton-base',
+  })
+}
+
 export function AlbumChapterCard({
   chapter,
   copy,
@@ -96,7 +104,7 @@ export function AlbumChapterCard({
               key={photo.id}
               type="button"
               onClick={() => onOpenPhoto?.(photo)}
-              className="aspect-square overflow-hidden rounded-[var(--radius-md)] bg-warm-skeleton-base"
+              className={buildAlbumChapterPreviewTileClassName()}
             >
               {photo.thumbnailUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -114,21 +122,24 @@ export function AlbumChapterCard({
       <div className="flex items-center justify-between gap-3">
         <div className="text-sm text-warm-muted">{copy.photoCount}</div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
+          <Button
+            size="sm"
+            variant="secondary"
+            leadingIcon={<EditIcon />}
             onClick={onEditChapter}
-            className="px-3 py-2 rounded-[var(--radius-md)] border border-warm-border text-sm text-warm-text"
           >
             {copy.editChapter}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            size="sm"
+            variant={meta.hasSummary ? 'subtle' : 'brand'}
+            leadingIcon={meta.hasSummary ? <RefreshIcon /> : <SparklesIcon />}
             onClick={onRefreshSummary}
             disabled={summaryAction.disabled}
-            className="px-3 py-2 rounded-[var(--radius-md)] border border-warm-border text-sm text-warm-text"
+            loading={isRefreshingSummary}
           >
             {summaryAction.label}
-          </button>
+          </Button>
         </div>
       </div>
     </section>

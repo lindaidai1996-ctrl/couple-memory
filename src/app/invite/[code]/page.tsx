@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { PreferenceDock } from '@/components/preferences/preference-dock'
+import { ArrowRightIcon, Button, buttonClassName, CheckIcon } from '@/components/ui/button'
 
 interface InviteInfo {
   coupleName: string
@@ -150,13 +151,15 @@ function ReadyState({
         {t('inviteYou', { name: info.ownerName ?? t('partnerFallback') })}
       </p>
 
-      <button
+      <Button
         onClick={onAccept}
-        className="w-full py-3 text-sm font-medium text-film-text bg-film-accent
-          rounded-[var(--radius-md)] hover:opacity-90 transition-opacity"
+        scheme="film"
+        variant="brand"
+        fullWidth
+        trailingIcon={<ArrowRightIcon />}
       >
         {t('joinSpace')}
-      </button>
+      </Button>
 
       {expiry && (
         <p className="text-xs text-film-muted mt-4">{expiry}</p>
@@ -178,9 +181,7 @@ function SuccessState({ message }: { message: string }) {
   return (
     <div className="py-8">
       <div className="w-12 h-12 rounded-full bg-success/20 flex items-center justify-center mx-auto mb-4">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
+        <CheckIcon />
       </div>
       <p className="text-sm text-film-text">{message}</p>
     </div>
@@ -210,8 +211,7 @@ function ErrorState({
       </p>
       <Link
         href="/"
-        className="inline-block px-5 py-2.5 text-sm font-medium text-film-muted border border-film-surface
-          rounded-[var(--radius-md)] hover:bg-film-surface transition-colors"
+        className={buttonClassName({ scheme: 'film', variant: 'secondary' })}
       >
         {t('backHome')}
       </Link>

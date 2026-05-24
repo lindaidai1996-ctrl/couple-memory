@@ -44,6 +44,10 @@ function applyResolvedTheme(theme: ThemeMode) {
   document.documentElement.dataset.theme = resolved
 }
 
+export function buildThemeToggleClassName() {
+  return 'dashboard-glass-button inline-flex min-w-[8rem] items-center justify-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-xs font-medium shadow-sm backdrop-blur'
+}
+
 export function ThemeToggle() {
   const t = useTranslations('Common')
   const theme = useSyncExternalStore(
@@ -76,7 +80,7 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={handleClick}
-      className="dashboard-glass-button inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium shadow-sm backdrop-blur"
+      className={buildThemeToggleClassName()}
       aria-label={`${t('themeLabel')}: ${labelMap[theme]}`}
       title={`${t('themeLabel')}: ${labelMap[theme]}`}
     >

@@ -294,6 +294,33 @@ body > * {
   margin-block: 14px;
 }
 
+.pipeline-node-results-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(111, 79, 102, 0.34) transparent;
+}
+
+.pipeline-node-results-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.pipeline-node-results-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.pipeline-node-results-scroll::-webkit-scrollbar-thumb {
+  background: rgba(111, 79, 102, 0.34);
+  border-radius: 3px;
+}
+
+html.dark .pipeline-node-results-scroll {
+  scrollbar-color: rgba(213, 166, 181, 0.3) transparent;
+}
+
+html.dark .pipeline-node-results-scroll::-webkit-scrollbar-thumb {
+  background: rgba(213, 166, 181, 0.3);
+}
+
 .dashboard-panel-soft {
   border: 1px solid var(--color-warm-border);
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)), var(--color-warm-sidebar);
@@ -331,6 +358,331 @@ body > * {
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
     inset 0 0 0 1px rgba(255, 255, 255, 0.08),
     0 10px 22px var(--dashboard-accent-glow);
+}
+
+.cm-button {
+  --cm-button-height: 40px;
+  --cm-button-padding-x: 14px;
+  --cm-button-gap: 8px;
+  --cm-button-radius: var(--radius-md);
+  --cm-button-font-size: 14px;
+  --cm-button-bg: transparent;
+  --cm-button-border: transparent;
+  --cm-button-text: currentColor;
+  --cm-button-shadow: none;
+  --cm-button-focus-ring: var(--dashboard-focus-ring);
+  --cm-button-hover-transform: translateY(-1px);
+  --cm-button-hover-shadow: var(--cm-button-shadow);
+  --cm-button-hover-bg: var(--cm-button-bg);
+  --cm-button-hover-border: var(--cm-button-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cm-button-gap);
+  min-width: max-content;
+  height: var(--cm-button-height);
+  padding-inline: var(--cm-button-padding-x);
+  border-radius: var(--cm-button-radius);
+  border: 1px solid var(--cm-button-border);
+  background: var(--cm-button-bg);
+  color: var(--cm-button-text);
+  font-size: var(--cm-button-font-size);
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    opacity 180ms ease;
+  box-shadow: var(--cm-button-shadow);
+}
+
+.cm-button:hover {
+  transform: var(--cm-button-hover-transform);
+  background: var(--cm-button-hover-bg);
+  border-color: var(--cm-button-hover-border);
+  box-shadow: var(--cm-button-hover-shadow);
+}
+
+.cm-button:focus-visible {
+  outline: none;
+  box-shadow: var(--cm-button-focus-ring), var(--cm-button-hover-shadow);
+}
+
+.cm-button:disabled,
+.cm-button[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.48;
+  transform: none;
+  box-shadow: none;
+}
+
+.cm-button--full {
+  width: 100%;
+}
+
+.cm-button--pill {
+  border-radius: 999px;
+}
+
+.cm-button--icon {
+  width: var(--cm-button-height);
+  min-width: 0;
+  padding-inline: 0;
+}
+
+.cm-button--xs {
+  --cm-button-height: 32px;
+  --cm-button-padding-x: 10px;
+  --cm-button-gap: 6px;
+  --cm-button-radius: var(--radius-sm);
+  --cm-button-font-size: 12px;
+}
+
+.cm-button--sm {
+  --cm-button-height: 36px;
+  --cm-button-padding-x: 12px;
+  --cm-button-radius: var(--radius-sm);
+  --cm-button-font-size: 12px;
+}
+
+.cm-button--md {
+  --cm-button-height: 40px;
+  --cm-button-padding-x: 14px;
+  --cm-button-radius: var(--radius-md);
+  --cm-button-font-size: 14px;
+}
+
+.cm-button--lg {
+  --cm-button-height: 44px;
+  --cm-button-padding-x: 16px;
+  --cm-button-radius: var(--radius-md);
+  --cm-button-font-size: 14px;
+}
+
+.cm-button__label {
+  display: inline-flex;
+  align-items: center;
+}
+
+.cm-button__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+}
+
+.cm-button__spinner {
+  width: 14px;
+  height: 14px;
+  border: 1.6px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 999px;
+  animation: cm-button-spin 0.8s linear infinite;
+}
+
+.cm-button--velvet {
+  --cm-button-focus-ring: var(--dashboard-focus-ring);
+}
+
+.cm-button--velvet.cm-button--brand,
+.cm-button--velvet.cm-button--success,
+.cm-button--velvet.cm-button--warning,
+.cm-button--velvet.cm-button--danger {
+  --cm-button-border: rgba(255, 255, 255, 0.18);
+  --cm-button-text: #fffafc;
+  --cm-button-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 10px 22px var(--cm-button-glow);
+  --cm-button-hover-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 14px 28px var(--cm-button-glow);
+}
+
+.cm-button--velvet.cm-button--brand {
+  --cm-button-bg: var(--dashboard-active-gradient);
+  --cm-button-glow: var(--dashboard-accent-glow);
+}
+
+.cm-button--velvet.cm-button--success {
+  --cm-button-bg: linear-gradient(135deg, #4f6d5d 0%, #9fc3ad 100%);
+  --cm-button-glow: rgba(79, 109, 93, 0.2);
+}
+
+.cm-button--velvet.cm-button--warning {
+  --cm-button-bg: linear-gradient(135deg, #7a5732 0%, #d4af85 100%);
+  --cm-button-glow: rgba(122, 87, 50, 0.22);
+  --cm-button-text: #fff9f3;
+}
+
+.cm-button--velvet.cm-button--danger {
+  --cm-button-bg: linear-gradient(135deg, #7d3947 0%, #d699a6 100%);
+  --cm-button-glow: rgba(125, 57, 71, 0.22);
+}
+
+.cm-button--velvet.cm-button--secondary {
+  --cm-button-bg: var(--color-warm-surface);
+  --cm-button-border: var(--color-warm-border);
+  --cm-button-text: var(--color-warm-text);
+  --cm-button-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 8px 18px rgba(40, 24, 34, 0.06);
+  --cm-button-hover-bg: color-mix(in srgb, var(--color-warm-surface) 88%, white 12%);
+  --cm-button-hover-border: color-mix(in srgb, var(--color-warm-accent) 24%, var(--color-warm-border));
+  --cm-button-hover-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 12px 22px rgba(40, 24, 34, 0.08);
+}
+
+.cm-button--velvet.cm-button--subtle {
+  --cm-button-bg: rgba(255, 255, 255, 0.02);
+  --cm-button-border: var(--color-warm-border);
+  --cm-button-text: var(--color-warm-muted);
+  --cm-button-hover-bg: rgba(255, 255, 255, 0.08);
+  --cm-button-hover-border: color-mix(in srgb, var(--color-warm-accent) 24%, var(--color-warm-border));
+}
+
+.cm-button--velvet.cm-button--ghost {
+  --cm-button-bg: transparent;
+  --cm-button-border: transparent;
+  --cm-button-text: var(--color-warm-muted);
+  --cm-button-hover-bg: rgba(255, 255, 255, 0.06);
+  --cm-button-hover-border: var(--color-warm-border);
+}
+
+html.dark .cm-button--velvet.cm-button--brand {
+  --cm-button-bg: var(--dashboard-active-gradient);
+  --cm-button-glow: var(--dashboard-accent-glow);
+}
+
+html.dark .cm-button--velvet.cm-button--success {
+  --cm-button-bg: linear-gradient(135deg, #5d7f6c 0%, #91b39f 100%);
+  --cm-button-glow: rgba(145, 179, 159, 0.18);
+}
+
+html.dark .cm-button--velvet.cm-button--warning {
+  --cm-button-bg: linear-gradient(135deg, #886245 0%, #d0a67f 100%);
+  --cm-button-glow: rgba(208, 166, 127, 0.18);
+}
+
+html.dark .cm-button--velvet.cm-button--danger {
+  --cm-button-bg: linear-gradient(135deg, #9f5b69 0%, #cf97a5 100%);
+  --cm-button-glow: rgba(207, 151, 165, 0.18);
+}
+
+html.dark .cm-button--velvet.cm-button--brand,
+html.dark .cm-button--velvet.cm-button--success,
+html.dark .cm-button--velvet.cm-button--warning,
+html.dark .cm-button--velvet.cm-button--danger {
+  --cm-button-shadow:
+    inset 0 1px 0 rgba(255, 247, 250, 0.28),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 6px 14px rgba(255, 240, 246, 0.06),
+    0 16px 30px rgba(5, 3, 6, 0.34),
+    0 0 0 1px rgba(18, 12, 17, 0.18),
+    0 10px 22px var(--cm-button-glow);
+  --cm-button-hover-transform: translateY(-2px);
+  --cm-button-hover-shadow:
+    inset 0 1px 0 rgba(255, 247, 250, 0.32),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 8px 18px rgba(255, 240, 246, 0.07),
+    0 22px 38px rgba(5, 3, 6, 0.42),
+    0 0 0 1px rgba(18, 12, 17, 0.16),
+    0 14px 28px var(--cm-button-glow);
+}
+
+html.dark .cm-button--velvet.cm-button--secondary {
+  --cm-button-bg: linear-gradient(180deg, rgba(255, 250, 252, 0.06), rgba(255, 250, 252, 0.015)), var(--color-warm-surface);
+  --cm-button-border: var(--color-warm-border);
+  --cm-button-text: var(--color-warm-text);
+  --cm-button-shadow:
+    inset 0 1px 0 rgba(255, 247, 250, 0.18),
+    0 12px 22px rgba(0, 0, 0, 0.22);
+  --cm-button-hover-transform: translateY(-2px);
+  --cm-button-hover-bg: linear-gradient(180deg, rgba(255, 250, 252, 0.08), rgba(255, 250, 252, 0.02)), var(--color-warm-surface);
+  --cm-button-hover-border: rgba(213, 166, 181, 0.24);
+  --cm-button-hover-shadow:
+    inset 0 1px 0 rgba(255, 247, 250, 0.22),
+    0 18px 28px rgba(0, 0, 0, 0.28);
+}
+
+html.dark .cm-button--velvet.cm-button--subtle {
+  --cm-button-bg: linear-gradient(180deg, rgba(255, 250, 252, 0.06), rgba(255, 250, 252, 0.015));
+  --cm-button-border: var(--color-warm-border);
+  --cm-button-text: var(--color-warm-muted);
+  --cm-button-hover-transform: translateY(-2px);
+  --cm-button-hover-bg: linear-gradient(180deg, rgba(255, 250, 252, 0.08), rgba(255, 250, 252, 0.025));
+  --cm-button-hover-border: rgba(213, 166, 181, 0.24);
+}
+
+html.dark .cm-button--velvet.cm-button--ghost {
+  --cm-button-text: var(--color-warm-muted);
+  --cm-button-hover-transform: translateY(-1px);
+  --cm-button-hover-bg: rgba(255, 255, 255, 0.06);
+  --cm-button-hover-border: var(--color-warm-border);
+}
+
+.cm-button--film {
+  --cm-button-focus-ring: 0 0 0 3px rgba(184, 155, 111, 0.22);
+}
+
+.cm-button--film.cm-button--brand {
+  --cm-button-bg: linear-gradient(135deg, color-mix(in srgb, var(--color-film-accent) 90%, #d5b48a 10%) 0%, color-mix(in srgb, var(--color-film-accent-light) 72%, #f3ddbb 28%) 100%);
+  --cm-button-border: rgba(255, 255, 255, 0.08);
+  --cm-button-text: var(--color-film-text);
+  --cm-button-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 12px 26px rgba(0, 0, 0, 0.22);
+  --cm-button-hover-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 16px 32px rgba(0, 0, 0, 0.28);
+}
+
+.cm-button--film.cm-button--secondary {
+  --cm-button-bg: rgba(255, 255, 255, 0.03);
+  --cm-button-border: rgba(255, 255, 255, 0.08);
+  --cm-button-text: var(--color-film-text);
+  --cm-button-hover-bg: rgba(255, 255, 255, 0.08);
+  --cm-button-hover-border: rgba(184, 155, 111, 0.28);
+}
+
+.cm-button--film.cm-button--subtle {
+  --cm-button-bg: rgba(255, 255, 255, 0.02);
+  --cm-button-border: rgba(255, 255, 255, 0.06);
+  --cm-button-text: var(--color-film-muted);
+  --cm-button-hover-bg: rgba(255, 255, 255, 0.05);
+  --cm-button-hover-border: rgba(255, 255, 255, 0.1);
+}
+
+.cm-button--film.cm-button--ghost {
+  --cm-button-bg: transparent;
+  --cm-button-border: transparent;
+  --cm-button-text: var(--color-film-muted);
+  --cm-button-hover-bg: rgba(255, 255, 255, 0.05);
+  --cm-button-hover-border: rgba(255, 255, 255, 0.08);
+}
+
+.cm-button--film.cm-button--danger {
+  --cm-button-bg: linear-gradient(135deg, #794456 0%, #c28e9a 100%);
+  --cm-button-border: rgba(255, 255, 255, 0.1);
+  --cm-button-text: #fff7fa;
+  --cm-button-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 12px 26px rgba(0, 0, 0, 0.24);
+  --cm-button-hover-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 18px 32px rgba(0, 0, 0, 0.32);
+}
+
+@keyframes cm-button-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .dashboard-input {
@@ -435,6 +787,22 @@ html.dark .velvet-select-option-selected {
   color: #fff7fb;
 }
 
+.velvet-date-day-selected:hover,
+.velvet-select-option-selected:hover {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(135deg, #4a2f42 0%, #8f607a 52%, #c59f9d 100%);
+  color: #fffafc;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 10px 18px rgba(111, 79, 102, 0.18);
+}
+
+html.dark .velvet-date-day-selected:hover,
+html.dark .velvet-select-option-selected:hover {
+  background: var(--dashboard-active-gradient);
+  color: #fff7fb;
+}
+
 .velvet-date-day-selected {
   font-weight: 500;
 }
@@ -493,4 +861,38 @@ html.dark .velvet-select-option-selected {
   border: 1px solid var(--dashboard-hero-panel-border);
   background: var(--dashboard-hero-panel-bg);
   backdrop-filter: blur(10px);
+}
+
+@keyframes cm-drawer-overlay-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes cm-drawer-slide-in-right {
+  from {
+    opacity: 0.72;
+    transform: translate3d(100%, 0, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes cm-drawer-slide-in-top {
+  from {
+    opacity: 0.72;
+    transform: translate3d(0, -100%, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
 }

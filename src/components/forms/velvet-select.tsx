@@ -1,8 +1,10 @@
 'use client'
 
+import type { CSSProperties } from 'react'
 import { useId, useState } from 'react'
 import { createPortal } from 'react-dom'
 
+import { buttonClassName } from '@/components/ui/button'
 import { useFloatingPanel } from '@/components/forms/velvet-floating-panel'
 
 export type VelvetSelectOption = {
@@ -13,6 +15,7 @@ export type VelvetSelectOption = {
 type VelvetSelectProps = {
   ariaLabel?: string
   disabled?: boolean
+  fullWidth?: boolean
   name?: string
   onChange: (value: string) => void
   options: VelvetSelectOption[]
@@ -20,16 +23,47 @@ type VelvetSelectProps = {
   value: string
 }
 
-const controlClassName = `group flex h-10 w-full items-center justify-between rounded-[16px] border
-  border-[var(--color-warm-border)] bg-[var(--color-warm-surface)] px-3.5 text-left text-sm text-[var(--color-warm-text)]
-  shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] outline-none transition duration-200
-  hover:border-[rgba(111,79,102,0.28)] focus-visible:border-[rgba(111,79,102,0.42)]
-  focus-visible:ring-4 focus-visible:ring-[rgba(111,79,102,0.12)] disabled:cursor-not-allowed disabled:opacity-50
-  dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]`
+export function buildVelvetSelectAnchorClassName({
+  fullWidth = false,
+}: {
+  fullWidth?: boolean
+} = {}) {
+  return fullWidth ? 'relative w-full' : 'relative inline-block'
+}
+
+export function buildVelvetSelectControlClassName({
+  fullWidth = false,
+}: {
+  fullWidth?: boolean
+} = {}) {
+  return buttonClassName({
+    variant: 'secondary',
+    fullWidth,
+    className: `group justify-between rounded-[16px] px-3.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]
+      dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]`,
+  })
+}
+
+export function buildVelvetSelectPanelStyle(position: {
+  top: number
+  left: number
+  width: number
+}): CSSProperties {
+  return {
+    position: 'fixed',
+    top: position.top,
+    left: position.left,
+    width: 'max-content',
+    minWidth: position.width,
+    maxWidth: 'calc(100vw - 1rem)',
+    zIndex: 80,
+  }
+}
 
 export function VelvetSelect({
   ariaLabel,
   disabled = false,
+  fullWidth = false,
   name,
   onChange,
   options,
@@ -45,7 +79,7 @@ export function VelvetSelect({
   return (
     <>
       {name ? <input type="hidden" name={name} value={value} /> : null}
-      <div ref={anchorRef} className="relative">
+      <div ref={anchorRef} className={buildVelvetSelectAnchorClassName({ fullWidth })}>
         <button
           type="button"
           aria-label={ariaLabel}
@@ -53,7 +87,7 @@ export function VelvetSelect({
           aria-haspopup="listbox"
           aria-controls={listboxId}
           disabled={disabled}
-          className={controlClassName}
+          className={buildVelvetSelectControlClassName({ fullWidth })}
           onClick={() => setOpen(current => !current)}
         >
           <span className={selectedOption ? 'text-[var(--color-warm-text)]' : 'text-[var(--dashboard-text-faint)]'}>
@@ -72,13 +106,7 @@ export function VelvetSelect({
           ref={panelRef}
           id={listboxId}
           role="listbox"
-          style={{
-            position: 'fixed',
-            top: position.top,
-            left: position.left,
-            width: position.width,
-            zIndex: 80,
-          }}
+          style={buildVelvetSelectPanelStyle(position)}
           className="velvet-select-panel overflow-hidden rounded-[20px] p-2"
         >
           <div className="grid gap-1">
@@ -91,7 +119,11 @@ export function VelvetSelect({
                   type="button"
                   role="option"
                   aria-selected={selected}
-                  className={`flex min-h-[38px] items-center justify-between rounded-[14px] px-3 text-sm transition duration-150 ${
+                  className={`${buttonClassName({
+                    size: 'sm',
+                    variant: selected ? 'subtle' : 'ghost',
+                    className: 'flex min-h-[38px] items-center justify-between rounded-[14px] px-3 text-sm',
+                  })} ${
                     selected
                       ? 'velvet-select-option-selected'
                       : 'velvet-select-option-hoverable border border-transparent text-[var(--color-warm-text)]'

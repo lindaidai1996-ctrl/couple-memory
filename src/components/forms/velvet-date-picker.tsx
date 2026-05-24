@@ -3,6 +3,7 @@
 import { useId, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 
+import { buttonClassName } from '@/components/ui/button'
 import { useFloatingPanel } from '@/components/forms/velvet-floating-panel'
 import {
   buildCalendarMonth,
@@ -19,6 +20,7 @@ type VelvetDatePickerProps = {
   ariaLabel?: string
   defaultValue?: string
   disabled?: boolean
+  fullWidth?: boolean
   locale?: string
   name?: string
   onChange?: (value: string) => void
@@ -26,17 +28,32 @@ type VelvetDatePickerProps = {
   value?: string
 }
 
-const controlClassName = `group flex h-10 w-full items-center justify-between rounded-[16px] border
-  border-[var(--color-warm-border)] bg-[var(--color-warm-surface)] px-3.5 text-left text-sm text-[var(--color-warm-text)]
-  shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] outline-none transition duration-200
-  hover:border-[rgba(111,79,102,0.28)] focus-visible:border-[rgba(111,79,102,0.42)]
-  focus-visible:ring-4 focus-visible:ring-[rgba(111,79,102,0.12)] disabled:cursor-not-allowed disabled:opacity-50
-  dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]`
+export function buildVelvetDatePickerAnchorClassName({
+  fullWidth = false,
+}: {
+  fullWidth?: boolean
+} = {}) {
+  return fullWidth ? 'relative w-full' : 'relative inline-block'
+}
+
+export function buildVelvetDatePickerControlClassName({
+  fullWidth = false,
+}: {
+  fullWidth?: boolean
+} = {}) {
+  return buttonClassName({
+    variant: 'secondary',
+    fullWidth,
+    className: `group justify-between rounded-[16px] px-3.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]
+      dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]`,
+  })
+}
 
 export function VelvetDatePicker({
   ariaLabel,
   defaultValue = '',
   disabled = false,
+  fullWidth = false,
   locale = 'zh-CN',
   name,
   onChange,
@@ -93,7 +110,7 @@ export function VelvetDatePicker({
   return (
     <>
       {name ? <input type="hidden" name={name} value={normalizedValue} /> : null}
-      <div ref={anchorRef} className="relative">
+      <div ref={anchorRef} className={buildVelvetDatePickerAnchorClassName({ fullWidth })}>
         <button
           type="button"
           aria-label={ariaLabel}
@@ -101,7 +118,7 @@ export function VelvetDatePicker({
           aria-haspopup="dialog"
           aria-controls={listboxId}
           disabled={disabled}
-          className={controlClassName}
+          className={buildVelvetDatePickerControlClassName({ fullWidth })}
           onClick={handleToggleOpen}
         >
           <span className={normalizedValue ? 'text-[var(--color-warm-text)]' : 'text-[var(--dashboard-text-faint)]'}>
@@ -134,8 +151,12 @@ export function VelvetDatePicker({
           <div className="flex items-center justify-between border-b border-[var(--color-warm-border)]/80 px-4 py-3">
             <button
               type="button"
-              className="velvet-date-nav-button grid h-8 w-8 place-items-center rounded-[10px]
-                transition hover:-translate-y-px hover:border-[rgba(111,79,102,0.18)]"
+              className={buttonClassName({
+                size: 'xs',
+                iconOnly: true,
+                variant: 'secondary',
+                className: 'velvet-date-nav-button grid h-8 w-8 place-items-center rounded-[10px]',
+              })}
               onClick={() => setViewMonth(current => shiftMonth(current.year, current.monthIndex, -1))}
             >
               ‹
@@ -145,8 +166,12 @@ export function VelvetDatePicker({
             </div>
             <button
               type="button"
-              className="velvet-date-nav-button grid h-8 w-8 place-items-center rounded-[10px]
-                transition hover:-translate-y-px hover:border-[rgba(111,79,102,0.18)]"
+              className={buttonClassName({
+                size: 'xs',
+                iconOnly: true,
+                variant: 'secondary',
+                className: 'velvet-date-nav-button grid h-8 w-8 place-items-center rounded-[10px]',
+              })}
               onClick={() => setViewMonth(current => shiftMonth(current.year, current.monthIndex, 1))}
             >
               ›
@@ -171,7 +196,11 @@ export function VelvetDatePicker({
                 <button
                   key={day.iso}
                   type="button"
-                  className={`grid h-9 place-items-center rounded-[12px] border text-sm transition duration-150 ${
+                  className={`${buttonClassName({
+                    size: 'sm',
+                    variant: 'ghost',
+                    className: 'grid h-9 place-items-center rounded-[12px] px-0',
+                  })} ${
                     selected
                       ? 'velvet-date-day-selected'
                       : isToday
@@ -193,7 +222,11 @@ export function VelvetDatePicker({
           <div className="flex items-center justify-between border-t border-[var(--color-warm-border)]/80 px-4 py-3">
             <button
               type="button"
-              className="text-xs uppercase tracking-[0.18em] text-[var(--color-warm-muted)] transition hover:text-[var(--color-warm-accent)]"
+              className={buttonClassName({
+                size: 'xs',
+                variant: 'ghost',
+                className: 'h-auto px-0 text-xs uppercase tracking-[0.18em] text-[var(--color-warm-muted)]',
+              })}
               onClick={() => {
                 commitValue(todayIso)
                 setViewMonth(() => {
@@ -207,7 +240,11 @@ export function VelvetDatePicker({
             </button>
             <button
               type="button"
-              className="text-xs uppercase tracking-[0.18em] text-[var(--color-warm-muted)] transition hover:text-[var(--color-warm-accent)]"
+              className={buttonClassName({
+                size: 'xs',
+                variant: 'ghost',
+                className: 'h-auto px-0 text-xs uppercase tracking-[0.18em] text-[var(--color-warm-muted)]',
+              })}
               onClick={() => setOpen(false)}
             >
               {closeLabel}

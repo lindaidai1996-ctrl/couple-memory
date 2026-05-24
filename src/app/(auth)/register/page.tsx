@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
+import { ArrowRightIcon, Button, PlusIcon } from '@/components/ui/button'
 
 const inputClassName = `h-[42px] w-full rounded-[var(--radius-md)] border border-warm-border
   bg-[var(--dashboard-input-bg)] px-3 text-sm text-warm-text placeholder:text-[color:var(--dashboard-text-faint)]
@@ -151,13 +152,16 @@ export default function RegisterPage() {
           />
         </div>
 
-        <button
+        <Button
           type="submit"
-          disabled={loading}
-          className="h-[42px] w-full rounded-[var(--radius-md)] border border-white/18 bg-[var(--dashboard-active-gradient)] font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_0_0_1px_rgba(255,255,255,0.08),0_10px_22px_var(--dashboard-accent-glow)] transition-transform duration-200 hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
+          loading={loading}
+          fullWidth
+          variant="brand"
+          leadingIcon={<PlusIcon />}
+          trailingIcon={!loading ? <ArrowRightIcon /> : undefined}
         >
           {loading ? t('submitting') : t('submit')}
-        </button>
+        </Button>
       </form>
 
       <p className="mt-5 text-center text-sm text-warm-muted">

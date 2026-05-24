@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import Link from 'next/link'
+import { ArrowRightIcon, Button } from '@/components/ui/button'
 
 const inputClassName = `h-[42px] w-full rounded-[var(--radius-md)] border border-warm-border
   bg-[var(--dashboard-input-bg)] px-3 text-sm text-warm-text placeholder:text-[color:var(--dashboard-text-faint)]
@@ -103,13 +104,15 @@ export default function LoginPage() {
         </div>
 
         <div className="space-y-2 pt-0.5">
-          <button
+          <Button
             type="submit"
-            disabled={loading}
-            className="h-[42px] w-full cursor-pointer rounded-[var(--radius-md)] border border-warm-border bg-transparent text-sm font-medium text-warm-text transition-[transform,background-color,border-color,box-shadow] duration-200 hover:-translate-y-px hover:border-warm-accent/20 hover:bg-white/40 hover:shadow-[0_10px_24px_rgba(34,18,30,0.08)] disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-white/6 dark:hover:shadow-[0_10px_24px_rgba(0,0,0,0.16)]"
+            loading={loading}
+            fullWidth
+            variant="secondary"
+            trailingIcon={<ArrowRightIcon />}
           >
             {loading ? t('submitting') : t('submit')}
-          </button>
+          </Button>
         </div>
       </form>
 

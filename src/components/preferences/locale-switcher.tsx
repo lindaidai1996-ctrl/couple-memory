@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import {
@@ -12,15 +13,29 @@ function setLocaleCookie(value: AppLocale) {
   document.cookie = `${LOCALE_COOKIE_NAME}=${encodeURIComponent(value)}; path=/; max-age=31536000; samesite=lax`
 }
 
+export function buildLocaleSwitcherOptionClassName(active: boolean) {
+  return `rounded-full border px-2.5 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none ${
+    active
+      ? 'dashboard-pill-active'
+      : 'border-transparent text-warm-text hover:bg-white/50 dark:hover:bg-white/8'
+  }`
+}
+
 export function LocaleSwitcher() {
   const t = useTranslations('Common')
   const locale = useLocale() as AppLocale
   const router = useRouter()
+  const [pendingLocale, setPendingLocale] = useState<AppLocale>(locale)
+  const [isPending, startTransition] = useTransition()
+  const activeLocale = isPending ? pendingLocale : locale
 
   function handleChange(nextLocale: AppLocale) {
-    if (nextLocale === locale) return
+    if (nextLocale === activeLocale) return
+    setPendingLocale(nextLocale)
     setLocaleCookie(nextLocale)
-    router.refresh()
+    startTransition(() => {
+      router.refresh()
+    })
   }
 
   const labelMap: Record<AppLocale, string> = {
@@ -34,17 +49,14 @@ export function LocaleSwitcher() {
       aria-label={t('languageLabel')}
     >
       {SUPPORTED_LOCALES.map(option => {
-        const active = option === locale
+        const active = option === activeLocale
         return (
           <button
             key={option}
             type="button"
             onClick={() => handleChange(option)}
-            className={`rounded-full px-2.5 py-1.5 transition-all ${
-              active
-                ? 'dashboard-pill-active'
-                : 'text-warm-text hover:bg-white/50 dark:hover:bg-white/8'
-            }`}
+            className={buildLocaleSwitcherOptionClassName(active)}
+            aria-pressed={active}
           >
             {labelMap[option]}
           </button>

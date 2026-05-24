@@ -1,4 +1,11 @@
+import { mediaTileButtonClassName } from '@/components/ui/media-tile'
 import { photoCardSurfaceClass, type PhotoData } from './photo-card'
+
+export function buildPhotoSelectionTileClassName() {
+  return mediaTileButtonClassName({
+    className: `relative aspect-square overflow-hidden rounded-[var(--radius-md)] ${photoCardSurfaceClass} text-left`,
+  })
+}
 
 export function PhotoSelectionGrid({
   photos,
@@ -23,7 +30,7 @@ export function PhotoSelectionGrid({
             key={photo.id}
             type="button"
             onClick={() => selectionMode ? onToggle(photo.id) : onOpen(photo)}
-            className={`relative overflow-hidden rounded-[var(--radius-md)] ${photoCardSurfaceClass} aspect-square text-left`}
+            className={buildPhotoSelectionTileClassName()}
           >
             {photo.thumbnailUrl ? (
               // eslint-disable-next-line @next/next/no-img-element

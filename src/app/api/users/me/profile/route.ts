@@ -31,7 +31,10 @@ type ProfileRouteDeps = {
       }) => Promise<ProfileRecord | null>
       update?: (args: {
         where: { id: string }
-        data: { avatar: string | null }
+        data: {
+          avatar?: string | null
+          name?: string | null
+        }
         select: typeof profileSelect
       }) => Promise<ProfileRecord>
     }
@@ -43,6 +46,14 @@ function normalizeAvatarInput(avatar: unknown) {
   if (typeof avatar !== 'string') return undefined
 
   const trimmed = avatar.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
+function normalizeNameInput(name: unknown) {
+  if (name === null) return null
+  if (typeof name !== 'string') return undefined
+
+  const trimmed = name.trim()
   return trimmed.length > 0 ? trimmed : null
 }
 
@@ -94,18 +105,38 @@ export function createProfilePatchHandler(
     }
 
     const body = await req.json()
-    if (!body || typeof body !== 'object' || !('avatar' in body)) {
-      return createApiErrorResponse(400, 'AVATAR_REQUIRED', 'avatar is required', false, requestId)
+    if (!body || typeof body !== 'object') {
+      return createApiErrorResponse(400, 'PROFILE_UPDATE_REQUIRED', 'name or avatar is required', false, requestId)
     }
 
-    const avatar = normalizeAvatarInput(body?.avatar)
-    if (avatar === undefined) {
-      return createApiErrorResponse(400, 'INVALID_AVATAR', 'Invalid avatar', false, requestId)
+    const nextData: {
+      avatar?: string | null
+      name?: string | null
+    } = {}
+
+    if ('avatar' in body) {
+      const avatar = normalizeAvatarInput(body?.avatar)
+      if (avatar === undefined) {
+        return createApiErrorResponse(400, 'INVALID_AVATAR', 'Invalid avatar', false, requestId)
+      }
+      nextData.avatar = avatar
+    }
+
+    if ('name' in body) {
+      const name = normalizeNameInput(body?.name)
+      if (name === undefined) {
+        return createApiErrorResponse(400, 'INVALID_NAME', 'Invalid name', false, requestId)
+      }
+      nextData.name = name
+    }
+
+    if (Object.keys(nextData).length === 0) {
+      return createApiErrorResponse(400, 'PROFILE_UPDATE_REQUIRED', 'name or avatar is required', false, requestId)
     }
 
     const updated = await prisma.user.update!({
       where: { id: session.user.id },
-      data: { avatar },
+      data: nextData,
       select: profileSelect,
     })
 

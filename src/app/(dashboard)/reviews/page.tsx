@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
+import { Button, RefreshIcon, SparklesIcon } from '@/components/ui/button'
 
 type MemoryReviewItem = {
   id: string
@@ -92,22 +93,28 @@ export default function ReviewsPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button
+            <Button
               onClick={() => handleGenerate('YEARLY')}
-              disabled={submitting !== null}
-              className="dashboard-pill-active rounded-[18px] px-4 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-70"
+              loading={submitting === 'YEARLY'}
+              disabled={submitting !== null && submitting !== 'YEARLY'}
+              variant="brand"
+              pill
+              leadingIcon={<SparklesIcon />}
             >
               {submitting === 'YEARLY' ? `${uiText.generateYearly}...` : uiText.generateYearly}
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => handleGenerate('ANNIVERSARY')}
-              disabled={submitting !== null}
-              className="rounded-[18px] border border-warm-border px-4 py-2.5 text-sm text-warm-text transition-colors hover:bg-warm-bg disabled:cursor-not-allowed disabled:opacity-70"
+              loading={submitting === 'ANNIVERSARY'}
+              disabled={submitting !== null && submitting !== 'ANNIVERSARY'}
+              variant="secondary"
+              pill
+              leadingIcon={<RefreshIcon />}
             >
               {submitting === 'ANNIVERSARY'
                 ? `${uiText.generateAnniversary}...`
                 : uiText.generateAnniversary}
-            </button>
+            </Button>
           </div>
         </div>
       </section>

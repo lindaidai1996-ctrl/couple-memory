@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { ArrowRightIcon, Button, RefreshIcon } from '@/components/ui/button'
 
 type Translator = (key: string) => string
 
@@ -35,20 +36,20 @@ export default function DashboardError({
       <p className="text-base text-warm-text mb-2">{uiText.title}</p>
       <p className="text-sm text-warm-muted mb-8">{uiText.subtitle}</p>
       <div className="flex items-center gap-3">
-        <button
+        <Button
           onClick={reset}
-          className="px-5 py-2.5 text-sm font-medium text-white bg-warm-accent
-            rounded-[var(--radius-md)] hover:bg-warm-accent-hover transition-colors"
+          variant="brand"
+          leadingIcon={<RefreshIcon />}
         >
           {uiText.retry}
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => router.push('/')}
-          className="px-5 py-2.5 text-sm font-medium text-warm-muted border border-warm-border
-            rounded-[var(--radius-md)] hover:bg-warm-bg transition-colors"
+          variant="secondary"
+          trailingIcon={<ArrowRightIcon />}
         >
           {uiText.backHome}
-        </button>
+        </Button>
       </div>
     </div>
   )

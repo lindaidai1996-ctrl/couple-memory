@@ -1,5 +1,6 @@
 import Link from 'next/link'
 
+import { ArrowRightIcon, buttonClassName } from '@/components/ui/button'
 import type { OrganizationReadinessAction } from '@/lib/readiness/organization-readiness'
 
 export function ReadinessCard({
@@ -48,9 +49,14 @@ export function ReadinessCard({
                 <Link
                   key={`${action.href}:${action.label}`}
                   href={action.href}
-                  className="dashboard-glass-button inline-flex items-center rounded-[var(--radius-md)] px-3 py-2 text-sm"
+                  className={buttonClassName({
+                    variant: 'secondary',
+                    size: 'sm',
+                    className: 'inline-flex items-center',
+                  })}
                 >
-                  {action.label}
+                  <span className="cm-button__label">{action.label}</span>
+                  <span className="cm-button__icon" aria-hidden="true"><ArrowRightIcon /></span>
                 </Link>
               ))}
             </div>

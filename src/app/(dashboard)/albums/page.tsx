@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
+import { Button, PlusIcon, TrashIcon } from '@/components/ui/button'
 
 interface Album {
   id: string
@@ -84,25 +85,25 @@ export default function AlbumsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-warm-text">{uiText.title}</h1>
-        <button
+        <Button
           onClick={() => setShowCreate(true)}
-          className="px-4 py-2 text-sm bg-warm-accent text-white rounded-[var(--radius-md)] font-medium
-            hover:bg-warm-accent-hover transition-colors"
+          variant="brand"
+          leadingIcon={<PlusIcon />}
         >
           {uiText.create}
-        </button>
+        </Button>
       </div>
 
       {albums.length === 0 ? (
         <div className="text-center py-20 bg-warm-surface rounded-[var(--radius-lg)] border border-warm-border">
           <p className="text-warm-muted mb-4">{uiText.empty}</p>
-          <button
+          <Button
             onClick={() => setShowCreate(true)}
-            className="px-4 py-2 text-sm text-warm-accent border border-warm-accent
-              rounded-[var(--radius-md)] hover:bg-warm-accent/10 transition-colors"
+            variant="secondary"
+            leadingIcon={<PlusIcon />}
           >
             {uiText.create}
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -140,16 +141,17 @@ export default function AlbumsPage() {
                       <p className="text-xs text-warm-muted mt-1 line-clamp-2">{album.description}</p>
                     )}
                   </div>
-                  <button
+                  <Button
                     onClick={e => { e.preventDefault(); handleDelete(album.id) }}
-                    className="p-1 text-warm-muted hover:text-error rounded transition-colors opacity-0 group-hover:opacity-100"
+                    className="opacity-0 group-hover:opacity-100"
                     title={t('deleteTitle')}
+                    aria-label={t('deleteTitle')}
+                    variant="ghost"
+                    size="xs"
+                    iconOnly
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="3 6 5 6 21 6" />
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    </svg>
-                  </button>
+                    <TrashIcon />
+                  </Button>
                 </div>
                 <p className="text-xs text-warm-muted mt-2">
                   {t('photoCount', { count: album.photoCount })}
@@ -193,21 +195,23 @@ export default function AlbumsPage() {
                 />
               </div>
               <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
+                <Button
                   onClick={() => setShowCreate(false)}
-                  className="flex-1 py-2.5 text-sm text-warm-muted border border-warm-border
-                    rounded-[var(--radius-md)] hover:bg-warm-bg transition-colors"
+                  className="flex-1"
+                  variant="secondary"
+                  fullWidth
                 >
                   {t('cancel')}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className="flex-1 py-2.5 text-sm bg-warm-accent text-white font-medium
-                    rounded-[var(--radius-md)] hover:bg-warm-accent-hover transition-colors"
+                  className="flex-1"
+                  variant="brand"
+                  fullWidth
+                  leadingIcon={<PlusIcon />}
                 >
                   {t('submit')}
-                </button>
+                </Button>
               </div>
             </form>
           </div>

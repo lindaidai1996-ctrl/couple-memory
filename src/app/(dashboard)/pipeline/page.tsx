@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { VelvetSelect } from '@/components/forms/velvet-select'
 import { useLocale, useTranslations } from 'next-intl'
 
 type RunStatus = 'RUNNING' | 'COMPLETED' | 'FAILED' | 'DEGRADED'
@@ -68,6 +69,26 @@ export function buildPipelineUiText(t: Translator) {
     recentRuns: t('recentRuns'),
     runDetail: t('runDetail'),
   }
+}
+
+export function buildPipelineRunRowClassName(selected: boolean) {
+  return `w-full rounded-[22px] border border-[var(--color-warm-border)] px-4 py-4 text-left transition-colors cursor-pointer ${
+    selected
+      ? 'velvet-active-surface shadow-[0_14px_30px_rgba(90,54,77,0.18)]'
+      : 'bg-[var(--panel-strong)]/55 shadow-[0_10px_24px_rgba(40,24,34,0.08)] hover:bg-[var(--panel-strong)]/75'
+  }`
+}
+
+export function buildPipelineRunTitleClassName(selected: boolean) {
+  return selected ? 'text-sm font-medium text-[#fffafc] truncate' : 'text-sm font-medium text-warm-text truncate'
+}
+
+export function buildPipelineRunMetaClassName(selected: boolean) {
+  return selected ? 'text-xs text-white/82' : 'text-xs text-warm-muted'
+}
+
+export function buildPipelineDetailPanelClassName() {
+  return 'min-h-[42rem] overflow-y-auto p-4 space-y-3 text-sm'
 }
 
 export default function PipelineRunsPage() {
@@ -153,17 +174,12 @@ export default function PipelineRunsPage() {
           <p className="text-sm text-warm-muted mt-1">{uiText.subtitle}</p>
         </div>
 
-        <select
+        <VelvetSelect
+          ariaLabel={t('status')}
           value={status}
-          onChange={e => setStatus(e.target.value as '' | RunStatus)}
-          className="px-3 py-2 rounded-[var(--radius-md)] border border-warm-border bg-warm-surface text-sm text-warm-text"
-        >
-          {statusOptions.map(option => (
-            <option key={option.label} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          onChange={value => setStatus(value as '' | RunStatus)}
+          options={statusOptions}
+        />
       </div>
 
       {errorText && (
@@ -183,21 +199,22 @@ export default function PipelineRunsPage() {
           ) : runs.length === 0 ? (
             <div className="p-8 text-sm text-warm-muted text-center">{t('empty')}</div>
           ) : (
-            <div className="divide-y divide-warm-border/70">
-              {runs.map(run => (
-                <button
-                  key={run.id}
-                  onClick={() => setSelectedRunId(run.id)}
-                  className={`w-full text-left px-4 py-3 hover:bg-warm-bg/70 transition-colors ${
-                    selectedRunId === run.id ? 'bg-warm-bg' : ''
-                  }`}
-                >
+            <div className="space-y-3 p-3">
+              {runs.map(run => {
+                const selected = selectedRunId === run.id
+
+                return (
+                  <div
+                    key={run.id}
+                    onClick={() => setSelectedRunId(run.id)}
+                    className={buildPipelineRunRowClassName(selected)}
+                  >
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-warm-text truncate">
+                      <p className={buildPipelineRunTitleClassName(selected)}>
                         {run.photo?.fileName || run.id}
                       </p>
-                      <p className="text-xs text-warm-muted mt-1 truncate">
+                      <p className={`${buildPipelineRunMetaClassName(selected)} mt-1 truncate`}>
                         {run.photo?.album?.title || t('unknownAlbum')} · {t('attempt', { count: run.attemptNumber })}
                       </p>
                     </div>
@@ -205,16 +222,17 @@ export default function PipelineRunsPage() {
                       {run.status}
                     </span>
                   </div>
-                  <div className="mt-2 flex items-center gap-3 text-xs text-warm-muted">
+                  <div className={`mt-2 flex items-center gap-3 ${buildPipelineRunMetaClassName(selected)}`}>
                     <span>{new Date(run.startedAt).toLocaleString(locale)}</span>
                     {run.duration !== null && <span>{run.duration} ms</span>}
                     {run.triggerType && <span>{run.triggerType}</span>}
                   </div>
                   {run.summary && (
-                    <p className="mt-2 text-xs text-warm-muted line-clamp-2">{run.summary}</p>
+                    <p className={`${buildPipelineRunMetaClassName(selected)} mt-2 line-clamp-2`}>{run.summary}</p>
                   )}
-                </button>
-              ))}
+                  </div>
+                )
+              })}
             </div>
           )}
         </section>
@@ -225,15 +243,21 @@ export default function PipelineRunsPage() {
           </div>
 
           {!selectedRunId ? (
-            <div className="p-8 text-sm text-warm-muted text-center">
-              {t('selectRun')}
+            <div className={buildPipelineDetailPanelClassName()}>
+              <div className="pt-4 text-warm-muted text-center">
+                {t('selectRun')}
+              </div>
             </div>
           ) : detailLoading ? (
-            <div className="p-4 text-sm text-warm-muted">{t('loadingDetail')}</div>
+            <div className={buildPipelineDetailPanelClassName()}>
+              <div className="text-warm-muted">{t('loadingDetail')}</div>
+            </div>
           ) : !runDetail ? (
-            <div className="p-4 text-sm text-error">{t('loadDetailFailed')}</div>
+            <div className={buildPipelineDetailPanelClassName()}>
+              <div className="text-error">{t('loadDetailFailed')}</div>
+            </div>
           ) : (
-            <div className="p-4 space-y-3 text-sm">
+            <div className={buildPipelineDetailPanelClassName()}>
               <DetailRow label="Run ID" value={runDetail.id} mono />
               <DetailRow label={t('status')} value={runDetail.status} />
               <DetailRow label={t('triggerType')} value={runDetail.triggerType || '-'} />
@@ -248,7 +272,7 @@ export default function PipelineRunsPage() {
 
               <div className="pt-3 border-t border-warm-border">
                 <p className="text-xs font-medium text-warm-text mb-2">{t('nodeResults')}</p>
-                <pre className="text-xs bg-warm-bg rounded-[var(--radius-sm)] p-3 overflow-auto max-h-64 text-warm-muted">
+                <pre className="pipeline-node-results-scroll text-xs bg-warm-bg rounded-[var(--radius-sm)] p-3 overflow-auto max-h-64 text-warm-muted">
                   {JSON.stringify(runDetail.nodeResults, null, 2)}
                 </pre>
               </div>

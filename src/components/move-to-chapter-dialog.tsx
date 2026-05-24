@@ -1,3 +1,5 @@
+import { Button } from '@/components/ui/button'
+
 type MoveChapterOption = {
   id: string
   title: string
@@ -33,14 +35,15 @@ export function MoveToChapterDialog({
         </div>
         <div className="space-y-2">
           {chapters.map(chapter => (
-            <button
+            <Button
               key={chapter.id}
-              type="button"
+              fullWidth
+              variant="secondary"
               onClick={() => onSelect(chapter.id)}
-              className="w-full rounded-[var(--radius-md)] border border-warm-border px-4 py-3 text-left text-sm text-warm-text"
+              className="justify-start"
             >
               {chapter.title}
-            </button>
+            </Button>
           ))}
         </div>
       </div>

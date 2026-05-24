@@ -2,6 +2,7 @@
 
 import { useRouter, useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { ArrowRightIcon, Button, RefreshIcon } from '@/components/ui/button'
 
 export default function PublicError({
   reset,
@@ -25,20 +26,22 @@ export default function PublicError({
       <p className="text-base text-film-text mb-2">{t('title')}</p>
       <p className="text-sm text-film-muted mb-8">{t('subtitle')}</p>
       <div className="flex items-center gap-3">
-        <button
+        <Button
           onClick={reset}
-          className="px-5 py-2.5 text-sm font-medium text-film-text bg-film-accent
-            rounded-[var(--radius-md)] hover:opacity-90 transition-opacity"
+          scheme="film"
+          variant="brand"
+          leadingIcon={<RefreshIcon />}
         >
           {t('retry')}
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => router.push(`/s/${slug}`)}
-          className="px-5 py-2.5 text-sm font-medium text-film-muted border border-film-surface
-            rounded-[var(--radius-md)] hover:bg-film-surface transition-colors"
+          scheme="film"
+          variant="secondary"
+          trailingIcon={<ArrowRightIcon />}
         >
           {t('backHome')}
-        </button>
+        </Button>
       </div>
     </div>
   )

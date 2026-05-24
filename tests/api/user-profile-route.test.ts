@@ -13,7 +13,7 @@ function createJsonRequest(url: string, body: unknown) {
   })
 }
 
-test('createProfilePatchHandler rejects avatar update when no avatar provided', async () => {
+test('createProfilePatchHandler rejects profile update when no name or avatar is provided', async () => {
   const handler = createProfilePatchHandler({
     auth: async () => ({
       user: {
@@ -36,8 +36,8 @@ test('createProfilePatchHandler rejects avatar update when no avatar provided', 
   assert.equal(response.status, 400)
   const payload = await response.json()
 
-  assert.equal(payload.error.code, 'AVATAR_REQUIRED')
-  assert.equal(payload.error.message, 'avatar is required')
+  assert.equal(payload.error.code, 'PROFILE_UPDATE_REQUIRED')
+  assert.equal(payload.error.message, 'name or avatar is required')
   assert.equal(payload.error.retryable, false)
   assert.equal(typeof payload.error.requestId, 'string')
   assert.ok(payload.error.requestId.length > 0)

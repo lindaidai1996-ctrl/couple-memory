@@ -5,6 +5,9 @@ import { useLocale, useTranslations } from 'next-intl'
 import { VelvetDatePicker } from '@/components/forms/velvet-date-picker'
 import { VelvetSelect } from '@/components/forms/velvet-select'
 import { SettingsFormSkeleton } from '@/components/skeleton/settings-form-skeleton'
+import { ArrowRightIcon, Button, EditIcon, PlusIcon, RefreshIcon } from '@/components/ui/button'
+import { mediaTileButtonClassName } from '@/components/ui/media-tile'
+import { resolveUserAvatarUrl } from '@/lib/default-avatar'
 import { compressAndUploadAvatar, type UploadStage } from '@/lib/upload'
 import {
   CAPTION_STYLE_OPTIONS,
@@ -112,6 +115,18 @@ type CoupleUpdateInput = {
   blockedPhrases?: string[]
 }
 
+type InviteActionButtonLabelInput = {
+  inviteCopied: string
+  inviteCopy: string
+  inviteRegenerate: string
+}
+
+type InviteActionButtonConfig = {
+  label: string
+  size: 'sm'
+  variant: 'secondary' | 'ghost'
+}
+
 export function normalizeCoverModeForSettings(
   coverMode: CoverMode | undefined,
   coverPhotoUrl: string | null
@@ -148,17 +163,43 @@ function normalizeCoupleResponse(data: Partial<CoupleData> & Record<string, unkn
   }
 }
 
-export function buildAvatarUpdatePayload(avatar: string) {
-  const trimmed = avatar.trim()
-  return { avatar: trimmed || null }
+export function buildProfileUpdatePayload(name: string) {
+  const trimmed = name.trim()
+  return { name: trimmed || null }
 }
 
-export function buildAvatarInputInitialValue() {
-  return ''
+export function resolveDisplayAvatarUrl(profile: Pick<UserProfile, 'avatar' | 'email' | 'name'> | null) {
+  if (!profile) return ''
+  return resolveUserAvatarUrl(profile)
 }
 
 export function buildBlockedPhrasesDraft(blockedPhrases: string[]) {
   return blockedPhrases.join('\n')
+}
+
+export function buildInviteActionButtonConfigs(
+  copied: boolean,
+  labels: InviteActionButtonLabelInput
+): {
+  copy: InviteActionButtonConfig
+  regenerate: InviteActionButtonConfig
+} {
+  return {
+    copy: {
+      label: copied ? labels.inviteCopied : labels.inviteCopy,
+      size: 'sm',
+      variant: 'secondary',
+    },
+    regenerate: {
+      label: labels.inviteRegenerate,
+      size: 'sm',
+      variant: 'ghost',
+    },
+  }
+}
+
+export function buildCoverTileClassName(selected: boolean) {
+  return `${mediaTileButtonClassName()} ${buildCoverTileClass(selected)}`
 }
 
 export function parseBlockedPhrasesDraft(draft: string) {
@@ -365,13 +406,15 @@ export default function SettingsPage() {
   const avatarStageLabels = useMemo(() => buildAvatarUploadStageLabels(t), [t])
   const [couple, setCouple] = useState<CoupleData | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [avatarInput, setAvatarInput] = useState('')
+  const [nameInput, setNameInput] = useState('')
+  const [avatarEditorOpen, setAvatarEditorOpen] = useState(false)
   const [blockedPhrasesDraft, setBlockedPhrasesDraft] = useState('')
   const [recentCoverPhotos, setRecentCoverPhotos] = useState<CoverPhotoOption[]>([])
   const [styleMemoryProfile, setStyleMemoryProfile] = useState<StyleMemoryProfileSnapshot | null>(null)
   const [recentCoverPhotosLoading, setRecentCoverPhotosLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [profileSaving, setProfileSaving] = useState(false)
   const [avatarSaving, setAvatarSaving] = useState(false)
   const [avatarUploadStage, setAvatarUploadStage] = useState<UploadStage | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -393,7 +436,7 @@ export default function SettingsPage() {
       if (profileRes.ok) {
         const data = await profileRes.json()
         setProfile(data)
-        setAvatarInput(buildAvatarInputInitialValue())
+        setNameInput(data.name ?? '')
       }
 
       setLoading(false)
@@ -461,36 +504,44 @@ export default function SettingsPage() {
     }
   }, [couple?.id])
 
-  async function saveAvatar(nextAvatar: string | null) {
-    setAvatarSaving(true)
+  async function patchProfile(
+    payload: {
+      avatar?: string | null
+      name?: string | null
+    },
+    successMessage: string
+  ) {
     setMessage(null)
 
     const res = await fetch('/api/users/me/profile', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ avatar: nextAvatar }),
+      body: JSON.stringify(payload),
     })
 
     if (res.ok) {
       const updated = await res.json()
       setProfile(updated)
-      setMessage({ type: 'success', text: t('avatarUpdated') })
+      setNameInput(updated.name ?? '')
+      setMessage({ type: 'success', text: successMessage })
+      return true
     } else {
       const data = await res.json()
       setMessage({
         type: 'error',
-        text: extractApiErrorMessage(data, t('avatarFailed')),
+        text: extractApiErrorMessage(data, t('profileSaveFailed')),
       })
     }
-
-    setAvatarSaving(false)
+    return false
   }
 
-  async function handleAvatarSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleProfileSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (!profile) return
 
-    await saveAvatar(buildAvatarUpdatePayload(avatarInput).avatar)
+    setProfileSaving(true)
+    await patchProfile(buildProfileUpdatePayload(nameInput), t('profileSaved'))
+    setProfileSaving(false)
   }
 
   async function handleAvatarFileChange(file: File | null) {
@@ -504,13 +555,16 @@ export default function SettingsPage() {
       const { avatarUrl } = await compressAndUploadAvatar(file, stage => {
         setAvatarUploadStage(stage)
       })
-      await saveAvatar(avatarUrl)
+      const success = await patchProfile({ avatar: avatarUrl }, t('avatarUpdated'))
+      if (success) {
+        setAvatarEditorOpen(false)
+      }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : t('avatarFailed')
       setMessage({ type: 'error', text: errorMessage })
-      setAvatarSaving(false)
     } finally {
       setAvatarUploadStage(null)
+      setAvatarSaving(false)
     }
   }
 
@@ -628,14 +682,14 @@ export default function SettingsPage() {
   const publicPreviewUrl = typeof window !== 'undefined'
     ? buildPublicPreviewUrl(window.location.origin, couple.slug)
     : ''
-  const avatarPreviewUrl = avatarInput.trim() || profile?.avatar || ''
+  const avatarPreviewUrl = resolveDisplayAvatarUrl(profile)
   const previewReady = Boolean(couple.isPublic && couple.slug)
   const heroCards = buildSettingsHeroCards({
     isPublic: couple.isPublic,
     slug: couple.slug,
     coverMode: couple.coverMode,
     coverPhotoUrl: couple.coverPhotoUrl,
-    avatar: profile?.avatar || avatarInput.trim() || null,
+    avatar: avatarPreviewUrl || null,
     captionStylePreference: couple.captionStylePreference,
     tonePreference: couple.tonePreference,
     blockedPhrases: couple.blockedPhrases,
@@ -663,37 +717,69 @@ export default function SettingsPage() {
         </div>
       ) : null}
 
-      <form onSubmit={handleAvatarSubmit}>
+      <form onSubmit={handleProfileSubmit}>
         <Section
-          title={t('avatar')}
-          eyebrow="Portrait"
-          description={t('avatarHint')}
-          accent={avatarPreviewUrl ? 'plum' : 'rose'}
+          title={t('profileTitle')}
+          eyebrow="Profile"
+          accent="plum"
         >
-          <div className="grid gap-5 lg:grid-cols-[132px_minmax(0,1fr)]">
-            <div className="flex flex-col items-center gap-3">
-              <div className={avatarFrameClass}>
-                <div className={avatarHaloClass} />
-                <div className={avatarMediaClass}>
-                  {avatarPreviewUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={avatarPreviewUrl}
-                      alt={t('avatarPreviewAlt')}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span className="px-4 text-center text-[11px] uppercase tracking-[0.28em] text-[var(--text-soft)]">
-                      {t('avatarEmpty')}
-                    </span>
-                  )}
+          <div className="space-y-4">
+            <div className="rounded-[24px] border border-[var(--line)] bg-[var(--panel-strong)]/80 p-4">
+              <div className="grid gap-4 md:grid-cols-[88px_minmax(0,1fr)_auto] md:items-center">
+                <div className="flex items-center justify-center">
+                  <div className={avatarFrameClass}>
+                    <div className={avatarHaloClass} />
+                    <div className={avatarMediaClass}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={avatarPreviewUrl}
+                        alt={t('avatarPreviewAlt')}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-base font-medium text-[var(--text)]">
+                    {nameInput.trim() || profile?.email || t('profileTitle')}
+                  </p>
+                  <p className="text-sm leading-6 text-[var(--text-soft)]">
+                    {avatarEditorOpen ? t('avatarReplaceHint') : t('avatarCollapsedHint')}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2.5">
+                  <Button
+                    type="button"
+                    onClick={() => setAvatarEditorOpen(prev => !prev)}
+                    variant="secondary"
+                    leadingIcon={<EditIcon />}
+                  >
+                    {avatarEditorOpen ? t('cancelAvatarChange') : t('changeAvatar')}
+                  </Button>
                 </div>
               </div>
-              <p className="text-center text-[11px] uppercase tracking-[0.26em] text-[var(--text-faint)]">
-                {profile?.name || profile?.email || t('avatar')}
-              </p>
             </div>
-            <div className="space-y-4">
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label={t('profileNickname')}>
+                <input
+                  value={nameInput}
+                  onChange={e => setNameInput(e.target.value)}
+                  className={controlClass}
+                  placeholder={t('profileNicknamePlaceholder')}
+                />
+              </Field>
+
+              <Field label={t('email')}>
+                <input
+                  value={profile?.email || ''}
+                  readOnly
+                  className={readOnlyControlClass}
+                />
+              </Field>
+            </div>
+
+            {avatarEditorOpen ? (
               <Field label={t('avatarUploadField')} hint={t('avatarUploadHint')}>
                 <label className={uploadTileClass}>
                   <span className="text-[11px] uppercase tracking-[0.3em] text-[var(--text-faint)]">
@@ -721,30 +807,17 @@ export default function SettingsPage() {
                   />
                 </label>
               </Field>
-              <Field label={t('avatarField')} hint={t('avatarHint')}>
-                <input
-                  value={avatarInput}
-                  onChange={e => setAvatarInput(e.target.value)}
-                  className={controlClass}
-                  placeholder={t('avatarPlaceholder')}
-                />
-              </Field>
-              <div className="flex flex-wrap gap-2.5">
-                <button
-                  type="submit"
-                  disabled={avatarSaving}
-                  className={primaryButtonClass}
-                >
-                  {avatarSaving ? t('saving') : t('updateAvatar')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAvatarInput('')}
-                  className={secondaryButtonClass}
-                >
-                  {t('clear')}
-                </button>
-              </div>
+            ) : null}
+
+            <div className="flex flex-wrap gap-2.5">
+              <Button
+                type="submit"
+                loading={profileSaving}
+                variant="brand"
+                leadingIcon={<RefreshIcon />}
+              >
+                {profileSaving ? t('saving') : t('saveProfile')}
+              </Button>
             </div>
           </div>
         </Section>
@@ -752,7 +825,7 @@ export default function SettingsPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Section
-          title={t('basicInfo')}
+          title={t('spaceBasicInfo')}
           eyebrow="Identity"
           description={t('slugHint')}
           accent="plum"
@@ -941,14 +1014,15 @@ export default function SettingsPage() {
                   : t('memoryPreferenceResetEmptyHint')}
               </p>
             </div>
-            <button
+            <Button
               type="button"
               onClick={() => void handleResetMemoryPreferences()}
               disabled={saving || !memoryPreferenceSummary.hasCustomPreferences}
-              className={secondaryButtonClass}
+              variant="secondary"
+              leadingIcon={<RefreshIcon />}
             >
               {t('memoryPreferenceResetAction')}
-            </button>
+            </Button>
           </div>
 
           {styleMemoryCards.length > 0 ? (
@@ -1007,7 +1081,7 @@ export default function SettingsPage() {
                         key={photo.id}
                         type="button"
                         onClick={() => setCouple(prev => prev ? applyCoverPhotoSelection(prev, photo) : prev)}
-                        className={buildCoverTileClass(selected)}
+                        className={buildCoverTileClassName(selected)}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -1050,25 +1124,26 @@ export default function SettingsPage() {
           </Field>
 
           <div className="flex flex-wrap gap-2.5">
-            <button
+            <Button
               type="button"
               disabled={!couple.isPublic || !couple.slug}
               onClick={() => window.open(publicPreviewUrl, '_blank', 'noopener,noreferrer')}
-              className={secondaryButtonClass}
+              variant="secondary"
+              leadingIcon={<ArrowRightIcon />}
             >
               {t('openPreview')}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               disabled={!couple.slug}
               onClick={() => {
                 navigator.clipboard.writeText(publicPreviewUrl)
                 setMessage({ type: 'success', text: t('copiedPreview') })
               }}
-              className={ghostButtonClass}
+              variant="ghost"
             >
               {t('copyPreview')}
-            </button>
+            </Button>
           </div>
 
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--text-faint)]">
@@ -1076,13 +1151,14 @@ export default function SettingsPage() {
           </p>
         </Section>
 
-        <button
+        <Button
           type="submit"
-          disabled={saving}
-          className={primaryButtonClass}
+          loading={saving}
+          variant="brand"
+          leadingIcon={<RefreshIcon />}
         >
           {saving ? t('saving') : t('save')}
-        </button>
+        </Button>
       </form>
 
       <div className="border-t border-[var(--line)]/80 pt-5">
@@ -1105,7 +1181,7 @@ const pageShellClass = `mx-auto flex max-w-4xl flex-col gap-4 text-[var(--text)]
   [--panel-strong:var(--color-warm-surface)] [--accent:var(--color-warm-accent)]
   [--accent-2:var(--dashboard-accent-secondary)] [--accent-glow:var(--dashboard-accent-glow)]`
 
-const heroClass = `dashboard-hero-surface relative overflow-hidden rounded-[30px] px-5 py-5 text-white sm:px-6`
+const heroClass = `dashboard-hero-surface relative overflow-hidden rounded-[22px] px-3.5 py-3 text-white sm:px-4`
 
 const sectionClass = `dashboard-surface-card-soft rounded-[26px] p-5 backdrop-blur-sm`
 
@@ -1120,26 +1196,12 @@ const textareaClass = `${controlClass} h-auto min-h-[108px] py-3 leading-6 resiz
 
 const readOnlyControlClass = `${controlClass} bg-[var(--dashboard-surface-gradient)] text-[var(--text-soft)]`
 
-const primaryButtonClass = `inline-flex h-10 items-center justify-center rounded-[16px] border border-white/20
-  bg-[linear-gradient(135deg,#5b3a52_0%,#c9a2a1_100%)] px-4 text-sm font-medium text-white
-  shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_10px_24px_rgba(111,79,102,0.22)]
-  transition duration-200 hover:-translate-y-0.5 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_14px_28px_rgba(111,79,102,0.26)]
-  disabled:translate-y-0 disabled:opacity-50`
-
-const secondaryButtonClass = `dashboard-glass-button inline-flex h-10 items-center justify-center rounded-[16px]
-  px-4 text-sm font-medium text-[var(--accent)] transition duration-200
-  hover:-translate-y-0.5 disabled:translate-y-0 disabled:opacity-50`
-
-const ghostButtonClass = `inline-flex h-10 items-center justify-center rounded-[16px] border border-[var(--line)]
-  bg-transparent px-4 text-sm font-medium text-[var(--text)] transition duration-200
-  hover:-translate-y-0.5 hover:bg-white/65 dark:hover:bg-white/8 disabled:translate-y-0 disabled:opacity-50`
-
 const chipClass = `inline-flex rounded-full border border-[rgba(111,79,102,0.16)] bg-white/72 px-2.5 py-1 text-[10px]
   uppercase tracking-[0.22em] text-[rgba(91,58,82,0.88)] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]`
 
-const avatarFrameClass = `relative flex h-28 w-28 items-center justify-center`
+const avatarFrameClass = `relative flex h-20 w-20 items-center justify-center`
 const avatarHaloClass = `absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.82)_0%,rgba(255,255,255,0.12)_56%,transparent_70%)] blur-sm`
-const avatarMediaClass = `relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-white/50
+const avatarMediaClass = `relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-white/50
   bg-[linear-gradient(135deg,rgba(111,79,102,0.18),rgba(201,162,161,0.26))] shadow-[0_18px_36px_rgba(73,42,58,0.16)]`
 
 const uploadTileClass = `group flex min-h-[168px] cursor-pointer flex-col items-center justify-center gap-3 rounded-[24px]
@@ -1193,30 +1255,38 @@ function PageHeader({
 }) {
   return (
     <header className={heroClass}>
-      <div className="absolute inset-y-0 right-0 w-44 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.34),transparent_68%)]" />
-      <div className="relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start">
-        <div className="space-y-4">
-          <p className="text-[11px] uppercase tracking-[0.34em] text-white/72">{eyebrow}</p>
-          <h1 className="max-w-xl font-[var(--font-display)] text-[clamp(2rem,4vw,3.6rem)] leading-[0.96] tracking-[-0.03em] text-white">
-            {title}
-          </h1>
-          <p className="max-w-2xl text-sm leading-6 text-white/78">{summary}</p>
-          <div className="grid gap-2 sm:grid-cols-3">
-            {cards.map(card => (
-              <div
-                key={card.label}
-                className="rounded-[20px] border border-white/12 bg-white/8 p-3 backdrop-blur-sm"
-              >
-                <p className="text-[10px] uppercase tracking-[0.26em] text-white/56">{card.label}</p>
-                <p className="mt-2 font-[var(--font-display)] text-[22px] leading-none text-white">{card.value}</p>
-                <p className="mt-2 text-xs leading-5 text-white/72">{card.detail}</p>
-              </div>
-            ))}
+      <div className="absolute inset-y-0 right-0 w-20 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.24),transparent_70%)]" />
+      <div className="relative space-y-2.5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-1">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-white/68">{eyebrow}</p>
+            <h1 className="max-w-xl font-[var(--font-display)] text-[clamp(1.35rem,2.2vw,2rem)] leading-none tracking-[-0.03em] text-white">
+              {title}
+            </h1>
           </div>
+          <p className="max-w-xl text-[11px] leading-4 text-white/72 sm:text-right">{summary}</p>
         </div>
-        <div className="rounded-[24px] border border-white/12 bg-white/10 p-4 backdrop-blur-sm">
-          <p className="text-[10px] uppercase tracking-[0.3em] text-white/62">Public status</p>
-          <p className="mt-3 font-[var(--font-display)] text-[22px] leading-tight text-white">{detail}</p>
+
+        <div className="grid gap-1.5 sm:grid-cols-3">
+          {cards.map(card => (
+            <div
+              key={card.label}
+              className="rounded-[14px] border border-white/10 bg-white/6 px-2.5 py-2 backdrop-blur-sm"
+            >
+              <p className="text-[8px] uppercase tracking-[0.22em] text-white/52">{card.label}</p>
+              <div className="mt-1 flex items-baseline gap-2">
+                <p className="font-[var(--font-display)] text-[14px] leading-none text-white">{card.value}</p>
+                <p className="line-clamp-1 text-[10px] leading-4 text-white/64">{card.detail}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-[14px] border border-white/10 bg-white/7 px-2.5 py-2 backdrop-blur-sm">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-[8px] uppercase tracking-[0.24em] text-white/56">Public status</p>
+            <p className="text-[11px] leading-4 text-white/84">{detail}</p>
+          </div>
         </div>
       </div>
     </header>
@@ -1312,16 +1382,23 @@ function InviteSection({
     return (
       <div className="rounded-[24px] border border-dashed border-[rgba(111,79,102,0.24)] bg-[linear-gradient(135deg,rgba(111,79,102,0.05),rgba(201,162,161,0.12))] p-4">
         <p className="mb-3 text-sm leading-6 text-[var(--text-soft)]">{t('visibilityDescription')}</p>
-        <button
+        <Button
           type="button"
           onClick={onGenerate}
-          className={primaryButtonClass}
+          variant="brand"
+          leadingIcon={<PlusIcon />}
         >
           {t('inviteGenerate')}
-        </button>
+        </Button>
       </div>
     )
   }
+
+  const actionButtons = buildInviteActionButtonConfigs(copied, {
+    inviteCopied: t('inviteCopied'),
+    inviteCopy: t('inviteCopy'),
+    inviteRegenerate: t('inviteRegenerate'),
+  })
 
   return (
     <div className="space-y-3">
@@ -1331,20 +1408,22 @@ function InviteSection({
           {typeof window !== 'undefined' ? window.location.origin : ''}/invite/{couple.inviteCode}
         </code>
         <div className="mt-3 flex flex-wrap gap-2.5">
-          <button
+          <Button
             type="button"
             onClick={handleCopy}
-            className={secondaryButtonClass}
+            size={actionButtons.copy.size}
+            variant={actionButtons.copy.variant}
           >
-            {copied ? t('inviteCopied') : t('inviteCopy')}
-          </button>
-          <button
+            {actionButtons.copy.label}
+          </Button>
+          <Button
             type="button"
             onClick={handleRegenerate}
-            className={ghostButtonClass}
+            size={actionButtons.regenerate.size}
+            variant={actionButtons.regenerate.variant}
           >
-            {t('inviteRegenerate')}
-          </button>
+            {actionButtons.regenerate.label}
+          </Button>
         </div>
       </div>
       {daysLeft !== null && (

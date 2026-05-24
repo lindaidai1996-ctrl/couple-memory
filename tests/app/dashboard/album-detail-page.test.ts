@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import {
   ALBUM_NARRATIVE_HIGHLIGHT_CARD_CLASS,
   ALBUM_NARRATIVE_STAT_CARD_CLASS,
+  buildAlbumDetailWorkspaceState,
   buildAlbumCoverCandidates,
   buildAlbumDescriptionDraftSuggestion,
   buildAlbumDetailUiText,
@@ -20,6 +21,7 @@ import {
 import {
   AlbumChapterCard,
   buildAlbumChapterCardMeta,
+  buildAlbumChapterPreviewTileClassName,
 } from '../../../src/components/album-chapter-card'
 import {
   buildChapterDetailDraft,
@@ -45,6 +47,9 @@ test('buildAlbumDetailUiText exposes localized chapter page copy', () => {
   assert.equal(uiText.composer.title, 'composerTitle')
   assert.equal(uiText.moveDialog.title, 'moveDialogTitle')
   assert.equal(uiText.detailDrawer.save, 'detailDrawerSave')
+  assert.equal(uiText.workspace.emptyTitle, 'workspaceEmptyTitle')
+  assert.equal(uiText.workspace.emptyDescription, 'workspaceEmptyDescription')
+  assert.equal(uiText.workspace.close, 'workspaceClose')
   assert.equal(uiText.createChapterFailed, 'createChapterFailed')
   assert.equal(uiText.summaryUpdated, 'summaryUpdated')
   assert.equal(uiText.narrative.editAlbum, 'narrativeEditAlbum')
@@ -97,6 +102,50 @@ test('buildAlbumDetailSections shows empty chapter guidance when there are no ch
   assert.equal(sections.hasEmptyChapters, true)
   assert.equal(sections.chapterCount, 0)
   assert.equal(sections.ungroupedCount, 2)
+})
+
+test('AlbumChapterCard preview tiles keep full grid width after shared button refactor', () => {
+  const tileClassName = buildAlbumChapterPreviewTileClassName()
+  const markup = renderToStaticMarkup(
+    React.createElement(AlbumChapterCard, {
+      chapter: {
+        id: 'chapter_1',
+        title: '第一次一起看海',
+        backgroundNote: null,
+        aiSummary: null,
+        photos: [
+          {
+            id: 'photo_1',
+            fileName: 'cover.jpg',
+            status: 'READY',
+            thumbnailUrl: 'https://cdn.example.com/cover.jpg',
+            displayUrl: null,
+            takenAt: null,
+            userCaption: null,
+            aiCaption: null,
+            aiLayout: null,
+            aiScene: null,
+            aiMood: null,
+            locationName: null,
+            canBeCover: false,
+            isAlbumCover: false,
+          },
+        ],
+      },
+      copy: {
+        photoCount: '1 张照片',
+        editChapter: '编辑',
+        refreshSummary: '刷新',
+        generateSummary: '生成',
+        refreshingSummary: '刷新中',
+        generatingSummary: '生成中',
+      },
+    })
+  )
+
+  assert.match(tileClassName, /\bcm-media-tile\b/)
+  assert.doesNotMatch(tileClassName, /\bcm-button\b/)
+  assert.match(markup, /cm-media-tile/)
 })
 
 test('buildAlbumNarrativeSnapshot reports a ready narrative album', () => {
@@ -501,4 +550,108 @@ test('buildChapterDetailDraft derives current chapter values for the drawer form
     title: '赛里木湖婚纱照的时刻',
     backgroundNote: '那天的风很轻',
   })
+})
+
+test('buildAlbumDetailWorkspaceState resolves the selected photo from the latest album payload', () => {
+  const state = buildAlbumDetailWorkspaceState({
+    detailSurface: {
+      kind: 'photo',
+      photoId: 'photo_2',
+      chapterPhotoIds: ['photo_1', 'photo_2'],
+    },
+    album: {
+      id: 'album_1',
+      title: '夏天',
+      description: null,
+      ungroupedPhotos: [],
+      chapters: [
+        {
+          id: 'chapter_1',
+          title: '看海',
+          backgroundNote: null,
+          photos: [
+            {
+              id: 'photo_1',
+              fileName: 'one.jpg',
+              thumbnailUrl: 'https://cdn.example.com/1.jpg',
+              displayUrl: 'https://cdn.example.com/1-large.jpg',
+              status: 'READY',
+              aiCaption: null,
+              userCaption: null,
+              takenAt: null,
+              locationName: null,
+              aiLayout: null,
+              aiScene: null,
+              aiMood: null,
+              cameraMake: null,
+              cameraModel: null,
+              focalLength: null,
+              aperture: null,
+              shutterSpeed: null,
+              iso: null,
+            },
+            {
+              id: 'photo_2',
+              fileName: 'two.jpg',
+              thumbnailUrl: 'https://cdn.example.com/2.jpg',
+              displayUrl: 'https://cdn.example.com/2-large.jpg',
+              status: 'READY',
+              aiCaption: '最新文案',
+              userCaption: null,
+              takenAt: null,
+              locationName: '青岛',
+              aiLayout: 'story-card',
+              aiScene: null,
+              aiMood: null,
+              cameraMake: null,
+              cameraModel: null,
+              focalLength: null,
+              aperture: null,
+              shutterSpeed: null,
+              iso: null,
+            },
+          ],
+        },
+      ],
+    },
+  })
+
+  assert.equal(state.isOpen, true)
+  assert.equal(state.kind, 'photo')
+  assert.equal(state.activePhoto?.id, 'photo_2')
+  assert.equal(state.activeChapter, null)
+})
+
+test('buildAlbumDetailWorkspaceState resolves the selected chapter from the latest album payload', () => {
+  const state = buildAlbumDetailWorkspaceState({
+    detailSurface: {
+      kind: 'chapter',
+      chapterId: 'chapter_2',
+    },
+    album: {
+      id: 'album_1',
+      title: '夏天',
+      description: null,
+      ungroupedPhotos: [],
+      chapters: [
+        {
+          id: 'chapter_1',
+          title: '看海',
+          backgroundNote: null,
+          photos: [],
+        },
+        {
+          id: 'chapter_2',
+          title: '回家路上',
+          backgroundNote: '风很大',
+          photos: [],
+        },
+      ],
+    },
+  })
+
+  assert.equal(state.isOpen, true)
+  assert.equal(state.kind, 'chapter')
+  assert.equal(state.activePhoto, null)
+  assert.equal(state.activeChapter?.id, 'chapter_2')
 })

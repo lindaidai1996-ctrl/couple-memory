@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
+import { ArrowRightIcon, Button, EditIcon, RefreshIcon, XIcon, buttonClassName } from '@/components/ui/button'
 import type { PhotoData } from './photo-card'
 import { PhotoContextForm } from './photo-context-form'
 
@@ -167,31 +168,31 @@ export function PhotoDetailModal({
         {/* 图片区 */}
         <div className={`relative ${photoDetailImageSurfaceClass} flex-shrink-0`}>
           {navigation.hasPrevious && onNavigate ? (
-            <button
+            <Button
               type="button"
               onClick={() => onNavigate(navigation.previousPhotoId!)}
               aria-label={t('previousPhoto')}
-              className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/40 p-2 text-white transition-colors hover:bg-black/60"
+              className="absolute left-3 top-1/2 z-10 -translate-y-1/2 bg-black/40 text-white hover:bg-black/60"
+              variant="ghost"
+              size="xs"
+              iconOnly
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-            </button>
+              <ArrowRightIcon className="-scale-x-100" />
+            </Button>
           ) : null}
 
           {navigation.hasNext && onNavigate ? (
-            <button
+            <Button
               type="button"
               onClick={() => onNavigate(navigation.nextPhotoId!)}
               aria-label={t('nextPhoto')}
-              className="absolute right-14 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/40 p-2 text-white transition-colors hover:bg-black/60"
+              className="absolute right-14 top-1/2 z-10 -translate-y-1/2 bg-black/40 text-white hover:bg-black/60"
+              variant="ghost"
+              size="xs"
+              iconOnly
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-            </button>
+              <ArrowRightIcon />
+            </Button>
           ) : null}
 
           {photo.displayUrl ? (
@@ -206,17 +207,16 @@ export function PhotoDetailModal({
               {t('noPreview')}
             </div>
           )}
-          <button
+          <Button
             onClick={onClose}
-            className="absolute top-3 right-3 p-2 bg-black/40 hover:bg-black/60
-              text-white rounded-full transition-colors"
+            aria-label={t('close')}
+            className="absolute top-3 right-3 bg-black/40 text-white hover:bg-black/60"
+            variant="ghost"
+            size="xs"
+            iconOnly
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              strokeWidth="2" strokeLinecap="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
+            <XIcon />
+          </Button>
         </div>
 
         {/* Tab 切换 */}
@@ -229,7 +229,11 @@ export function PhotoDetailModal({
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors
+              className={`${buttonClassName({
+                size: 'sm',
+                variant: tab === key ? 'subtle' : 'ghost',
+                className: 'h-auto rounded-none border-b-2 px-4 py-3 text-sm font-medium shadow-none',
+              })} 
                 ${tab === key
                   ? 'border-warm-accent text-warm-accent'
                   : 'border-transparent text-warm-muted hover:text-warm-text'
@@ -259,25 +263,28 @@ export function PhotoDetailModal({
               } />
 
               {photo.status === 'FAILED' && (
-                <button
+                <Button
                   onClick={handleRetry}
-                  disabled={retrying}
-                  className="mt-2 px-4 py-2 text-sm text-white bg-warm-accent rounded-[var(--radius-md)]
-                    hover:bg-warm-accent-hover disabled:opacity-50 transition-colors"
+                  loading={retrying}
+                  variant="brand"
+                  leadingIcon={<RefreshIcon />}
+                  className="mt-2"
                 >
                   {retrying ? t('retrying') : t('retry')}
-                </button>
+                </Button>
               )}
 
               {photo.status === 'READY' && photo.canBeCover && onSetCover && (
-                <button
+                <Button
                   onClick={handleSetCover}
                   disabled={settingCover || photo.isAlbumCover}
-                  className="mt-2 px-4 py-2 text-sm text-white bg-warm-text rounded-[var(--radius-md)]
-                    hover:opacity-90 disabled:opacity-50 transition-colors"
+                  loading={settingCover}
+                  variant={photo.isAlbumCover ? 'subtle' : 'secondary'}
+                  leadingIcon={!photo.isAlbumCover ? <EditIcon /> : undefined}
+                  className="mt-2"
                 >
                   {photo.isAlbumCover ? t('coverCurrent') : settingCover ? t('coverSetting') : t('coverSet')}
-                </button>
+                </Button>
               )}
             </div>
           )}
@@ -315,31 +322,27 @@ export function PhotoDetailModal({
                   <summary className="cursor-pointer text-sm font-medium text-warm-text">{t('layoutTemplate')}</summary>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
                     {layoutOptions.map(opt => (
-                      <button
+                      <Button
                         key={opt.value}
+                        size="sm"
                         onClick={() => setLayout(opt.value)}
-                        className={`px-3 py-2 text-sm rounded-[var(--radius-md)] border transition-colors
-                          ${layout === opt.value
-                            ? 'border-warm-accent bg-warm-accent/10 text-warm-accent'
-                            : 'border-warm-border text-warm-muted hover:border-warm-accent/50'
-                          }`}
+                        variant={layout === opt.value ? 'subtle' : 'ghost'}
                       >
                         {opt.label}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </details>
               ) : null}
 
-              <button
+              <Button
                 onClick={handleSave}
-                disabled={saving}
-                className="px-6 py-2.5 bg-warm-accent text-white text-sm font-medium
-                  rounded-[var(--radius-md)] hover:bg-warm-accent-hover
-                  disabled:opacity-50 transition-colors"
+                loading={saving}
+                variant="brand"
+                leadingIcon={<ArrowRightIcon />}
               >
                 {saving ? t('saving') : t('save')}
-              </button>
+              </Button>
             </div>
           )}
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Button } from '@/components/ui/button'
 import type { AlbumChapterCardData } from './album-chapter-card'
 
 export type ChapterDetailDrawerCopy = {
@@ -55,10 +56,12 @@ export function ChapterDetailDrawer({
       />
 
       <div className="flex justify-end gap-3">
-        <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-warm-text border border-warm-border rounded-[var(--radius-md)]">{copy.cancel}</button>
-        <button type="button" onClick={() => onSave({ title: title.trim(), backgroundNote: backgroundNote.trim() })} className="px-4 py-2 text-sm text-white bg-warm-accent rounded-[var(--radius-md)]">
+        <Button variant="secondary" onClick={onClose}>
+          {copy.cancel}
+        </Button>
+        <Button variant="brand" onClick={() => onSave({ title: title.trim(), backgroundNote: backgroundNote.trim() })}>
           {copy.save}
-        </button>
+        </Button>
       </div>
     </aside>
   )

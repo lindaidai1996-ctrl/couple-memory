@@ -3,37 +3,46 @@ import test from 'node:test'
 
 import {
   applyCoverPhotoSelection,
-  buildAvatarInputInitialValue,
+  buildInviteActionButtonConfigs,
   buildMemoryPreferenceSummary,
   buildStyleMemoryInsightCards,
   buildResetMemoryPreferencesInput,
   buildSettingsHeroCards,
+  buildCoverTileClassName,
   buildRecentCoverPhotoOptions,
-  buildAvatarUpdatePayload,
+  buildProfileUpdatePayload,
   buildBlockedPhrasesDraft,
   buildCoupleUpdatePayload,
   buildPublicPreviewUrl,
+  resolveDisplayAvatarUrl,
   extractApiErrorMessage,
   normalizeCoverModeForSettings,
   parseBlockedPhrasesDraft,
 } from '../../../src/app/(dashboard)/settings/page'
 
-test('buildAvatarUpdatePayload keeps avatar url when provided', () => {
+test('buildProfileUpdatePayload trims user name before saving', () => {
   assert.deepEqual(
-    buildAvatarUpdatePayload('https://cdn.example.com/avatar.jpg'),
-    { avatar: 'https://cdn.example.com/avatar.jpg' }
+    buildProfileUpdatePayload('  Lindaidai  '),
+    { name: 'Lindaidai' }
   )
 })
 
-test('buildAvatarUpdatePayload clears avatar when input is blank', () => {
+test('buildProfileUpdatePayload keeps empty name as null when user clears it', () => {
   assert.deepEqual(
-    buildAvatarUpdatePayload('   '),
-    { avatar: null }
+    buildProfileUpdatePayload('   '),
+    { name: null }
   )
 })
 
-test('buildAvatarInputInitialValue keeps manual avatar url field blank by default', () => {
-  assert.equal(buildAvatarInputInitialValue(), '')
+test('resolveDisplayAvatarUrl falls back to default avatar when profile avatar is missing', () => {
+  assert.equal(
+    resolveDisplayAvatarUrl({
+      email: 'linda@example.com',
+      name: 'Lindaidai',
+      avatar: null,
+    }),
+    '/avatars/default/avatar-03.svg'
+  )
 })
 
 test('buildCoupleUpdatePayload clears manual cover fields in NONE mode', () => {
@@ -248,6 +257,35 @@ test('buildBlockedPhrasesDraft preserves line breaks for textarea editing', () =
     buildBlockedPhrasesDraft(['soulmate', 'meant to be']),
     'soulmate\nmeant to be'
   )
+})
+
+test('InviteSection keeps invite actions compact in dense action rows', () => {
+  assert.deepEqual(
+    buildInviteActionButtonConfigs(false, {
+      inviteCopied: 'copied',
+      inviteCopy: 'copy',
+      inviteRegenerate: 'regenerate',
+    }),
+    {
+      copy: {
+        label: 'copy',
+        size: 'sm',
+        variant: 'secondary',
+      },
+      regenerate: {
+        label: 'regenerate',
+        size: 'sm',
+        variant: 'ghost',
+      },
+    }
+  )
+})
+
+test('cover photo tiles opt into full-width media button layout', () => {
+  const className = buildCoverTileClassName(false)
+
+  assert.match(className, /\bcm-media-tile\b/)
+  assert.doesNotMatch(className, /\bcm-button\b/)
 })
 
 test('buildMemoryPreferenceSummary exposes current AI memory settings at a glance', () => {

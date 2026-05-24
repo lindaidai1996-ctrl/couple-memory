@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
+import { Button, MenuIcon as ButtonMenuIcon } from '@/components/ui/button'
 
 export function Sidebar() {
   const t = useTranslations('Sidebar')
@@ -20,13 +21,17 @@ export function Sidebar() {
   return (
     <>
       {/* 移动端触发按钮 */}
-      <button
+      <Button
         onClick={() => setMobileOpen(true)}
-        className="dashboard-glass-button lg:hidden fixed left-4 top-4 z-50 rounded-full p-2.5 shadow-sm"
+        className="lg:hidden fixed left-4 top-4 z-50 shadow-sm"
         aria-label={t('openNavigation')}
+        variant="secondary"
+        size="sm"
+        pill
+        iconOnly
       >
-        <MenuIcon />
-      </button>
+        <ButtonMenuIcon />
+      </Button>
 
       {/* 移动端遮罩 */}
       <div
@@ -150,17 +155,6 @@ function PipelineIcon({ active }: { active: boolean }) {
       <path d="M14 6h3" />
       <path d="M14 18h3" />
       <path d="M12 8v8" />
-    </svg>
-  )
-}
-
-function MenuIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2" strokeLinecap="round">
-      <line x1="3" y1="6" x2="21" y2="6" />
-      <line x1="3" y1="12" x2="21" y2="12" />
-      <line x1="3" y1="18" x2="21" y2="18" />
     </svg>
   )
 }
