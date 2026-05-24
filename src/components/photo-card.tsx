@@ -46,6 +46,10 @@ type Translator = (key: string) => string
 
 export const photoCardSurfaceClass = 'bg-warm-skeleton-base'
 
+export function canUsePhotoAsAlbumCover(photo: Pick<PhotoData, 'status' | 'displayUrl' | 'canBeCover'>) {
+  return photo.status === 'READY' && Boolean(photo.displayUrl) && Boolean(photo.canBeCover)
+}
+
 export function buildPhotoCardStatusCopy(t: Translator) {
   return {
     processing: t('processing'),

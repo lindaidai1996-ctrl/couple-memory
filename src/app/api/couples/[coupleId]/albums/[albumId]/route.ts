@@ -9,6 +9,7 @@ type AlbumRouteDeps = {
         id: string
         title: string
         description: string | null
+        coverPhotoId?: string | null
         chapters?: unknown[]
         photos?: unknown[]
       } | null>
@@ -36,6 +37,23 @@ type AlbumRouteDeps = {
       photoAIVariant: { deleteMany: (args: Record<string, unknown>) => Promise<unknown> }
       pipelineRun: { deleteMany: (args: Record<string, unknown>) => Promise<unknown> }
     }) => Promise<T>) => Promise<T>
+  }
+}
+
+type AlbumPhotoShape = {
+  id: string
+  status?: string
+  displayUrl?: string | null
+  canBeCover?: boolean
+  isAlbumCover?: boolean
+  [key: string]: unknown
+}
+
+function annotateAlbumPhoto(photo: AlbumPhotoShape, coverPhotoId?: string | null) {
+  return {
+    ...photo,
+    canBeCover: photo.status === 'READY' && Boolean(photo.displayUrl),
+    isAlbumCover: coverPhotoId === photo.id,
   }
 }
 
@@ -98,12 +116,33 @@ export function createGetAlbumHandler(deps: AlbumRouteDeps = {}) {
     if (!album) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
+
+    const chapters = Array.isArray(album.chapters)
+      ? album.chapters.map(chapter => {
+          const typedChapter = chapter as {
+            photos?: AlbumPhotoShape[]
+            [key: string]: unknown
+          }
+
+          return {
+            ...typedChapter,
+            photos: Array.isArray(typedChapter.photos)
+              ? typedChapter.photos.map(photo => annotateAlbumPhoto(photo, album.coverPhotoId))
+              : [],
+          }
+        })
+      : []
+
+    const ungroupedPhotos = Array.isArray(album.photos)
+      ? (album.photos as AlbumPhotoShape[]).map(photo => annotateAlbumPhoto(photo, album.coverPhotoId))
+      : []
+
     return NextResponse.json({
       id: album.id,
       title: album.title,
       description: album.description,
-      chapters: album.chapters ?? [],
-      ungroupedPhotos: album.photos ?? [],
+      chapters,
+      ungroupedPhotos,
     })
   }
 }

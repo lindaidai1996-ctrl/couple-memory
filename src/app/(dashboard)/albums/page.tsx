@@ -20,6 +20,7 @@ type Translator = (key: string, values?: Record<string, string | number>) => str
 type AlbumCoverRecipe = {
   recipeKey: string
   accentKey: string
+  emblemKind: 'icon'
   coverClassName: string
   overlayClassName: string
   emblemClassName: string
@@ -33,6 +34,7 @@ const ALBUM_FALLBACK_RECIPES: AlbumCoverRecipe[] = [
   {
     recipeKey: 'plum-dawn',
     accentKey: 'mist',
+    emblemKind: 'icon',
     coverClassName:
       'bg-[linear-gradient(135deg,#4a2f42_0%,#8f607a_46%,#d7bbb7_100%)]',
     overlayClassName:
@@ -43,6 +45,7 @@ const ALBUM_FALLBACK_RECIPES: AlbumCoverRecipe[] = [
   {
     recipeKey: 'rose-parlor',
     accentKey: 'blush',
+    emblemKind: 'icon',
     coverClassName:
       'bg-[linear-gradient(145deg,#5b3a52_0%,#9d7084_42%,#edd9d5_100%)]',
     overlayClassName:
@@ -53,6 +56,7 @@ const ALBUM_FALLBACK_RECIPES: AlbumCoverRecipe[] = [
   {
     recipeKey: 'velvet-evening',
     accentKey: 'mulberry',
+    emblemKind: 'icon',
     coverClassName:
       'bg-[linear-gradient(135deg,#34202f_0%,#6f4f66_48%,#c9a2a1_100%)]',
     overlayClassName:
@@ -63,6 +67,7 @@ const ALBUM_FALLBACK_RECIPES: AlbumCoverRecipe[] = [
   {
     recipeKey: 'powder-ink',
     accentKey: 'editorial',
+    emblemKind: 'icon',
     coverClassName:
       'bg-[linear-gradient(140deg,#6f4f66_0%,#b88e96_44%,#f1dfda_100%)]',
     overlayClassName:
@@ -73,6 +78,7 @@ const ALBUM_FALLBACK_RECIPES: AlbumCoverRecipe[] = [
   {
     recipeKey: 'dark-bloom',
     accentKey: 'night',
+    emblemKind: 'icon',
     coverClassName:
       'bg-[linear-gradient(135deg,#2c1625_0%,#5a3550_38%,#a97684_100%)]',
     overlayClassName:
@@ -90,12 +96,6 @@ function hashAlbumSeed(seed: string) {
   }
 
   return hash
-}
-
-function buildAlbumMonogram(title: string) {
-  const compact = title.replace(/\s+/g, '').trim()
-  if (!compact) return 'AL'
-  return compact.slice(0, 2).toUpperCase()
 }
 
 export function buildAlbumsUiText(t: Translator) {
@@ -142,7 +142,21 @@ function AlbumFallbackCover({ album }: { album: Pick<Album, 'id' | 'title' | 'co
       </div>
       <div className="absolute inset-0 flex flex-col justify-between p-5">
         <div className={`flex h-11 w-11 items-center justify-center rounded-[14px] border text-sm font-semibold tracking-[0.22em] ${coverVisual.emblemClassName}`}>
-          {buildAlbumMonogram(album.title)}
+          <svg
+            aria-hidden="true"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x="3.5" y="5" width="17" height="14" rx="2.5" />
+            <path d="M7.5 9.5h9" />
+            <path d="M7.5 13h6" />
+          </svg>
         </div>
         <p className="max-w-[70%] text-xl font-semibold leading-tight text-white/92">
           {album.title}

@@ -762,6 +762,56 @@ html.dark .cm-button--velvet.cm-button--ghost {
   padding: 0 16px 16px;
 }
 
+.cm-photo-selection-checkbox {
+  display: flex;
+  height: 26px;
+  width: 26px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(242, 231, 237, 0.82));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 10px 22px rgba(28, 16, 24, 0.14);
+  backdrop-filter: blur(10px);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.cm-photo-selection-checkbox--idle {
+  color: transparent;
+}
+
+.cm-photo-selection-checkbox--selected {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: linear-gradient(135deg, #5b3a52 0%, #b88e96 52%, #e5c6c1 100%);
+  color: #fffafc;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 12px 24px rgba(91, 58, 82, 0.24);
+}
+
+.cm-photo-selection-checkbox__check {
+  height: 12px;
+  width: 12px;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.cm-photo-selection-checkbox__check--hidden {
+  opacity: 0;
+  transform: scale(0.7);
+}
+
+.cm-photo-selection-checkbox__check--visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
 html.dark .cm-modal-overlay {
   background:
     radial-gradient(circle at top, rgba(255, 250, 252, 0.05), transparent 30%),
@@ -771,6 +821,25 @@ html.dark .cm-modal-overlay {
 html.dark .cm-modal {
   background: linear-gradient(180deg, rgba(255, 250, 252, 0.07), rgba(255, 250, 252, 0.015)), var(--color-warm-surface);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+}
+
+html.dark .cm-photo-selection-checkbox {
+  border-color: rgba(255, 247, 251, 0.22);
+  background:
+    linear-gradient(180deg, rgba(255, 250, 252, 0.12), rgba(255, 250, 252, 0.04)),
+    rgba(46, 31, 42, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 12px 24px rgba(0, 0, 0, 0.28);
+}
+
+html.dark .cm-photo-selection-checkbox--selected {
+  border-color: rgba(255, 247, 251, 0.16);
+  background: var(--dashboard-active-gradient);
+  color: #fff7fb;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 14px 26px rgba(91, 53, 80, 0.3);
 }
 
 @keyframes cm-modal-fade-in {

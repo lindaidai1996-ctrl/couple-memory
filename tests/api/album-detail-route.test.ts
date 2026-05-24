@@ -63,13 +63,91 @@ test('createGetAlbumHandler returns chapters plus ungrouped photos', async () =>
         backgroundNote: '那天风很大',
         sortOrder: 1,
         photos: [
-          { id: 'photo_1', fileName: '1.jpg' },
+          { id: 'photo_1', fileName: '1.jpg', canBeCover: false, isAlbumCover: false },
         ],
       },
     ],
     ungroupedPhotos: [
-      { id: 'photo_2', fileName: '2.jpg' },
-      { id: 'photo_3', fileName: '3.jpg' },
+      { id: 'photo_2', fileName: '2.jpg', canBeCover: false, isAlbumCover: false },
+      { id: 'photo_3', fileName: '3.jpg', canBeCover: false, isAlbumCover: false },
+    ],
+  })
+})
+
+test('createGetAlbumHandler annotates album photos with cover availability and current cover state', async () => {
+  const mod = await import('../../src/app/api/couples/[coupleId]/albums/[albumId]/route')
+  const handler = mod.createGetAlbumHandler({
+    prismaClient: {
+      album: {
+        findFirst: async () => ({
+          id: 'album_1',
+          title: '2024',
+          description: null,
+          coverPhotoId: 'photo_2',
+          chapters: [
+            {
+              id: 'chapter_1',
+              title: '看海',
+              backgroundNote: null,
+              photos: [
+                { id: 'photo_1', fileName: '1.jpg', status: 'PROCESSING', displayUrl: null },
+              ],
+            },
+          ],
+          photos: [
+            { id: 'photo_2', fileName: '2.jpg', status: 'READY', displayUrl: 'https://cdn.example.com/2.jpg' },
+            { id: 'photo_3', fileName: '3.jpg', status: 'READY', displayUrl: null },
+          ],
+        }),
+      },
+    } as never,
+  })
+
+  const response = await handler(
+    createRequest('/api/couples/couple_1/albums/album_1'),
+    createAuthContext(),
+    { coupleId: 'couple_1', albumId: 'album_1' }
+  )
+
+  assert.equal(response.status, 200)
+  assert.deepEqual(await response.json(), {
+    id: 'album_1',
+    title: '2024',
+    description: null,
+    chapters: [
+      {
+        id: 'chapter_1',
+        title: '看海',
+        backgroundNote: null,
+        photos: [
+          {
+            id: 'photo_1',
+            fileName: '1.jpg',
+            status: 'PROCESSING',
+            displayUrl: null,
+            canBeCover: false,
+            isAlbumCover: false,
+          },
+        ],
+      },
+    ],
+    ungroupedPhotos: [
+      {
+        id: 'photo_2',
+        fileName: '2.jpg',
+        status: 'READY',
+        displayUrl: 'https://cdn.example.com/2.jpg',
+        canBeCover: true,
+        isAlbumCover: true,
+      },
+      {
+        id: 'photo_3',
+        fileName: '3.jpg',
+        status: 'READY',
+        displayUrl: null,
+        canBeCover: false,
+        isAlbumCover: false,
+      },
     ],
   })
 })

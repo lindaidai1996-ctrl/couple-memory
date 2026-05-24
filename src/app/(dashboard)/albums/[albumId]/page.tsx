@@ -19,6 +19,7 @@ import { type PhotoData } from '@/components/photo-card'
 import { PhotoUploader } from '@/components/photo-uploader'
 import { PhotoGridSkeleton } from '@/components/skeleton/photo-grid-skeleton'
 import { Button, EditIcon, PlusIcon, RefreshIcon } from '@/components/ui/button'
+import { Modal } from '@/components/ui/modal'
 import { ResponsiveDrawer } from '@/components/ui/responsive-drawer'
 
 type Photo = PhotoData
@@ -69,6 +70,15 @@ export function buildAlbumDetailUiText(t: Translator) {
     saveChapterFailed: t('saveChapterFailed'),
     generateSummaryFailed: t('generateSummaryFailed'),
     summaryUpdated: t('summaryUpdated'),
+    photoActions: {
+      deletePhoto: t('photoActionDeletePhoto'),
+      deletingPhoto: t('photoActionDeletingPhoto'),
+      deleteConfirm: t('photoActionDeleteConfirm'),
+      setAsCover: t('photoActionSetAsCover'),
+      settingCover: t('photoActionSettingCover'),
+      currentCover: t('photoActionCurrentCover'),
+      setCoverConfirm: t('photoActionSetCoverConfirm'),
+    },
     narrative: {
       title: t('narrativeTitle'),
       description: t('narrativeDescription'),
@@ -344,6 +354,7 @@ export function buildAlbumDetailSections({
     chapterCount: chapters.length,
     hasEmptyChapters: chapters.length === 0,
     ungroupedCount: ungroupedPhotos.length,
+    chapterGridMode: 'card-only' as const,
     order: ['chapters', 'ungrouped'] as const,
   }
 }
@@ -460,6 +471,10 @@ export default function AlbumDetailPage() {
   const [editingAlbumMeta, setEditingAlbumMeta] = useState(false)
   const [albumMetaDraft, setAlbumMetaDraft] = useState({ title: '', description: '' })
   const [savingAlbumMeta, setSavingAlbumMeta] = useState(false)
+  const [pendingDeletePhotoId, setPendingDeletePhotoId] = useState<string | null>(null)
+  const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null)
+  const [pendingCoverPhotoId, setPendingCoverPhotoId] = useState<string | null>(null)
+  const [settingCoverPhotoId, setSettingCoverPhotoId] = useState<string | null>(null)
   const uiText = buildAlbumDetailUiText(t)
 
   useEffect(() => {
@@ -553,9 +568,14 @@ export default function AlbumDetailPage() {
     })
   }
 
-  async function handleSetCover(photoId: string) {
+  function requestSetCover(photoId: string) {
+    setPendingCoverPhotoId(photoId)
+  }
+
+  async function applySetCover(photoId: string) {
     if (!coupleId) return
     setActionError(null)
+    setSettingCoverPhotoId(photoId)
 
     const res = await fetch(`/api/couples/${coupleId}/albums/${albumId}/cover`, {
       method: 'PATCH',
@@ -566,6 +586,8 @@ export default function AlbumDetailPage() {
       }),
     })
 
+    setSettingCoverPhotoId(null)
+
     if (res.ok) {
       setRefreshKey(key => key + 1)
       return
@@ -573,6 +595,43 @@ export default function AlbumDetailPage() {
 
     const data = await res.json().catch(() => null)
     setActionError(data?.error?.message || t('setCoverFailed'))
+  }
+
+  async function handleSetCover() {
+    if (!pendingCoverPhotoId) return
+    await applySetCover(pendingCoverPhotoId)
+    setPendingCoverPhotoId(null)
+  }
+
+  function requestDeletePhoto(photoId: string) {
+    setPendingDeletePhotoId(photoId)
+  }
+
+  async function handleDeletePhoto() {
+    if (!pendingDeletePhotoId) return
+    if (!coupleId) return
+
+    setActionError(null)
+    setActionMessage(null)
+    setDeletingPhotoId(pendingDeletePhotoId)
+
+    const res = await fetch(`/api/couples/${coupleId}/photos/${pendingDeletePhotoId}`, {
+      method: 'DELETE',
+    })
+
+    setDeletingPhotoId(null)
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => null)
+      setActionError(data?.error?.message || t('deleteFailed'))
+      return
+    }
+
+    setSelectedPhotoIds(prev => prev.filter(id => id !== pendingDeletePhotoId))
+    setSelectedUngroupedIds(prev => prev.filter(id => id !== pendingDeletePhotoId))
+    setDetailSurface(prev => prev?.kind === 'photo' && prev.photoId === pendingDeletePhotoId ? null : prev)
+    setPendingDeletePhotoId(null)
+    setRefreshKey(key => key + 1)
   }
 
   async function openComposerForPhotoIds(photoIds: string[]) {
@@ -765,7 +824,6 @@ export default function AlbumDetailPage() {
     ungroupedPhotos: album.ungroupedPhotos,
   })
   const narrativeComparison = buildAlbumNarrativeComparison({ album })
-  const coverSectionState = buildAlbumCoverSectionState(allVisiblePhotos)
   const albumSelectionState = buildAlbumSelectionState({
     selectionMode: albumSelectionMode,
     selectedPhotoIds,
@@ -794,24 +852,23 @@ export default function AlbumDetailPage() {
       </div>
 
       <section className="rounded-[var(--radius-lg)] border border-warm-border bg-warm-surface p-5 space-y-4">
-        <div className="space-y-1">
-          <h2 className="text-lg font-semibold text-warm-text">{uiText.narrative.title}</h2>
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-warm-text">{uiText.narrative.title}</h2>
+            <Button
+              type="button"
+              onClick={() => {
+                setAlbumMetaDraft(buildAlbumMetaDraft(album))
+                setEditingAlbumMeta(prev => !prev)
+              }}
+              variant="secondary"
+              size="sm"
+              leadingIcon={<EditIcon />}
+            >
+              {uiText.narrative.editAlbum}
+            </Button>
+          </div>
           <p className="text-sm text-warm-muted">{uiText.narrative.description}</p>
-        </div>
-
-        <div className="flex justify-end">
-          <Button
-            type="button"
-            onClick={() => {
-              setAlbumMetaDraft(buildAlbumMetaDraft(album))
-              setEditingAlbumMeta(prev => !prev)
-            }}
-            variant="secondary"
-            size="sm"
-            leadingIcon={<EditIcon />}
-          >
-            {uiText.narrative.editAlbum}
-          </Button>
         </div>
 
         <div className="grid gap-3 lg:grid-cols-2">
@@ -963,53 +1020,6 @@ export default function AlbumDetailPage() {
           ) : null}
         </div>
 
-        <div className="space-y-3 border-t border-warm-border pt-4">
-          <div className="space-y-1">
-            <h3 className="text-sm font-semibold text-warm-text">{uiText.narrative.coverCandidates}</h3>
-            <p className="text-sm text-warm-muted">{uiText.narrative.description}</p>
-          </div>
-
-          {coverSectionState.hasCandidates ? (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {coverSectionState.candidates.map(candidate => (
-                <div
-                  key={candidate.id}
-                  className="overflow-hidden rounded-[var(--radius-md)] border border-warm-border bg-warm-bg"
-                >
-                  <div className="aspect-[4/3] overflow-hidden bg-warm-surface">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={candidate.previewUrl}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <div className="space-y-3 p-3">
-                    <p className="line-clamp-2 text-sm text-warm-text">{candidate.label}</p>
-                    {candidate.isCurrent ? (
-                      <span className="inline-flex rounded-full bg-warm-accent/10 px-2.5 py-1 text-xs font-medium text-warm-accent">
-                        {uiText.narrative.currentCover}
-                      </span>
-                    ) : (
-                      <Button
-                        type="button"
-                        onClick={() => handleSetCover(candidate.id)}
-                        size="sm"
-                        variant="secondary"
-                      >
-                        {uiText.narrative.setAsCover}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-[var(--radius-md)] border border-dashed border-warm-border bg-warm-bg px-4 py-4 text-sm text-warm-muted">
-              {uiText.narrative.coverCandidatesEmpty}
-            </div>
-          )}
-        </div>
       </section>
 
       {actionError && (
@@ -1070,11 +1080,19 @@ export default function AlbumDetailPage() {
                     generatingSummary: uiText.chapterCard.generatingSummary,
                   }}
                   onOpenPhoto={photo => openChapterPhotoPreview(photo.id, chapter.photos.map(item => item.id))}
+                  onTogglePhotoSelection={toggleAlbumSelection}
+                  onDeletePhoto={requestDeletePhoto}
+                  onRequestSetCover={requestSetCover}
                   onEditChapter={() => setDetailSurface({ kind: 'chapter', chapterId: chapter.id })}
                   onRefreshSummary={() => handleGenerateSummary(chapter.id)}
                   isRefreshingSummary={summaryActionChapterId === chapter.id}
+                  selectionMode={albumSelectionMode}
+                  selectedPhotoIds={selectedPhotoIds}
+                  photoActionCopy={uiText.photoActions}
+                  deletingPhotoId={deletingPhotoId}
+                  settingCoverPhotoId={settingCoverPhotoId}
                 />
-                {albumSelectionMode ? (
+                {albumSelectionMode && sections.chapterGridMode === 'card-with-selection-grid' ? (
                   <PhotoSelectionGrid
                     photos={chapter.photos}
                     selectedIds={selectedPhotoIds}
@@ -1138,6 +1156,11 @@ export default function AlbumDetailPage() {
             selectionMode={albumSelectionMode ? albumSelectionMode : selectionMode}
             onToggle={albumSelectionMode ? toggleAlbumSelection : toggleUngroupedSelection}
             onOpen={photo => setDetailSurface({ kind: 'photo', photoId: photo.id, chapterPhotoIds: [photo.id] })}
+            onDeletePhoto={selectionMode || albumSelectionMode ? undefined : requestDeletePhoto}
+            onRequestSetCover={selectionMode || albumSelectionMode ? undefined : requestSetCover}
+            photoActionCopy={uiText.photoActions}
+            deletingPhotoId={deletingPhotoId}
+            settingCoverPhotoId={settingCoverPhotoId}
           />
         )}
       </section>
@@ -1183,6 +1206,44 @@ export default function AlbumDetailPage() {
         onSelect={handleMoveSelected}
         onClose={() => setMoveDialogOpen(false)}
       />
+
+      <Modal
+        open={pendingDeletePhotoId !== null}
+        onClose={() => {
+          if (deletingPhotoId) return
+          setPendingDeletePhotoId(null)
+        }}
+        title={uiText.photoActions.deletePhoto}
+        description={uiText.photoActions.deleteConfirm}
+        confirmText={uiText.photoActions.deletePhoto}
+        cancelText={uiText.cancel}
+        confirmVariant="danger"
+        confirmLoading={deletingPhotoId === pendingDeletePhotoId}
+        onConfirm={handleDeletePhoto}
+      >
+        <p className="text-sm text-warm-muted">
+          {[...album.chapters.flatMap(chapter => chapter.photos), ...album.ungroupedPhotos].find(photo => photo.id === pendingDeletePhotoId)?.fileName ?? ''}
+        </p>
+      </Modal>
+
+      <Modal
+        open={pendingCoverPhotoId !== null}
+        onClose={() => {
+          if (settingCoverPhotoId) return
+          setPendingCoverPhotoId(null)
+        }}
+        title={uiText.photoActions.setAsCover}
+        description={uiText.photoActions.setCoverConfirm}
+        confirmText={uiText.photoActions.setAsCover}
+        cancelText={uiText.cancel}
+        confirmVariant="brand"
+        confirmLoading={settingCoverPhotoId === pendingCoverPhotoId}
+        onConfirm={handleSetCover}
+      >
+        <p className="text-sm text-warm-muted">
+          {[...album.chapters.flatMap(chapter => chapter.photos), ...album.ungroupedPhotos].find(photo => photo.id === pendingCoverPhotoId)?.fileName ?? ''}
+        </p>
+      </Modal>
     </div>
 
     {workspaceState.isOpen ? (
@@ -1206,7 +1267,7 @@ export default function AlbumDetailPage() {
               })
             }}
             onRefreshData={() => setRefreshKey(key => key + 1)}
-            onSetCover={handleSetCover}
+            onSetCover={applySetCover}
             onSaveChapter={handleSaveChapter}
           />
       </ResponsiveDrawer>

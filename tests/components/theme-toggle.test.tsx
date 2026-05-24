@@ -16,7 +16,8 @@ test('ThemeToggle uses a stable initial theme before syncing browser preference'
 test('ThemeToggle reserves stable width so locale switching does not shift neighboring controls', () => {
   const className = buildThemeToggleClassName()
 
-  assert.equal(className.includes('min-w-[8rem]'), true)
+  assert.equal(className.includes('w-[8rem]'), true)
+  assert.equal(className.includes('h-9'), true)
   assert.equal(className.includes('justify-center'), true)
   assert.equal(className.includes('whitespace-nowrap'), true)
 })

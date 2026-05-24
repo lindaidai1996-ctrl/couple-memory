@@ -33,6 +33,7 @@ test('buildAlbumFallbackCover returns a stable recipe for the same album seed', 
   const second = buildAlbumFallbackCover({ id: 'album_1', title: '2024 夏天' })
 
   assert.deepEqual(second, first)
+  assert.equal(first.emblemKind, 'icon')
 })
 
 test('buildAlbumFallbackCover can vary recipes for same-title albums with different ids', () => {
