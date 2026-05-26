@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import {
   PhotoHoverOverlay,
   buildPhotoHoverActionButtonClassName,
+  buildPhotoHoverIndicatorClassName,
   buildPhotoHoverOverlayClassName,
   buildPhotoHoverMaskClassName,
 } from '../../src/components/photo-hover-overlay'
@@ -29,6 +30,15 @@ test('photo hover overlay action button keeps hover actions clickable above the 
   assert.equal(className.includes('bg-['), false)
   assert.equal(className.includes('border '), false)
   assert.equal(className.includes('cursor-pointer'), true)
+})
+
+test('photo hover overlay current cover indicator stays non-interactive', () => {
+  const className = buildPhotoHoverIndicatorClassName()
+
+  assert.match(className, /\bcm-photo-hover-indicator\b/)
+  assert.equal(className.includes('pointer-events-none'), true)
+  assert.equal(className.includes('cursor-pointer'), false)
+  assert.equal(className.includes('cursor-wait'), false)
 })
 
 test('PhotoHoverOverlay renders top and bottom slots for future extensibility', () => {

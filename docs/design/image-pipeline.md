@@ -2,7 +2,7 @@
 
 > 本文档描述从用户选择照片到照片可展示的完整处理流程。
 >
-> 相关文档：[总览](./README.md) · [产品需求](./product-requirements.md) · [AI Agent 架构](./ai-agent.md) · [API 设计](./api-design.md)
+> 相关文档：[总览](./README.md) · [产品需求](./product-requirements.md) · [Agent 编排设计](./ai-agent.md) · [API 设计](./api-design.md)
 
 ## 处理流程总览
 
@@ -43,15 +43,15 @@
            │
            ▼
 ┌─────────────────────┐
-│ 6. AI Agent Pipeline │  详见 ai-agent.md
+│ 6. Agent 编排层       │  详见 ai-agent.md
 │    分析 → 文案/排版/  │
-│    时间轴（并行）     │
+│    时间线建议（并行） │
 └──────────┬──────────┘
            │
            ▼
 ┌─────────────────────┐
 │ 7. 完成              │  status = READY
-│    照片可展示        │  （或 FAILED + 错误信息）
+│    或部分降级完成    │  （或 FAILED + 错误信息）
 └─────────────────────┘
 ```
 
@@ -283,29 +283,96 @@ async function reverseGeocode(latitude: number, longitude: number): Promise<stri
 - GPS 坐标需要 WGS84 → GCJ-02 坐标转换（中国境内）
 - 缓存相近坐标的结果，减少 API 调用
 
-## 阶段 6-7: AI Pipeline 与完成
+## 阶段 6-7: Agent 编排与完成
 
-EXIF 提取完成后，触发 AI Agent Pipeline（详见 [AI Agent 架构](./ai-agent.md)）。
+EXIF 提取完成后，不是直接调用单个模型，而是进入 `src/lib/pipeline/process-photo.ts` 驱动的 Agent 编排层（详见 [Agent 编排设计](./ai-agent.md)）。
 
-Pipeline 完成后更新 Photo 记录：
+当前真实主链如下：
+
+1. 下载 OSS 原图
+2. 生成 `display` / `thumbnail`
+3. 提取并合并 EXIF
+4. GPS 逆地理编码
+5. 读取当前 couple 的偏好与 style memory
+6. 调用 `runAIPipeline(...)`
+7. 在 `COMPLETED` 或 `DEGRADED` 时写回 `Photo` 与 `PhotoAIVariant`
+8. 依据运行结果决定最终 `Photo.status`
+
+### 当前 DAG
+
+```text
+photoAnalyzer
+  -> captionWriter
+  -> layoutAdvisor
+  -> timelineBuilder
+```
+
+其中：
+
+- `photoAnalyzer` 先执行
+- `captionWriter`、`layoutAdvisor`、`timelineBuilder` 并行执行
+- 节点结果会整体写入 `PipelineRun.nodeResults`
+
+### 运行状态
+
+`PipelineRun` 目前有 4 种状态：
+
+- `RUNNING`
+- `COMPLETED`
+- `FAILED`
+- `DEGRADED`
+
+`DEGRADED` 表示有节点失败，但不是整条链完全不可用。
+
+### 写回结果
+
+Pipeline 完成后，系统会分层写回：
+
+- `Photo`：当前被前台使用的主结果，如 `aiCaption`、`aiLayout`、`aiScene`
+- `PhotoAIVariant`：caption/layout 候选项
+- `PipelineRun`：本次运行的 DAG、节点状态、耗时、token、错误信息
+
+示意：
 
 ```typescript
 await prisma.photo.update({
   where: { id: photoId },
   data: {
-    // 从 EXIF 提取
-    takenAt, latitude, longitude, locationName,
-    cameraMake, cameraModel, focalLength, aperture, shutterSpeed, iso,
-    width, height,
-    // 从 AI Pipeline 提取
-    aiCaption, aiScene, aiMood, aiComposition, aiColorTone, aiLayout, aiKeywords,
-    // 图片 URL
-    thumbnailUrl, displayUrl,
-    // 状态
-    status: 'READY',
+    takenAt,
+    latitude,
+    longitude,
+    locationName,
+    cameraMake,
+    cameraModel,
+    focalLength,
+    aperture,
+    shutterSpeed,
+    iso,
+    width,
+    height,
+    aiCaption,
+    aiScene,
+    aiMood,
+    aiComposition,
+    aiColorTone,
+    aiLayout,
+    aiKeywords,
+    thumbnailUrl,
+    displayUrl,
+    status: 'READY' // 或在完全失败时标记为 FAILED
   }
 })
 ```
+
+### 照片状态决策
+
+图片资产和 Agent 结果会一起影响最终 `Photo.status`：
+
+- 如果整条运行 `FAILED`，照片标记为 `FAILED`
+- 如果运行 `DEGRADED` 但展示图已生成，照片仍会进入 `READY`
+- 如果运行 `COMPLETED` 且展示图存在，照片进入 `READY`
+
+这意味着系统优先保证“照片可继续使用”，而不是让 AI 某个局部失败阻断整个上传体验。
 
 ## 前端状态轮询
 
@@ -346,6 +413,6 @@ MVP 后可升级为 Server-Sent Events (SSE) 或 WebSocket 实现实时推送。
 | Sharp 处理 | 图片损坏 | 标记 FAILED，提示用户重新上传 |
 | EXIF 提取 | 无 EXIF 信息 | 跳过，相关字段留空 |
 | 逆地理编码 | API 调用失败 | 跳过，locationName 留空 |
-| AI Pipeline | Agent 失败 | 参见 [AI Agent 错误处理](./ai-agent.md#错误处理) |
+| Agent 编排层 | 节点失败或模型调用失败 | 参见 [Agent 编排设计](./ai-agent.md#14-可观测性与排障) |
 
 核心原则：**非关键步骤失败不阻塞整体流程**。EXIF 缺失、地理编码失败、AI 生成失败都不影响照片的基本展示。

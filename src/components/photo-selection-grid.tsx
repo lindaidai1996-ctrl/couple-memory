@@ -1,7 +1,11 @@
 import { mediaTileButtonClassName } from '@/components/ui/media-tile'
-import { CheckIcon, ScreenIcon, TrashIcon } from '@/components/ui/button'
+import { CheckIcon, EyeIcon, ScreenIcon, TrashIcon } from '@/components/ui/button'
 import { canUsePhotoAsAlbumCover, photoCardSurfaceClass, type PhotoData } from './photo-card'
-import { PhotoHoverOverlay, buildPhotoHoverActionButtonClassName } from './photo-hover-overlay'
+import {
+  PhotoHoverOverlay,
+  buildPhotoHoverActionButtonClassName,
+  buildPhotoHoverIndicatorClassName,
+} from './photo-hover-overlay'
 
 export function buildPhotoSelectionTileClassName() {
   return mediaTileButtonClassName({
@@ -59,12 +63,24 @@ export function buildPhotoSelectionOverlayClassName(selected: boolean) {
   ].join(' ')
 }
 
+export function buildAlbumPhotoPreviewItems(photos: Array<Pick<PhotoData, 'id' | 'displayUrl' | 'fileName'>>) {
+  return photos
+    .filter(photo => Boolean(photo.displayUrl))
+    .map(photo => ({
+      id: photo.id,
+      src: photo.displayUrl!,
+      alt: photo.fileName,
+      title: photo.fileName,
+    }))
+}
+
 export function PhotoSelectionGrid({
   photos,
   selectedIds,
   selectionMode,
   onToggle,
   onOpen,
+  onPreviewPhoto,
   onDeletePhoto,
   onRequestSetCover,
   photoActionCopy,
@@ -76,9 +92,11 @@ export function PhotoSelectionGrid({
   selectionMode: boolean
   onToggle: (photoId: string) => void
   onOpen: (photo: PhotoData) => void
+  onPreviewPhoto?: (photoId: string) => void
   onDeletePhoto?: (photoId: string) => void
   onRequestSetCover?: (photoId: string) => void
   photoActionCopy?: {
+    previewPhoto?: string
     deletePhoto: string
     deletingPhoto: string
     setAsCover: string
@@ -93,11 +111,16 @@ export function PhotoSelectionGrid({
       {photos.map(photo => {
         const selected = selectedIds.includes(photo.id)
         const showDeleteAction = !selectionMode && Boolean(onDeletePhoto) && Boolean(photoActionCopy)
+        const showPreviewAction =
+          !selectionMode &&
+          Boolean(onPreviewPhoto) &&
+          Boolean(photoActionCopy?.previewPhoto) &&
+          Boolean(photo.displayUrl)
         const showCoverAction = !selectionMode && Boolean(onRequestSetCover) && Boolean(photoActionCopy)
         const isDeleting = deletingPhotoId === photo.id
         const canSetCover = canUsePhotoAsAlbumCover(photo)
         const isCurrentCover = Boolean(photo.isAlbumCover)
-        const shouldShowCoverAction = showCoverAction && (canSetCover || isCurrentCover)
+        const shouldShowCoverAction = showCoverAction && canSetCover && !isCurrentCover
         const isSettingCover = settingCoverPhotoId === photo.id
 
         return (
@@ -148,53 +171,71 @@ export function PhotoSelectionGrid({
               </div>
             ) : null}
 
-            {showDeleteAction || shouldShowCoverAction ? (
+            {showDeleteAction || shouldShowCoverAction || showPreviewAction ? (
               <PhotoHoverOverlay
                 topSlot={shouldShowCoverAction ? (
                   <button
                     type="button"
-                    aria-label={
-                      isCurrentCover
-                        ? photoActionCopy!.currentCover
-                        : isSettingCover
-                          ? photoActionCopy!.settingCover
-                          : photoActionCopy!.setAsCover
-                    }
-                    title={
-                      isCurrentCover
-                        ? photoActionCopy!.currentCover
-                        : isSettingCover
-                          ? photoActionCopy!.settingCover
-                          : photoActionCopy!.setAsCover
-                    }
-                    className={`${buildPhotoHoverActionButtonClassName()} ${isCurrentCover ? 'text-white opacity-100' : ''}`}
-                    disabled={isCurrentCover || isSettingCover}
-                    onClick={event => {
-                      event.stopPropagation()
-                      if (!isCurrentCover) {
-                        onRequestSetCover?.(photo.id)
-                      }
-                    }}
-                  >
-                    {isCurrentCover ? <CheckIcon className="h-4 w-4" /> : <ScreenIcon className="h-4 w-4" />}
-                  </button>
-                ) : null}
-                bottomSlot={showDeleteAction ? (
-                  <button
-                    type="button"
-                    aria-label={isDeleting ? photoActionCopy!.deletingPhoto : photoActionCopy!.deletePhoto}
-                    title={isDeleting ? photoActionCopy!.deletingPhoto : photoActionCopy!.deletePhoto}
+                    aria-label={isSettingCover ? photoActionCopy!.settingCover : photoActionCopy!.setAsCover}
+                    title={isSettingCover ? photoActionCopy!.settingCover : photoActionCopy!.setAsCover}
                     className={buildPhotoHoverActionButtonClassName()}
-                    disabled={isDeleting}
+                    disabled={isSettingCover}
                     onClick={event => {
                       event.stopPropagation()
-                      onDeletePhoto?.(photo.id)
+                      onRequestSetCover?.(photo.id)
                     }}
                   >
-                    <TrashIcon className="h-4 w-4" />
+                    <ScreenIcon className="h-4 w-4" />
                   </button>
                 ) : null}
+                bottomSlot={(
+                  showDeleteAction || showPreviewAction ? (
+                    <div className="flex items-center gap-2">
+                      {showPreviewAction ? (
+                        <button
+                          type="button"
+                          aria-label={photoActionCopy!.previewPhoto}
+                          title={photoActionCopy!.previewPhoto}
+                          className={buildPhotoHoverActionButtonClassName()}
+                          onClick={event => {
+                            event.stopPropagation()
+                            onPreviewPhoto?.(photo.id)
+                          }}
+                        >
+                          <EyeIcon className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      {showDeleteAction ? (
+                        <button
+                          type="button"
+                          aria-label={isDeleting ? photoActionCopy!.deletingPhoto : photoActionCopy!.deletePhoto}
+                          title={isDeleting ? photoActionCopy!.deletingPhoto : photoActionCopy!.deletePhoto}
+                          className={buildPhotoHoverActionButtonClassName()}
+                          disabled={isDeleting}
+                          onClick={event => {
+                            event.stopPropagation()
+                            onDeletePhoto?.(photo.id)
+                          }}
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null
+                )}
               />
+            ) : null}
+
+            {!selectionMode && isCurrentCover ? (
+              <div className="pointer-events-none absolute left-2.5 top-2.5 z-20">
+                <span
+                  aria-label={photoActionCopy?.currentCover ?? '当前封面'}
+                  className={buildPhotoHoverIndicatorClassName()}
+                >
+                  <CheckIcon className="h-4 w-4" />
+                  <span>{photoActionCopy?.currentCover ?? '当前封面'}</span>
+                </span>
+              </div>
             ) : null}
           </div>
         )

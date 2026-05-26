@@ -30,6 +30,9 @@ type AlbumCardVisual =
   | { kind: 'image'; url: string }
   | ({ kind: 'fallback' } & AlbumCoverRecipe)
 
+export const ALBUM_CARD_TEXT_COLUMN_CLASS = 'min-w-0 flex-1'
+export const ALBUM_CARD_DELETE_ACTION_CLASS = 'shrink-0 pl-2'
+
 const ALBUM_FALLBACK_RECIPES: AlbumCoverRecipe[] = [
   {
     recipeKey: 'plum-dawn',
@@ -278,23 +281,25 @@ export default function AlbumsPage() {
               </div>
               <div className="p-4">
                 <div className="flex items-start justify-between">
-                  <div>
+                  <div className={ALBUM_CARD_TEXT_COLUMN_CLASS}>
                     <h3 className="font-semibold text-warm-text">{album.title}</h3>
                     {album.description && (
                       <p className="text-xs text-warm-muted mt-1 line-clamp-2">{album.description}</p>
                     )}
                   </div>
-                  <Button
-                    onClick={e => { e.preventDefault(); setPendingDeleteAlbumId(album.id) }}
-                    className="opacity-0 group-hover:opacity-100"
-                    title={t('deleteTitle')}
-                    aria-label={t('deleteTitle')}
-                    variant="ghost"
-                    size="xs"
-                    iconOnly
-                  >
-                    <TrashIcon />
-                  </Button>
+                  <div className={ALBUM_CARD_DELETE_ACTION_CLASS}>
+                    <Button
+                      onClick={e => { e.preventDefault(); setPendingDeleteAlbumId(album.id) }}
+                      className="opacity-0 group-hover:opacity-100"
+                      title={t('deleteTitle')}
+                      aria-label={t('deleteTitle')}
+                      variant="ghost"
+                      size="xs"
+                      iconOnly
+                    >
+                      <TrashIcon />
+                    </Button>
+                  </div>
                 </div>
                 <p className="text-xs text-warm-muted mt-2">
                   {t('photoCount', { count: album.photoCount })}

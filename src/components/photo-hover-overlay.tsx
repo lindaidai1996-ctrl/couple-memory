@@ -26,6 +26,13 @@ export function buildPhotoHoverActionButtonClassName() {
   ].join(' ')
 }
 
+export function buildPhotoHoverIndicatorClassName() {
+  return [
+    'cm-photo-hover-indicator',
+    'pointer-events-none inline-flex items-center gap-1 rounded-sm bg-black/45 px-1.5 py-1 text-[11px] font-medium leading-none text-white opacity-100',
+  ].join(' ')
+}
+
 export function PhotoHoverOverlay({
   topSlot,
   bottomSlot,

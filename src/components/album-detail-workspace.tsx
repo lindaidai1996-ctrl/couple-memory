@@ -32,12 +32,26 @@ type AlbumDetailWorkspaceState =
     activeChapter: AlbumChapterCardData | null
   }
 
+export function buildAlbumDetailWorkspaceHeader({
+  kind,
+  copy,
+}: {
+  kind: 'photo' | 'chapter'
+  copy: AlbumDetailWorkspaceCopy
+}) {
+  return {
+    title: kind === 'photo' ? copy.photoTitle : copy.chapterTitle,
+    description: null,
+  }
+}
+
 export function AlbumDetailWorkspace({
   state,
   chapterPhotoIds = [],
   copy,
   coupleId,
   onClose,
+  onOpenPreview,
   onPhotoNavigate,
   onRefreshData,
   onSetCover,
@@ -48,6 +62,7 @@ export function AlbumDetailWorkspace({
   copy: AlbumDetailWorkspaceCopy
   coupleId: string
   onClose: () => void
+  onOpenPreview: (photoId: string) => void
   onPhotoNavigate: (photoId: string) => void
   onRefreshData: () => void
   onSetCover: (photoId: string) => Promise<void> | void
@@ -72,15 +87,16 @@ export function AlbumDetailWorkspace({
     )
   }
 
-  const title = state.kind === 'photo' ? copy.photoTitle : copy.chapterTitle
-  const description = state.kind === 'photo' ? copy.photoDescription : copy.chapterDescription
+  const header = buildAlbumDetailWorkspaceHeader({
+    kind: state.kind === 'photo' ? 'photo' : 'chapter',
+    copy,
+  })
 
   return (
-    <section className="flex h-full flex-col overflow-hidden" aria-label={title}>
+    <section className="flex h-full flex-col overflow-hidden" aria-label={header.title}>
       <header className="flex items-start justify-between gap-4 border-b border-warm-border px-5 py-4 lg:px-6 lg:py-5">
         <div className="space-y-1">
-          <h2 className="text-base font-semibold text-warm-text">{title}</h2>
-          <p className="text-sm leading-6 text-warm-muted">{description}</p>
+          <h2 className="text-base font-semibold text-warm-text">{header.title}</h2>
         </div>
         <Button
           type="button"
@@ -101,6 +117,7 @@ export function AlbumDetailWorkspace({
           coupleId={coupleId}
           chapterPhotoIds={chapterPhotoIds}
           onClose={onClose}
+          onOpenPreview={onOpenPreview}
           onNavigate={onPhotoNavigate}
           onRefreshData={onRefreshData}
           onSetCover={onSetCover}
@@ -124,6 +141,7 @@ function PhotoWorkspacePanel({
   coupleId,
   chapterPhotoIds,
   onClose,
+  onOpenPreview,
   onNavigate,
   onRefreshData,
   onSetCover,
@@ -132,6 +150,7 @@ function PhotoWorkspacePanel({
   coupleId: string
   chapterPhotoIds: string[]
   onClose: () => void
+  onOpenPreview: (photoId: string) => void
   onNavigate: (photoId: string) => void
   onRefreshData: () => void
   onSetCover: (photoId: string) => Promise<void> | void
@@ -194,11 +213,26 @@ function PhotoWorkspacePanel({
       <div className="flex-1 overflow-y-auto p-5">
         <div className="space-y-5">
           <div className="space-y-3">
-            <div className="relative overflow-hidden rounded-[22px] border border-warm-border bg-warm-bg">
+            <div
+              className={`relative overflow-hidden rounded-[22px] border border-warm-border bg-warm-bg ${photo.displayUrl ? 'cursor-zoom-in' : ''}`}
+              onClick={photo.displayUrl ? () => onOpenPreview(photo.id) : undefined}
+              role={photo.displayUrl ? 'button' : undefined}
+              tabIndex={photo.displayUrl ? 0 : undefined}
+              onKeyDown={photo.displayUrl ? event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  onOpenPreview(photo.id)
+                }
+              } : undefined}
+              aria-label={photo.displayUrl ? t('previewPhoto') : undefined}
+            >
               {navigation.hasPrevious ? (
                 <Button
                   type="button"
-                  onClick={() => onNavigate(navigation.previousPhotoId!)}
+                  onClick={event => {
+                    event.stopPropagation()
+                    onNavigate(navigation.previousPhotoId!)
+                  }}
                   aria-label={t('previousPhoto')}
                   className="absolute left-3 top-1/2 z-10 -translate-y-1/2 bg-black/45 text-white hover:bg-black/60"
                   variant="ghost"
@@ -212,7 +246,10 @@ function PhotoWorkspacePanel({
               {navigation.hasNext ? (
                 <Button
                   type="button"
-                  onClick={() => onNavigate(navigation.nextPhotoId!)}
+                  onClick={event => {
+                    event.stopPropagation()
+                    onNavigate(navigation.nextPhotoId!)
+                  }}
                   aria-label={t('nextPhoto')}
                   className="absolute right-3 top-1/2 z-10 -translate-y-1/2 bg-black/45 text-white hover:bg-black/60"
                   variant="ghost"
@@ -392,10 +429,7 @@ function ChapterWorkspacePanel({
       <div className="flex-1 overflow-y-auto p-5 lg:p-6">
         <div className="space-y-5">
           <section className="space-y-3 rounded-[22px] border border-warm-border bg-warm-bg/60 p-4">
-            <div className="space-y-1">
-              <h3 className="text-sm font-semibold text-warm-text">{t('detailDrawerTitle')}</h3>
-              <p className="text-sm leading-6 text-warm-muted">{t('detailDrawerDescription')}</p>
-            </div>
+            <h3 className="text-sm font-semibold text-warm-text">{t('detailDrawerTitle')}</h3>
 
             <label className="grid gap-1.5">
               <span className="text-sm font-medium text-warm-text">{t('composerChapterTitle')}</span>

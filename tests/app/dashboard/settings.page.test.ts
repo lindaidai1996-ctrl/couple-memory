@@ -3,6 +3,7 @@ import test from 'node:test'
 
 import {
   applyCoverPhotoSelection,
+  buildAvatarPreviewItem,
   buildInviteActionButtonConfigs,
   buildMemoryPreferenceSummary,
   buildStyleMemoryInsightCards,
@@ -42,6 +43,31 @@ test('resolveDisplayAvatarUrl falls back to default avatar when profile avatar i
       avatar: null,
     }),
     '/avatars/default/avatar-03.svg'
+  )
+})
+
+test('buildAvatarPreviewItem returns a preview target only for uploaded avatars', () => {
+  assert.deepEqual(
+    buildAvatarPreviewItem({
+      email: 'linda@example.com',
+      name: 'Lindaidai',
+      avatar: 'https://cdn.example.com/avatar.jpg',
+    }),
+    {
+      id: 'avatar',
+      src: 'https://cdn.example.com/avatar.jpg',
+      alt: 'Lindaidai',
+      title: 'Lindaidai',
+    }
+  )
+
+  assert.equal(
+    buildAvatarPreviewItem({
+      email: 'linda@example.com',
+      name: 'Lindaidai',
+      avatar: null,
+    }),
+    null
   )
 })
 

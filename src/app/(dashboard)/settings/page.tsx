@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { VelvetDatePicker } from '@/components/forms/velvet-date-picker'
 import { VelvetSelect } from '@/components/forms/velvet-select'
+import { PhotoViewer, buildPhotoViewerCopy, type PhotoViewerItem } from '@/components/photo-viewer'
 import { SettingsFormSkeleton } from '@/components/skeleton/settings-form-skeleton'
 import { ArrowRightIcon, Button, EditIcon, PlusIcon, RefreshIcon } from '@/components/ui/button'
 import { mediaTileButtonClassName } from '@/components/ui/media-tile'
@@ -172,6 +173,21 @@ export function buildProfileUpdatePayload(name: string) {
 export function resolveDisplayAvatarUrl(profile: Pick<UserProfile, 'avatar' | 'email' | 'name'> | null) {
   if (!profile) return ''
   return resolveUserAvatarUrl(profile)
+}
+
+export function buildAvatarPreviewItem(
+  profile: Pick<UserProfile, 'avatar' | 'email' | 'name'> | null
+): PhotoViewerItem | null {
+  if (!profile?.avatar) return null
+
+  const title = profile.name?.trim() || profile.email
+
+  return {
+    id: 'avatar',
+    src: profile.avatar,
+    alt: title,
+    title,
+  }
 }
 
 export function buildBlockedPhrasesDraft(blockedPhrases: string[]) {
@@ -403,6 +419,7 @@ function buildAvatarUploadStageLabels(t: ReturnType<typeof useTranslations<'Sett
 
 export default function SettingsPage() {
   const t = useTranslations('SettingsPage')
+  const viewerT = useTranslations('PhotoViewer')
   const locale = useLocale()
   const avatarStageLabels = useMemo(() => buildAvatarUploadStageLabels(t), [t])
   const [couple, setCouple] = useState<CoupleData | null>(null)
@@ -419,6 +436,8 @@ export default function SettingsPage() {
   const [avatarSaving, setAvatarSaving] = useState(false)
   const [avatarUploadStage, setAvatarUploadStage] = useState<UploadStage | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [avatarPreviewOpen, setAvatarPreviewOpen] = useState(false)
+  const viewerCopy = useMemo(() => buildPhotoViewerCopy(viewerT), [viewerT])
 
   useEffect(() => {
     async function fetchSettingsData() {
@@ -684,6 +703,7 @@ export default function SettingsPage() {
     ? buildPublicPreviewUrl(window.location.origin, couple.slug)
     : ''
   const avatarPreviewUrl = resolveDisplayAvatarUrl(profile)
+  const avatarPreviewItem = buildAvatarPreviewItem(profile)
   const previewReady = Boolean(couple.isPublic && couple.slug)
   const heroCards = buildSettingsHeroCards({
     isPublic: couple.isPublic,
@@ -728,17 +748,36 @@ export default function SettingsPage() {
             <div className="rounded-[24px] border border-[var(--line)] bg-[var(--panel-strong)]/80 p-4">
               <div className="grid gap-4 md:grid-cols-[88px_minmax(0,1fr)_auto] md:items-center">
                 <div className="flex items-center justify-center">
-                  <div className={avatarFrameClass}>
-                    <div className={avatarHaloClass} />
-                    <div className={avatarMediaClass}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={avatarPreviewUrl}
-                        alt={t('avatarPreviewAlt')}
-                        className="h-full w-full object-cover"
-                      />
+                  {avatarPreviewItem ? (
+                    <button
+                      type="button"
+                      onClick={() => setAvatarPreviewOpen(true)}
+                      className={`${avatarFrameClass} cursor-zoom-in transition duration-300 hover:-translate-y-0.5`}
+                      aria-label={t('avatarPreviewAlt')}
+                    >
+                      <div className={avatarHaloClass} />
+                      <div className={avatarMediaClass}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={avatarPreviewUrl}
+                          alt={t('avatarPreviewAlt')}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    </button>
+                  ) : (
+                    <div className={avatarFrameClass}>
+                      <div className={avatarHaloClass} />
+                      <div className={avatarMediaClass}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={avatarPreviewUrl}
+                          alt={t('avatarPreviewAlt')}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <p className="text-base font-medium text-[var(--text)]">
@@ -1172,6 +1211,15 @@ export default function SettingsPage() {
           <InviteSection couple={couple} onGenerate={handleGenerateInvite} onRegenerate={handleRegenerateInvite} />
         </Section>
       </div>
+
+      <PhotoViewer
+        open={avatarPreviewOpen && avatarPreviewItem !== null}
+        items={avatarPreviewItem ? [avatarPreviewItem] : []}
+        currentIndex={0}
+        onIndexChange={() => {}}
+        onClose={() => setAvatarPreviewOpen(false)}
+        copy={viewerCopy}
+      />
     </div>
   )
 }

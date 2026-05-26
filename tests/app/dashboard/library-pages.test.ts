@@ -5,6 +5,8 @@ import {
   buildAlbumsUiText,
   buildAlbumFallbackCover,
   buildAlbumCardVisual,
+  ALBUM_CARD_TEXT_COLUMN_CLASS,
+  ALBUM_CARD_DELETE_ACTION_CLASS,
 } from '../../../src/app/(dashboard)/albums/page'
 import {
   buildPendingGeneratedMilestoneIds,
@@ -66,6 +68,12 @@ test('buildAlbumCardVisual preserves the image path when coverPhotoUrl exists', 
     kind: 'image',
     url: 'https://example.com/cover.jpg',
   })
+})
+
+test('album card layout keeps description text flexible and delete action fixed-width', () => {
+  assert.equal(ALBUM_CARD_TEXT_COLUMN_CLASS.includes('min-w-0'), true)
+  assert.equal(ALBUM_CARD_TEXT_COLUMN_CLASS.includes('flex-1'), true)
+  assert.equal(ALBUM_CARD_DELETE_ACTION_CLASS.includes('shrink-0'), true)
 })
 
 test('buildTimelineUiText returns translated primary copy', () => {

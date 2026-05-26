@@ -13,11 +13,15 @@ function setLocaleCookie(value: AppLocale) {
   document.cookie = `${LOCALE_COOKIE_NAME}=${encodeURIComponent(value)}; path=/; max-age=31536000; samesite=lax`
 }
 
+export function buildLocaleSwitcherClassName() {
+  return 'inline-flex h-9 items-center rounded-full border border-warm-border bg-white/24 p-1 text-xs shadow-sm backdrop-blur dark:bg-white/3'
+}
+
 export function buildLocaleSwitcherOptionClassName(active: boolean) {
-  return `rounded-full border px-2.5 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none ${
+  return `inline-flex min-w-[3.5rem] items-center justify-center rounded-full border px-2.5 py-1.5 text-xs font-medium leading-none transition-colors focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none ${
     active
       ? 'dashboard-pill-active'
-      : 'border-transparent text-warm-text hover:bg-white/50 dark:hover:bg-white/8'
+      : 'border-transparent text-warm-text hover:bg-white/24 dark:hover:bg-white/6'
   }`
 }
 
@@ -45,7 +49,7 @@ export function LocaleSwitcher() {
 
   return (
     <div
-      className="inline-flex rounded-full border border-warm-border bg-white/40 p-1 text-xs shadow-sm backdrop-blur dark:bg-white/4"
+      className={buildLocaleSwitcherClassName()}
       aria-label={t('languageLabel')}
     >
       {SUPPORTED_LOCALES.map(option => {

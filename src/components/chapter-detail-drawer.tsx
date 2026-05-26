@@ -40,7 +40,6 @@ export function ChapterDetailDrawer({
     <aside className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-warm-surface border-l border-warm-border p-5 space-y-5">
       <div>
         <h2 className="text-lg font-semibold text-warm-text">{copy.title}</h2>
-        <p className="text-sm text-warm-muted mt-1">{copy.description}</p>
       </div>
 
       <input

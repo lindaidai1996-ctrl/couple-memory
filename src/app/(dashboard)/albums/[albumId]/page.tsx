@@ -14,11 +14,13 @@ import { AlbumEmptyChapters } from '@/components/album-empty-chapters'
 import { ChapterComposerDrawer } from '@/components/chapter-composer-drawer'
 import { ChapterSelectionToolbar } from '@/components/chapter-selection-toolbar'
 import { MoveToChapterDialog } from '@/components/move-to-chapter-dialog'
-import { PhotoSelectionGrid } from '@/components/photo-selection-grid'
+import { PhotoSelectionGrid, buildAlbumPhotoPreviewItems } from '@/components/photo-selection-grid'
+import { PhotoViewer, buildPhotoViewerCopy } from '@/components/photo-viewer'
 import { type PhotoData } from '@/components/photo-card'
 import { PhotoUploader } from '@/components/photo-uploader'
+import { EditIcon, PlusIcon, RefreshIcon, TrashIcon } from '@/components/ui/button'
 import { PhotoGridSkeleton } from '@/components/skeleton/photo-grid-skeleton'
-import { Button, EditIcon, PlusIcon, RefreshIcon } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
 import { ResponsiveDrawer } from '@/components/ui/responsive-drawer'
 
@@ -46,11 +48,26 @@ export type AlbumDetailSurfaceState =
 
 type Translator = (key: string, values?: Record<string, string | number>) => string
 
+export const ALBUM_NARRATIVE_LAYOUT_CLASS =
+  'cm-album-narrative dashboard-surface-card-strong overflow-hidden rounded-[26px] p-3.5'
+
+export const ALBUM_NARRATIVE_HERO_CARD_CLASS =
+  'cm-album-narrative__hero-card dashboard-surface-card rounded-[24px] px-4 py-3'
+
 export const ALBUM_NARRATIVE_HIGHLIGHT_CARD_CLASS =
-  'space-y-3 rounded-[var(--radius-md)] border border-[var(--dashboard-card-hairline)] bg-[var(--dashboard-card-bg-strong)] px-4 py-4 shadow-[var(--dashboard-shadow-card)]'
+  'cm-album-narrative__preview-card cm-album-narrative__preview-card--spotlight dashboard-surface-card-strong rounded-[24px] px-4 py-3'
+
+export const ALBUM_NARRATIVE_PREVIEW_STATE_CLASS =
+  'cm-album-narrative__preview-state cm-album-narrative__preview-card dashboard-surface-card rounded-[24px] px-4 py-3'
+
+export const ALBUM_NARRATIVE_EDITOR_CLASS =
+  'cm-album-narrative__editor dashboard-inset-panel rounded-[24px] px-4 py-3'
+
+export const ALBUM_NARRATIVE_STAT_GRID_CLASS =
+  'cm-album-narrative__stats grid grid-cols-2 gap-3 sm:grid-cols-4'
 
 export const ALBUM_NARRATIVE_STAT_CARD_CLASS =
-  'rounded-[var(--radius-md)] border border-[var(--dashboard-card-hairline)] bg-[var(--dashboard-card-bg-soft)] px-3 py-3 shadow-[var(--dashboard-shadow-card)]'
+  'cm-album-narrative__stat-card dashboard-surface-card-soft rounded-[22px] px-3 py-2.5'
 
 export function buildAlbumDetailUiText(t: Translator) {
   return {
@@ -71,6 +88,8 @@ export function buildAlbumDetailUiText(t: Translator) {
     generateSummaryFailed: t('generateSummaryFailed'),
     summaryUpdated: t('summaryUpdated'),
     photoActions: {
+      previewPhoto: t('photoActionPreviewPhoto'),
+      editPhoto: t('photoActionEditPhoto'),
       deletePhoto: t('photoActionDeletePhoto'),
       deletingPhoto: t('photoActionDeletingPhoto'),
       deleteConfirm: t('photoActionDeleteConfirm'),
@@ -92,6 +111,10 @@ export function buildAlbumDetailUiText(t: Translator) {
       savingAlbum: t('narrativeSavingAlbum'),
       generateTitleDraft: t('narrativeGenerateTitleDraft'),
       generateDescriptionDraft: t('narrativeGenerateDescriptionDraft'),
+      regenerateTitleDraft: t('narrativeRegenerateTitleDraft'),
+      regenerateDescriptionDraft: t('narrativeRegenerateDescriptionDraft'),
+      applyTitleDraft: t('narrativeApplyTitleDraft'),
+      applyDescriptionDraft: t('narrativeApplyDescriptionDraft'),
       coverCandidates: t('narrativeCoverCandidates'),
       coverCandidatesEmpty: t('coverRecentPhotosEmpty'),
       setAsCover: t('narrativeSetAsCover'),
@@ -268,6 +291,39 @@ export function buildAlbumNarrativeComparison({
   }
 }
 
+export function buildAlbumNarrativePreview({
+  comparison,
+  copy,
+}: {
+  comparison: {
+    aiTitle: string
+    currentTitle: string
+    aiDescription: string
+    currentDescription: string
+    hasAiTitle: boolean
+    hasAiDescription: boolean
+    titleDiffers: boolean
+    descriptionDiffers: boolean
+  }
+  copy: {
+    currentTitleLabel: string
+    aiDescriptionLabel: string
+    currentDescriptionLabel: string
+    needDescriptionHint: string
+    descriptionMissing: string
+  }
+}) {
+  return {
+    titleLabel: copy.currentTitleLabel,
+    titleValue: comparison.currentTitle,
+    draftDescriptionLabel: copy.aiDescriptionLabel,
+    draftDescriptionValue: comparison.aiDescription || copy.needDescriptionHint,
+    currentDescriptionLabel: copy.currentDescriptionLabel,
+    currentDescriptionValue: comparison.currentDescription || copy.descriptionMissing,
+    hasDraftDescription: comparison.hasAiDescription,
+  }
+}
+
 export function buildAlbumDescriptionDraftSuggestion({
   chapters,
 }: {
@@ -299,6 +355,55 @@ export function buildAlbumDescriptionDraftSuggestion({
   return `这本相册收着${chapterLabel}。${summarySnippets.slice(0, 2).join('')}`
 }
 
+export function buildNextAlbumDescriptionDraftSuggestion({
+  chapters,
+  previousSuggestion,
+}: {
+  title: string
+  chapters: Array<{
+    title?: string
+    aiSummary?: string | null
+  }>
+  previousSuggestion?: string | null
+}) {
+  const titledChapters = chapters
+    .map(chapter => chapter.title?.trim())
+    .filter((title): title is string => Boolean(title))
+  const summarySnippets = chapters
+    .map(chapter => chapter.aiSummary?.trim())
+    .filter((summary): summary is string => Boolean(summary))
+
+  if (titledChapters.length === 0) {
+    return ''
+  }
+
+  const primaryChapterLabel = titledChapters.length === 1
+    ? `“${titledChapters[0]}”这一段回忆`
+    : `“${titledChapters.slice(0, 2).join('”和“')}”这些回忆`
+  const compactChapterLabel = titledChapters.length === 1
+    ? titledChapters[0]!
+    : titledChapters.slice(0, 2).join('、')
+  const compactSummaries = summarySnippets.slice(0, 2).join('')
+
+  const candidates = [
+    buildAlbumDescriptionDraftSuggestion({ title: '', chapters }),
+    summarySnippets.length > 0
+      ? `这本相册围绕${primaryChapterLabel}展开。${compactSummaries}`
+      : `这本相册围绕${primaryChapterLabel}展开。`,
+    summarySnippets.length > 0
+      ? `相册里收着${compactChapterLabel}的片段。${compactSummaries}`
+      : `相册里收着${compactChapterLabel}的片段。`,
+  ]
+    .map(candidate => candidate.trim())
+    .filter((candidate, index, list) => candidate.length > 0 && list.indexOf(candidate) === index)
+
+  if (!previousSuggestion) {
+    return candidates[0] ?? ''
+  }
+
+  return candidates.find(candidate => candidate !== previousSuggestion) ?? candidates[0] ?? ''
+}
+
 export function buildAlbumTitleDraftSuggestion({
   chapters,
 }: {
@@ -328,6 +433,49 @@ export function buildAlbumTitleDraftSuggestion({
   }
 
   return `${normalizeTitle(titledChapters[0]!, true)}与${normalizeTitle(titledChapters[1]!, true)}`
+}
+
+export function buildNextAlbumTitleDraftSuggestion({
+  chapters,
+  previousSuggestion,
+}: {
+  title: string
+  chapters: Array<{
+    title?: string
+  }>
+  previousSuggestion?: string | null
+}) {
+  const titledChapters = chapters
+    .map(chapter => chapter.title?.trim())
+    .filter((title): title is string => Boolean(title))
+
+  if (titledChapters.length === 0) {
+    return ''
+  }
+
+  const normalizeTitle = (title: string, compact = false) =>
+    title
+      .replace(/的时刻$/u, '')
+      .replace(/这一段回忆$/u, '')
+      .replace(/的晚风$/u, '')
+      .replace(compact ? /婚纱照$/u : /^$/u, '')
+      .trim()
+
+  const firstTitle = normalizeTitle(titledChapters[0]!, true)
+  const secondTitle = titledChapters[1] ? normalizeTitle(titledChapters[1], true) : ''
+  const candidates = [
+    buildAlbumTitleDraftSuggestion({ title: '', chapters }),
+    secondTitle ? `${firstTitle}和${secondTitle}` : `${firstTitle}回忆`,
+    secondTitle ? `${firstTitle} · ${secondTitle}` : `${firstTitle}记录`,
+  ]
+    .map(candidate => candidate.trim())
+    .filter((candidate, index, list) => candidate.length > 0 && list.indexOf(candidate) === index)
+
+  if (!previousSuggestion) {
+    return candidates[0] ?? ''
+  }
+
+  return candidates.find(candidate => candidate !== previousSuggestion) ?? candidates[0] ?? ''
 }
 
 export function buildChapterSummaryActionState(args: {
@@ -449,6 +597,7 @@ export function buildAlbumDetailWorkspaceState({
 
 export default function AlbumDetailPage() {
   const t = useTranslations('AlbumDetailPage')
+  const viewerT = useTranslations('PhotoViewer')
   const params = useParams()
   const router = useRouter()
   const albumId = params.albumId as string
@@ -470,12 +619,15 @@ export default function AlbumDetailPage() {
   const [summaryActionChapterId, setSummaryActionChapterId] = useState<string | null>(null)
   const [editingAlbumMeta, setEditingAlbumMeta] = useState(false)
   const [albumMetaDraft, setAlbumMetaDraft] = useState({ title: '', description: '' })
+  const [albumMetaSuggestions, setAlbumMetaSuggestions] = useState({ title: '', description: '' })
   const [savingAlbumMeta, setSavingAlbumMeta] = useState(false)
+  const [previewState, setPreviewState] = useState<{ photoId: string; indexHint: number } | null>(null)
   const [pendingDeletePhotoId, setPendingDeletePhotoId] = useState<string | null>(null)
   const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null)
   const [pendingCoverPhotoId, setPendingCoverPhotoId] = useState<string | null>(null)
   const [settingCoverPhotoId, setSettingCoverPhotoId] = useState<string | null>(null)
   const uiText = buildAlbumDetailUiText(t)
+  const viewerCopy = useMemo(() => buildPhotoViewerCopy(viewerT), [viewerT])
 
   useEffect(() => {
     async function fetchData() {
@@ -489,6 +641,7 @@ export default function AlbumDetailPage() {
         const data = await albumRes.json()
         setAlbum(data)
         setAlbumMetaDraft(buildAlbumMetaDraft(data))
+        setAlbumMetaSuggestions({ title: '', description: '' })
       }
 
       setLoading(false)
@@ -500,10 +653,18 @@ export default function AlbumDetailPage() {
   const allVisiblePhotos = useMemo(() => {
     if (!album) return []
     return [
-      ...album.ungroupedPhotos,
       ...album.chapters.flatMap(chapter => chapter.photos),
+      ...album.ungroupedPhotos,
     ]
   }, [album])
+
+  const previewItems = useMemo(() => buildAlbumPhotoPreviewItems(allVisiblePhotos), [allVisiblePhotos])
+  const previewIndex = previewState
+    ? previewItems.findIndex(item => item.id === previewState.photoId)
+    : -1
+  const activePreviewIndex = previewState
+    ? (previewIndex >= 0 ? previewIndex : Math.min(previewState.indexHint, Math.max(previewItems.length - 1, 0)))
+    : 0
 
   const workspaceState = useMemo(() => buildAlbumDetailWorkspaceState({
     detailSurface,
@@ -560,11 +721,25 @@ export default function AlbumDetailPage() {
     )
   }
 
-  function openChapterPhotoPreview(photoId: string, chapterPhotoIds: string[]) {
+  function openPhotoWorkspace(photoId: string) {
+    if (!album) return
+
+    const chapter = album.chapters.find(item => item.photos.some(photo => photo.id === photoId))
+
     setDetailSurface({
       kind: 'photo',
       photoId,
-      chapterPhotoIds,
+      chapterPhotoIds: chapter ? chapter.photos.map(photo => photo.id) : [photoId],
+    })
+  }
+
+  function openAlbumPreview(photoId: string) {
+    const nextIndex = previewItems.findIndex(item => item.id === photoId)
+    if (nextIndex < 0) return
+
+    setPreviewState({
+      photoId,
+      indexHint: nextIndex,
     })
   }
 
@@ -806,6 +981,7 @@ export default function AlbumDetailPage() {
         ? updated.description
         : album.description,
     }))
+    setAlbumMetaSuggestions({ title: '', description: '' })
     setEditingAlbumMeta(false)
     setActionMessage(uiText.narrative.saveSuccess)
   }
@@ -824,6 +1000,16 @@ export default function AlbumDetailPage() {
     ungroupedPhotos: album.ungroupedPhotos,
   })
   const narrativeComparison = buildAlbumNarrativeComparison({ album })
+  const narrativePreview = buildAlbumNarrativePreview({
+    comparison: narrativeComparison,
+    copy: {
+      currentTitleLabel: uiText.narrative.currentTitleLabel,
+      aiDescriptionLabel: uiText.narrative.aiDescriptionLabel,
+      currentDescriptionLabel: uiText.narrative.currentDescriptionLabel,
+      needDescriptionHint: uiText.narrative.needDescriptionHint,
+      descriptionMissing: uiText.narrative.descriptionMissing,
+    },
+  })
   const albumSelectionState = buildAlbumSelectionState({
     selectionMode: albumSelectionMode,
     selectedPhotoIds,
@@ -851,14 +1037,18 @@ export default function AlbumDetailPage() {
         </div>
       </div>
 
-      <section className="rounded-[var(--radius-lg)] border border-warm-border bg-warm-surface p-5 space-y-4">
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-warm-text">{uiText.narrative.title}</h2>
+      <section className={ALBUM_NARRATIVE_LAYOUT_CLASS}>
+        <div className={ALBUM_NARRATIVE_HERO_CARD_CLASS}>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-2">
+              <h2 className="cm-album-narrative__title">{uiText.narrative.title}</h2>
+              <p className="cm-album-narrative__lede">{uiText.narrative.description}</p>
+            </div>
             <Button
               type="button"
               onClick={() => {
                 setAlbumMetaDraft(buildAlbumMetaDraft(album))
+                setAlbumMetaSuggestions({ title: '', description: '' })
                 setEditingAlbumMeta(prev => !prev)
               }}
               variant="secondary"
@@ -868,55 +1058,62 @@ export default function AlbumDetailPage() {
               {uiText.narrative.editAlbum}
             </Button>
           </div>
-          <p className="text-sm text-warm-muted">{uiText.narrative.description}</p>
         </div>
 
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1.12fr)_minmax(320px,0.88fr)]">
           <div className={ALBUM_NARRATIVE_HIGHLIGHT_CARD_CLASS}>
-            <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-warm-accent">
-                {uiText.narrative.aiTitleLabel}
+            <div className="cm-album-narrative__preview-head">
+              <p className="cm-album-narrative__label">
+                {narrativePreview.titleLabel}
               </p>
-              <p className="text-base font-semibold text-warm-text">
-                {narrativeComparison.aiTitle || album.title}
+              <p className="cm-album-narrative__value">
+                {narrativePreview.titleValue}
               </p>
             </div>
-            <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-warm-accent">
-                {uiText.narrative.aiDescriptionLabel}
+            <div className="cm-album-narrative__divider" />
+            <div className="space-y-1.5">
+              <p className="cm-album-narrative__label">
+                {narrativePreview.currentDescriptionLabel}
               </p>
-              <p className="text-sm leading-6 text-warm-muted">
-                {narrativeComparison.aiDescription || uiText.narrative.needDescriptionHint}
+              <p className="cm-album-narrative__body">
+                {narrativePreview.currentDescriptionValue}
               </p>
             </div>
           </div>
 
-          <div className="rounded-[var(--radius-md)] border border-warm-border p-4 space-y-3">
-            <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-warm-muted">
-                {uiText.narrative.currentTitleLabel}
+          <div className={ALBUM_NARRATIVE_PREVIEW_STATE_CLASS}>
+            <div className="space-y-1.5">
+              <p className="cm-album-narrative__label">
+                {narrativePreview.draftDescriptionLabel}
               </p>
-              <p className="text-base font-semibold text-warm-text">{narrativeComparison.currentTitle}</p>
+              <p className="cm-album-narrative__body">
+                {narrativePreview.draftDescriptionValue}
+              </p>
             </div>
-            <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-warm-muted">
-                {uiText.narrative.currentDescriptionLabel}
-              </p>
-              <p className="text-sm leading-6 text-warm-muted">
-                {narrativeComparison.currentDescription || uiText.narrative.descriptionMissing}
-              </p>
+            <div className="space-y-2">
+              {narrativeSnapshot.hasNarrativeFoundation ? (
+                <p className="cm-album-narrative__note cm-album-narrative__note--positive">{uiText.narrative.readyHint}</p>
+              ) : null}
+              {narrativeSnapshot.shouldPromptDescription ? (
+                <p className="cm-album-narrative__note">{uiText.narrative.needDescriptionHint}</p>
+              ) : null}
+              {narrativeSnapshot.shouldPromptOrganization ? (
+                <p className="cm-album-narrative__note">{uiText.narrative.needOrganizationHint}</p>
+              ) : null}
             </div>
           </div>
         </div>
 
         {editingAlbumMeta ? (
-          <div className="grid gap-3 rounded-[var(--radius-md)] bg-warm-bg p-4">
+          <div className={ALBUM_NARRATIVE_EDITOR_CLASS}>
+            <p className="cm-album-narrative__label">{uiText.narrative.editAlbum}</p>
+            <div className="mt-4 grid gap-3">
             <label className="grid gap-1.5">
               <span className="text-sm font-medium text-warm-text">{uiText.narrative.titleLabel}</span>
               <input
                 value={albumMetaDraft.title}
                 onChange={e => setAlbumMetaDraft(prev => ({ ...prev, title: e.target.value }))}
-                className="rounded-[var(--radius-md)] border border-warm-border bg-warm-surface px-3 py-2 text-sm text-warm-text"
+                className="dashboard-input px-4 py-2.5 text-sm text-warm-text"
               />
             </label>
             <label className="grid gap-1.5">
@@ -924,15 +1121,58 @@ export default function AlbumDetailPage() {
               <textarea
                 value={albumMetaDraft.description}
                 onChange={e => setAlbumMetaDraft(prev => ({ ...prev, description: e.target.value }))}
-                rows={3}
-                className="rounded-[var(--radius-md)] border border-warm-border bg-warm-surface px-3 py-2 text-sm text-warm-text resize-none"
+                rows={4}
+                className="dashboard-input min-h-[132px] resize-none px-4 py-3 text-sm leading-6 text-warm-text"
               />
             </label>
-            <div className="flex justify-end gap-2">
+            </div>
+            <div className="cm-album-narrative__editor-actions">
+              <div className="cm-album-narrative__editor-actions-secondary">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    const suggestion = buildNextAlbumTitleDraftSuggestion({
+                      title: album.title,
+                      chapters: album.chapters,
+                      previousSuggestion: albumMetaSuggestions.title || null,
+                    })
+                    if (!suggestion) return
+                    setAlbumMetaSuggestions(prev => ({ ...prev, title: suggestion }))
+                  }}
+                  disabled={album.chapters.length === 0}
+                  size="sm"
+                  variant="subtle"
+                >
+                  {albumMetaSuggestions.title
+                    ? uiText.narrative.regenerateTitleDraft
+                    : uiText.narrative.generateTitleDraft}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    const suggestion = buildNextAlbumDescriptionDraftSuggestion({
+                      title: album.title,
+                      chapters: album.chapters,
+                      previousSuggestion: albumMetaSuggestions.description || null,
+                    })
+                    if (!suggestion) return
+                    setAlbumMetaSuggestions(prev => ({ ...prev, description: suggestion }))
+                  }}
+                  disabled={album.chapters.length === 0}
+                  size="sm"
+                  variant="subtle"
+                >
+                  {albumMetaSuggestions.description
+                    ? uiText.narrative.regenerateDescriptionDraft
+                    : uiText.narrative.generateDescriptionDraft}
+                </Button>
+              </div>
+              <div className="cm-album-narrative__editor-actions-primary">
               <Button
                 type="button"
                 onClick={() => {
                   setAlbumMetaDraft(buildAlbumMetaDraft(album))
+                  setAlbumMetaSuggestions({ title: '', description: '' })
                   setEditingAlbumMeta(false)
                 }}
                 size="sm"
@@ -951,73 +1191,60 @@ export default function AlbumDetailPage() {
               >
                 {savingAlbumMeta ? uiText.narrative.savingAlbum : uiText.narrative.saveAlbum}
               </Button>
-              <Button
-                type="button"
-                onClick={() => {
-                  const suggestion = buildAlbumTitleDraftSuggestion({
-                    title: album.title,
-                    chapters: album.chapters,
-                  })
-                  if (!suggestion) return
-                  setAlbumMetaDraft(prev => ({ ...prev, title: suggestion }))
-                }}
-                disabled={album.chapters.length === 0}
-                size="sm"
-                variant="subtle"
-              >
-                {uiText.narrative.generateTitleDraft}
-              </Button>
-              <Button
-                type="button"
-                onClick={() => {
-                  const suggestion = buildAlbumDescriptionDraftSuggestion({
-                    title: album.title,
-                    chapters: album.chapters,
-                  })
-                  if (!suggestion) return
-                  setAlbumMetaDraft(prev => ({ ...prev, description: suggestion }))
-                }}
-                disabled={album.chapters.length === 0}
-                size="sm"
-                variant="subtle"
-              >
-                {uiText.narrative.generateDescriptionDraft}
-              </Button>
+              </div>
             </div>
+            {albumMetaSuggestions.title ? (
+              <div className="mt-4 rounded-[20px] border border-[var(--dashboard-card-hairline)] bg-[var(--dashboard-card-bg-soft)] px-4 py-3">
+                <div className="cm-album-narrative__candidate-head">
+                  <p className="cm-album-narrative__label">{uiText.narrative.aiTitleLabel}</p>
+                  <p className="cm-album-narrative__candidate-title">{albumMetaSuggestions.title}</p>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setAlbumMetaDraft(prev => ({ ...prev, title: albumMetaSuggestions.title }))}
+                  >
+                    {uiText.narrative.applyTitleDraft}
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+            {albumMetaSuggestions.description ? (
+              <div className="mt-3 rounded-[20px] border border-[var(--dashboard-card-hairline)] bg-[var(--dashboard-card-bg-soft)] px-4 py-3">
+                <div className="cm-album-narrative__candidate-head">
+                  <p className="cm-album-narrative__label">{uiText.narrative.aiDescriptionLabel}</p>
+                  <p className="cm-album-narrative__body">{albumMetaSuggestions.description}</p>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setAlbumMetaDraft(prev => ({ ...prev, description: albumMetaSuggestions.description }))}
+                  >
+                    {uiText.narrative.applyDescriptionDraft}
+                  </Button>
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="cm-album-narrative__stats grid grid-cols-2 gap-3 sm:grid-cols-3">
           <div className={ALBUM_NARRATIVE_STAT_CARD_CLASS}>
-            <div className="text-xs text-warm-muted">{uiText.narrative.chapterCount}</div>
-            <div className="mt-1 text-lg font-semibold text-warm-text">{narrativeSnapshot.chapterCount}</div>
+            <div className="cm-album-narrative__stat-label">{uiText.narrative.chapterCount}</div>
+            <div className="cm-album-narrative__stat-value">{narrativeSnapshot.chapterCount}</div>
           </div>
           <div className={ALBUM_NARRATIVE_STAT_CARD_CLASS}>
-            <div className="text-xs text-warm-muted">{uiText.narrative.summarizedCount}</div>
-            <div className="mt-1 text-lg font-semibold text-warm-text">{narrativeSnapshot.summarizedChapterCount}</div>
+            <div className="cm-album-narrative__stat-label">{uiText.narrative.summarizedCount}</div>
+            <div className="cm-album-narrative__stat-value">{narrativeSnapshot.summarizedChapterCount}</div>
           </div>
           <div className={ALBUM_NARRATIVE_STAT_CARD_CLASS}>
-            <div className="text-xs text-warm-muted">{uiText.narrative.ungroupedCount}</div>
-            <div className="mt-1 text-lg font-semibold text-warm-text">{narrativeSnapshot.ungroupedCount}</div>
+            <div className="cm-album-narrative__stat-label">{uiText.narrative.ungroupedCount}</div>
+            <div className="cm-album-narrative__stat-value">{narrativeSnapshot.ungroupedCount}</div>
           </div>
-          <div className={ALBUM_NARRATIVE_STAT_CARD_CLASS}>
-            <div className="text-xs text-warm-muted">{uiText.narrative.descriptionReady}</div>
-            <div className="mt-1 text-sm font-medium text-warm-text">
-              {narrativeSnapshot.hasDescription ? uiText.narrative.descriptionReady : uiText.narrative.descriptionMissing}
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-2 text-sm">
-          {narrativeSnapshot.hasNarrativeFoundation ? (
-            <p className="text-success">{uiText.narrative.readyHint}</p>
-          ) : null}
-          {narrativeSnapshot.shouldPromptDescription ? (
-            <p className="text-warm-muted">{uiText.narrative.needDescriptionHint}</p>
-          ) : null}
-          {narrativeSnapshot.shouldPromptOrganization ? (
-            <p className="text-warm-muted">{uiText.narrative.needOrganizationHint}</p>
-          ) : null}
         </div>
 
       </section>
@@ -1079,8 +1306,9 @@ export default function AlbumDetailPage() {
                     refreshingSummary: uiText.chapterCard.refreshingSummary,
                     generatingSummary: uiText.chapterCard.generatingSummary,
                   }}
-                  onOpenPhoto={photo => openChapterPhotoPreview(photo.id, chapter.photos.map(item => item.id))}
+                  onOpenPhoto={photo => openPhotoWorkspace(photo.id)}
                   onTogglePhotoSelection={toggleAlbumSelection}
+                  onPreviewPhoto={openAlbumPreview}
                   onDeletePhoto={requestDeletePhoto}
                   onRequestSetCover={requestSetCover}
                   onEditChapter={() => setDetailSurface({ kind: 'chapter', chapterId: chapter.id })}
@@ -1146,7 +1374,8 @@ export default function AlbumDetailPage() {
             selectedIds={albumSelectionMode ? selectedPhotoIds : selectedUngroupedIds}
             selectionMode={albumSelectionMode ? albumSelectionMode : selectionMode}
             onToggle={albumSelectionMode ? toggleAlbumSelection : toggleUngroupedSelection}
-            onOpen={photo => setDetailSurface({ kind: 'photo', photoId: photo.id, chapterPhotoIds: [photo.id] })}
+            onOpen={photo => openPhotoWorkspace(photo.id)}
+            onPreviewPhoto={selectionMode || albumSelectionMode ? undefined : openAlbumPreview}
             onDeletePhoto={selectionMode || albumSelectionMode ? undefined : requestDeletePhoto}
             onRequestSetCover={selectionMode || albumSelectionMode ? undefined : requestSetCover}
             photoActionCopy={uiText.photoActions}
@@ -1235,6 +1464,40 @@ export default function AlbumDetailPage() {
           {[...album.chapters.flatMap(chapter => chapter.photos), ...album.ungroupedPhotos].find(photo => photo.id === pendingCoverPhotoId)?.fileName ?? ''}
         </p>
       </Modal>
+
+      <PhotoViewer
+        open={previewState !== null && previewItems.length > 0}
+        items={previewItems}
+        currentIndex={activePreviewIndex}
+        onIndexChange={index => {
+          const nextItem = previewItems[index]
+          if (!nextItem) return
+          setPreviewState({
+            photoId: nextItem.id,
+            indexHint: index,
+          })
+        }}
+        onClose={() => setPreviewState(null)}
+        copy={viewerCopy}
+        customActions={previewState ? [
+          {
+            key: 'delete',
+            label: uiText.photoActions.deletePhoto,
+            icon: <TrashIcon />,
+            disabled: deletingPhotoId === previewItems[activePreviewIndex]?.id,
+            onSelect: item => requestDeletePhoto(item.id),
+          },
+          {
+            key: 'edit',
+            label: uiText.photoActions.editPhoto,
+            icon: <EditIcon />,
+            onSelect: item => {
+              setPreviewState(null)
+              openPhotoWorkspace(item.id)
+            },
+          },
+        ] : []}
+      />
     </div>
 
     {workspaceState.isOpen ? (
@@ -1249,6 +1512,7 @@ export default function AlbumDetailPage() {
             copy={uiText.workspace}
             coupleId={coupleId ?? ''}
             onClose={() => setDetailSurface(null)}
+            onOpenPreview={openAlbumPreview}
             onPhotoNavigate={photoId => {
               if (detailSurface?.kind !== 'photo') return
               setDetailSurface({

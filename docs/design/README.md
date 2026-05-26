@@ -4,14 +4,14 @@
 
 ## 项目定位
 
-一个让情侣用摄影师级别的美学来展示共同记忆的网站平台。每对情侣拥有独立页面，AI 自动完成照片分析、文案生成、排版建议和时间轴构建，用户只需上传照片。
+一个让情侣用摄影师级别的美学来展示共同记忆的网站平台。每对情侣拥有独立页面，系统会在图片处理链路中调用可观测的 AI 编排流程，完成照片分析、文案生成、排版建议与时间线建议，用户也可以继续手动编辑和重选结果。
 
 ### 核心差异化
 
 | 维度 | 竞品现状 | 我们的方案 |
 |------|---------|-----------|
 | 视觉风格 | 可爱模板风（LovePage） | 摄影师美学：极简、留白、注重排版 |
-| AI 能力 | 无 AI 或仅 AI 建站（Wegic） | 4 个专职 Agent：分析、文案、排版、时间轴 |
+| AI 能力 | 无 AI 或仅 AI 建站（Wegic） | 固定 DAG 编排：分析、文案、排版、时间线建议 |
 | 中文市场 | 海外产品为主，国内仅有 App | Web 端，适配小红书传播场景 |
 | 技术深度 | 模板拖拽 | 自建 DAG Agent 引擎 + EXIF 解析 + 地理编码 |
 
@@ -19,14 +19,14 @@
 
 | 层 | 选型 | 说明 |
 |---|------|-----|
-| 框架 | Next.js 15 (App Router) | 全栈，SSR/SSG |
+| 框架 | Next.js 16 (App Router) | 全栈，SSR/SSG |
 | 语言 | TypeScript | 全栈统一 |
 | 数据库 | PostgreSQL + Prisma | 关系型，ORM 类型安全 |
 | 多租户 | 共享数据库 Row-Level | coupleId 隔离 |
 | 图片存储 | 阿里云 OSS + CDN | 国内访问快 |
 | 图片处理 | Sharp + exifr | 压缩/缩略图/EXIF |
-| AI 模型 | Claude (Vision) + DeepSeek (文案) | 混合编排 |
-| Agent 编排 | 自建 DAG Pipeline Engine | 拓扑排序 + 并行调度 |
+| AI 模型 | Qwen / OpenAI / Claude + DeepSeek | 多供应商路由与降级 |
+| Agent 编排 | 自建 DAG Pipeline Engine | 固定 DAG、拓扑排序、并行调度、运行落库 |
 | 认证 | NextAuth.js v5 (Auth.js) | Provider 插件式 |
 | 样式 | Tailwind CSS + Framer Motion | 摄影师美学 + 动效 |
 | 部署 | Docker Compose 单机 | Nginx + Let's Encrypt |
@@ -44,14 +44,11 @@ couple-memory/
 │   │   ├── (dashboard)/       # 管理后台
 │   │   ├── s/[slug]/          # 公开情侣页面
 │   │   └── api/               # API Routes
-│   ├── lib/                   # auth.ts, prisma.ts, oss.ts
-│   ├── agents/
-│   │   ├── engine/            # DAG Pipeline Engine（零外部依赖）
-│   │   ├── photo-analyzer/    # Claude Vision Agent
-│   │   ├── caption-writer/    # DeepSeek Agent
-│   │   ├── layout-advisor/    # DeepSeek Agent
-│   │   └── timeline-builder/  # DeepSeek Agent
-│   ├── services/              # 业务逻辑层
+│   ├── lib/
+│   │   ├── agents/            # DAG 引擎、Agent 节点、模型客户端
+│   │   ├── pipeline/          # 图片处理主链与状态决策
+│   │   ├── photos/            # 单图协助规则
+│   │   └── style-memory.ts    # 长期风格记忆
 │   └── components/            # React 组件
 ├── docs/design/               # 项目级长期设计文档
 ├── docs/superpowers/          # Superpowers 正式计划与规格文档
@@ -67,7 +64,7 @@ couple-memory/
 | 产品需求 | 用户角色、MVP 功能清单、用户流程、非功能需求 | [product-requirements.md](./product-requirements.md) |
 | 技术架构 | 整体架构、技术选型理由、多租户、认证权限、ADR | [architecture.md](./architecture.md) |
 | 数据库设计 | ER 关系、7 张表详细字段、索引、Prisma Schema | [database.md](./database.md) |
-| AI Agent 架构 | DAG 引擎、4 个 Agent 设计、模型选型、执行追踪 | [ai-agent.md](./ai-agent.md) |
+| Agent 编排设计 | 主处理链、DAG 引擎、4 个节点、模型路由、降级策略、结果持久化、可观测性 | [ai-agent.md](./ai-agent.md) |
 | 图片处理管道 | 前端压缩、OSS 直传、后端处理、EXIF 提取 | [image-pipeline.md](./image-pipeline.md) |
 | API 设计 | REST 端点、请求响应格式、认证中间件 | [api-design.md](./api-design.md) |
 | 部署方案 | Docker Compose、Nginx、CI/CD、SSL、成本估算 | [deployment.md](./deployment.md) |

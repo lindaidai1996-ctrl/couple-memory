@@ -1,7 +1,11 @@
-import { Button, CheckIcon, EditIcon, RefreshIcon, ScreenIcon, SparklesIcon, TrashIcon } from '@/components/ui/button'
+import { Button, CheckIcon, EditIcon, EyeIcon, RefreshIcon, ScreenIcon, SparklesIcon, TrashIcon } from '@/components/ui/button'
 import { mediaTileButtonClassName } from '@/components/ui/media-tile'
 import { canUsePhotoAsAlbumCover, type PhotoData } from './photo-card'
-import { PhotoHoverOverlay, buildPhotoHoverActionButtonClassName } from './photo-hover-overlay'
+import {
+  PhotoHoverOverlay,
+  buildPhotoHoverActionButtonClassName,
+  buildPhotoHoverIndicatorClassName,
+} from './photo-hover-overlay'
 import {
   buildPhotoSelectionCheckboxClassName,
   buildPhotoSelectionCheckmarkClassName,
@@ -93,6 +97,7 @@ export function AlbumChapterCard({
   copy,
   onOpenPhoto,
   onTogglePhotoSelection,
+  onPreviewPhoto,
   onDeletePhoto,
   onRequestSetCover,
   onEditChapter,
@@ -108,6 +113,7 @@ export function AlbumChapterCard({
   copy: AlbumChapterCardCopy
   onOpenPhoto?: (photo: PhotoData) => void
   onTogglePhotoSelection?: (photoId: string) => void
+  onPreviewPhoto?: (photoId: string) => void
   onDeletePhoto?: (photoId: string) => void
   onRequestSetCover?: (photoId: string) => void
   onEditChapter?: () => void
@@ -116,6 +122,7 @@ export function AlbumChapterCard({
   selectionMode?: boolean
   selectedPhotoIds?: string[]
   photoActionCopy?: {
+    previewPhoto?: string
     deletePhoto: string
     deletingPhoto: string
     setAsCover: string
@@ -137,9 +144,6 @@ export function AlbumChapterCard({
     <section className="rounded-[var(--radius-lg)] border border-warm-border bg-warm-surface p-5 space-y-4">
       <div className="space-y-1">
         <h2 className="text-lg font-semibold text-warm-text">{chapter.title}</h2>
-        {chapter.backgroundNote ? (
-          <p className="text-sm text-warm-muted">{chapter.backgroundNote}</p>
-        ) : null}
       </div>
 
       {chapter.aiSummary ? (
@@ -159,7 +163,12 @@ export function AlbumChapterCard({
               const isCurrentCover = Boolean(photo.isAlbumCover)
               const isSettingCover = settingCoverPhotoId === photo.id
               const shouldShowDeleteAction = !selectionMode && Boolean(onDeletePhoto) && Boolean(photoActionCopy)
-              const shouldShowCoverAction = !selectionMode && Boolean(onRequestSetCover) && Boolean(photoActionCopy) && (canSetCover || isCurrentCover)
+              const shouldShowPreviewAction =
+                !selectionMode &&
+                Boolean(onPreviewPhoto) &&
+                Boolean(photoActionCopy?.previewPhoto) &&
+                Boolean(photo.displayUrl)
+              const shouldShowCoverAction = !selectionMode && Boolean(onRequestSetCover) && Boolean(photoActionCopy) && canSetCover && !isCurrentCover
               const deleteActionLabel = deletingPhotoId === photo.id ? photoActionCopy?.deletingPhoto ?? '' : photoActionCopy?.deletePhoto ?? ''
 
               return (
@@ -205,55 +214,71 @@ export function AlbumChapterCard({
                     </div>
                   ) : null}
 
-                  {shouldShowDeleteAction || shouldShowCoverAction ? (
+                  {shouldShowDeleteAction || shouldShowCoverAction || shouldShowPreviewAction ? (
                     <PhotoHoverOverlay
                       topSlot={shouldShowCoverAction ? (
                         <button
                           type="button"
-                          aria-label={
-                            isCurrentCover
-                              ? photoActionCopy!.currentCover
-                              : isSettingCover
-                                ? photoActionCopy!.settingCover
-                                : photoActionCopy!.setAsCover
-                          }
-                          title={
-                            isCurrentCover
-                              ? photoActionCopy!.currentCover
-                              : isSettingCover
-                                ? photoActionCopy!.settingCover
-                                : photoActionCopy!.setAsCover
-                          }
-                          className={`${buildPhotoHoverActionButtonClassName()} ${isCurrentCover ? 'text-white opacity-100' : ''}`}
-                          disabled={isCurrentCover || isSettingCover}
+                          aria-label={isSettingCover ? photoActionCopy!.settingCover : photoActionCopy!.setAsCover}
+                          title={isSettingCover ? photoActionCopy!.settingCover : photoActionCopy!.setAsCover}
+                          className={buildPhotoHoverActionButtonClassName()}
+                          disabled={isSettingCover}
                           onClick={event => {
                             event.stopPropagation()
-                            if (!isCurrentCover) {
-                              onRequestSetCover?.(photo.id)
-                            }
+                            onRequestSetCover?.(photo.id)
                           }}
                         >
-                          {isCurrentCover ? <CheckIcon className="h-4 w-4" /> : <ScreenIcon className="h-4 w-4" />}
+                          <ScreenIcon className="h-4 w-4" />
                         </button>
                       ) : null}
                       bottomSlot={(
-                        shouldShowDeleteAction ? (
-                        <button
-                          type="button"
-                          aria-label={deleteActionLabel}
-                          title={deleteActionLabel}
-                          className={buildPhotoHoverActionButtonClassName()}
-                          disabled={deletingPhotoId === photo.id}
-                          onClick={event => {
-                            event.stopPropagation()
-                            onDeletePhoto?.(photo.id)
-                          }}
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
+                        shouldShowDeleteAction || shouldShowPreviewAction ? (
+                          <div className="flex items-center gap-2">
+                            {shouldShowPreviewAction ? (
+                              <button
+                                type="button"
+                                aria-label={photoActionCopy!.previewPhoto}
+                                title={photoActionCopy!.previewPhoto}
+                                className={buildPhotoHoverActionButtonClassName()}
+                                onClick={event => {
+                                  event.stopPropagation()
+                                  onPreviewPhoto?.(photo.id)
+                                }}
+                              >
+                                <EyeIcon className="h-4 w-4" />
+                              </button>
+                            ) : null}
+                            {shouldShowDeleteAction ? (
+                              <button
+                                type="button"
+                                aria-label={deleteActionLabel}
+                                title={deleteActionLabel}
+                                className={buildPhotoHoverActionButtonClassName()}
+                                disabled={deletingPhotoId === photo.id}
+                                onClick={event => {
+                                  event.stopPropagation()
+                                  onDeletePhoto?.(photo.id)
+                                }}
+                              >
+                                <TrashIcon className="h-4 w-4" />
+                              </button>
+                            ) : null}
+                          </div>
                         ) : null
                       )}
                     />
+                  ) : null}
+
+                  {!selectionMode && isCurrentCover ? (
+                    <div className="pointer-events-none absolute left-2.5 top-2.5 z-20">
+                      <span
+                        aria-label={photoActionCopy?.currentCover ?? '当前封面'}
+                        className={buildPhotoHoverIndicatorClassName()}
+                      >
+                        <CheckIcon className="h-4 w-4" />
+                        <span>{photoActionCopy?.currentCover ?? '当前封面'}</span>
+                      </span>
+                    </div>
                   ) : null}
                 </div>
               )
