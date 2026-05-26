@@ -43,6 +43,10 @@ export type PhotoViewerAction = {
   disabled?: boolean
 }
 
+type PhotoViewerToolbarAction = PhotoViewerAction & {
+  command?: PhotoViewerTransformCommand
+}
+
 type Translator = (key: string, values?: Record<string, string | number>) => string
 
 export function buildPhotoViewerCopy(t: Translator): PhotoViewerCopy {
@@ -119,27 +123,35 @@ export function buildPhotoViewerToolbarActions({
 }: {
   copy: Pick<PhotoViewerCopy, 'zoomOut' | 'zoomIn' | 'rotateLeft' | 'rotateRight'>
   customActions?: PhotoViewerAction[]
-}) {
+}): PhotoViewerToolbarAction[] {
   return [
     {
       key: 'zoom-out',
       label: copy.zoomOut,
       icon: <ZoomOutIcon />,
+      command: 'zoom-out',
+      onSelect: () => {},
     },
     {
       key: 'zoom-in',
       label: copy.zoomIn,
       icon: <ZoomInIcon />,
+      command: 'zoom-in',
+      onSelect: () => {},
     },
     {
       key: 'rotate-left',
       label: copy.rotateLeft,
       icon: <RotateCcwIcon />,
+      command: 'rotate-left',
+      onSelect: () => {},
     },
     {
       key: 'rotate-right',
       label: copy.rotateRight,
       icon: <RotateCwIcon />,
+      command: 'rotate-right',
+      onSelect: () => {},
     },
     ...customActions,
   ]
@@ -365,11 +377,7 @@ function PhotoViewerFrame({
 
         <div className="cm-photo-viewer__toolbar">
           {toolbarActions.map(action => {
-            const isCommonAction =
-              action.key === 'zoom-out' ||
-              action.key === 'zoom-in' ||
-              action.key === 'rotate-left' ||
-              action.key === 'rotate-right'
+            const isCommonAction = Boolean(action.command)
 
             return (
               <button
@@ -379,10 +387,8 @@ function PhotoViewerFrame({
                 className="cm-photo-viewer__tool"
                 disabled={isCommonAction ? false : action.disabled}
                 onClick={() => {
-                  if (isCommonAction) {
-                    setTransform(current =>
-                      buildPhotoViewerTransform(current, action.key as PhotoViewerTransformCommand)
-                    )
+                  if (action.command) {
+                    setTransform(current => buildPhotoViewerTransform(current, action.command!))
                     return
                   }
 

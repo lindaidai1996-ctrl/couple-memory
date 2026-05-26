@@ -1170,19 +1170,16 @@ test('buildAlbumPhotoPreviewItems keeps only previewable photos and preserves al
         id: 'photo_2',
         fileName: 'two.jpg',
         displayUrl: 'https://cdn.example.com/2.jpg',
-        status: 'READY',
       },
       {
         id: 'photo_1',
         fileName: 'one.jpg',
         displayUrl: 'https://cdn.example.com/1.jpg',
-        status: 'READY',
       },
       {
         id: 'photo_3',
         fileName: 'three.jpg',
         displayUrl: null,
-        status: 'PROCESSING',
       },
     ] as Parameters<typeof buildAlbumPhotoPreviewItems>[0]),
     [
