@@ -1,0 +1,25 @@
+name: Push Probe
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print event context
+        run: |
+          echo "event=${{ github.event_name }}"
+          echo "ref=${{ github.ref }}"
+          echo "sha=${{ github.sha }}"
+          echo "actor=${{ github.actor }}"
+          echo "workflow=${{ github.workflow }}"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Print latest commit
+        run: |
+          git log -1 --pretty=fuller

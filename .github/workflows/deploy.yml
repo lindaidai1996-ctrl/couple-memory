@@ -3,6 +3,7 @@ name: Deploy
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 env:
   REGISTRY: crpi-yhjn5h58paq8ixxi.cn-hongkong.personal.cr.aliyuncs.com
