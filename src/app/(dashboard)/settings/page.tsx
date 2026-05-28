@@ -129,6 +129,26 @@ type InviteActionButtonConfig = {
   variant: 'secondary' | 'ghost'
 }
 
+type EditableTextFieldKey = 'profileName' | 'spaceName' | 'slug' | 'bio' | 'blockedPhrases'
+
+type CoupleImmediateFieldKey =
+  | 'startDate'
+  | 'visibility'
+  | 'captionStyle'
+  | 'tone'
+  | 'coverMode'
+  | 'coverPhoto'
+  | 'memoryReset'
+
+type SettingsFieldKey = EditableTextFieldKey | CoupleImmediateFieldKey
+
+type FieldFeedbackTone = 'saving' | 'saved' | 'error'
+
+type FieldFeedback = {
+  tone: FieldFeedbackTone
+  text: string
+}
+
 export function normalizeCoverModeForSettings(
   coverMode: CoverMode | undefined,
   coverPhotoUrl: string | null
@@ -423,9 +443,12 @@ export default function SettingsPage() {
   const locale = useLocale()
   const avatarStageLabels = useMemo(() => buildAvatarUploadStageLabels(t), [t])
   const [couple, setCouple] = useState<CoupleData | null>(null)
+  const [persistedCouple, setPersistedCouple] = useState<CoupleData | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [nameInput, setNameInput] = useState('')
+  const [persistedProfileName, setPersistedProfileName] = useState('')
   const [avatarEditorOpen, setAvatarEditorOpen] = useState(false)
+  const [editingTextField, setEditingTextField] = useState<EditableTextFieldKey | null>(null)
   const [blockedPhrasesDraft, setBlockedPhrasesDraft] = useState('')
   const [recentCoverPhotos, setRecentCoverPhotos] = useState<CoverPhotoOption[]>([])
   const [styleMemoryProfile, setStyleMemoryProfile] = useState<StyleMemoryProfileSnapshot | null>(null)
@@ -436,7 +459,9 @@ export default function SettingsPage() {
   const [avatarSaving, setAvatarSaving] = useState(false)
   const [avatarUploadStage, setAvatarUploadStage] = useState<UploadStage | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [fieldFeedback, setFieldFeedback] = useState<Partial<Record<SettingsFieldKey, FieldFeedback>>>({})
   const [avatarPreviewOpen, setAvatarPreviewOpen] = useState(false)
+  const [showResetMemoryPreferencesConfirm, setShowResetMemoryPreferencesConfirm] = useState(false)
   const viewerCopy = useMemo(() => buildPhotoViewerCopy(viewerT), [viewerT])
 
   useEffect(() => {
@@ -450,6 +475,7 @@ export default function SettingsPage() {
         const data = await coupleRes.json()
         const normalizedCouple = normalizeCoupleResponse(data)
         setCouple(normalizedCouple)
+        setPersistedCouple(normalizedCouple)
         setBlockedPhrasesDraft(buildBlockedPhrasesDraft(normalizedCouple.blockedPhrases))
       }
 
@@ -457,6 +483,7 @@ export default function SettingsPage() {
         const data = await profileRes.json()
         setProfile(data)
         setNameInput(data.name ?? '')
+        setPersistedProfileName(data.name ?? '')
       }
 
       setLoading(false)
@@ -524,15 +551,27 @@ export default function SettingsPage() {
     }
   }, [couple?.id])
 
+  function updateFieldFeedback(key: SettingsFieldKey, feedback: FieldFeedback | null) {
+    setFieldFeedback(prev => {
+      const next = { ...prev }
+
+      if (feedback) {
+        next[key] = feedback
+      } else {
+        delete next[key]
+      }
+
+      return next
+    })
+  }
+
   async function patchProfile(
     payload: {
       avatar?: string | null
       name?: string | null
     },
-    successMessage: string
+    fallbackMessage: string
   ) {
-    setMessage(null)
-
     const res = await fetch('/api/users/me/profile', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -543,24 +582,58 @@ export default function SettingsPage() {
       const updated = await res.json()
       setProfile(updated)
       setNameInput(updated.name ?? '')
-      setMessage({ type: 'success', text: successMessage })
-      return true
-    } else {
-      const data = await res.json()
-      setMessage({
-        type: 'error',
-        text: extractApiErrorMessage(data, t('profileSaveFailed')),
-      })
+      setPersistedProfileName(updated.name ?? '')
+      return {
+        ok: true as const,
+        data: updated as UserProfile,
+      }
     }
-    return false
+
+    const data = await res.json()
+    return {
+      ok: false as const,
+      error: extractApiErrorMessage(data, fallbackMessage),
+    }
   }
 
-  async function handleProfileSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
+  async function patchCouple(nextCouple: CoupleData, fallbackMessage: string) {
+    const res = await fetch(`/api/couples/${nextCouple.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildCoupleUpdatePayload(nextCouple)),
+    })
+
+    if (res.ok) {
+      const data = await res.json()
+      return {
+        ok: true as const,
+        data: normalizeCoupleResponse(data),
+      }
+    }
+
+    const data = await res.json()
+    return {
+      ok: false as const,
+      error: extractApiErrorMessage(data, fallbackMessage),
+    }
+  }
+
+  async function handleProfileNameSave() {
     if (!profile) return
 
     setProfileSaving(true)
-    await patchProfile(buildProfileUpdatePayload(nameInput), t('profileSaved'))
+    updateFieldFeedback('profileName', { tone: 'saving', text: t('saving') })
+    setMessage(null)
+
+    const result = await patchProfile(buildProfileUpdatePayload(nameInput), t('profileSaveFailed'))
+
+    if (result.ok) {
+      updateFieldFeedback('profileName', { tone: 'saved', text: t('saved') })
+      setEditingTextField(null)
+    } else {
+      updateFieldFeedback('profileName', { tone: 'error', text: result.error })
+    }
+
     setProfileSaving(false)
   }
 
@@ -575,9 +648,12 @@ export default function SettingsPage() {
       const { avatarUrl } = await compressAndUploadAvatar(file, stage => {
         setAvatarUploadStage(stage)
       })
-      const success = await patchProfile({ avatar: avatarUrl }, t('avatarUpdated'))
-      if (success) {
+      const result = await patchProfile({ avatar: avatarUrl }, t('profileSaveFailed'))
+      if (result.ok) {
         setAvatarEditorOpen(false)
+        setMessage({ type: 'success', text: t('avatarUpdated') })
+      } else {
+        setMessage({ type: 'error', text: result.error })
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : t('avatarFailed')
@@ -588,42 +664,110 @@ export default function SettingsPage() {
     }
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    if (!couple) return
+  async function handleImmediateCoupleSave(
+    fieldKey: SettingsFieldKey,
+    nextCouple: CoupleData,
+    options?: {
+      fallbackMessage?: string
+      successMessage?: string
+      showGlobalMessage?: boolean
+      blockedPhrasesDraft?: string
+    }
+  ) {
+    if (!couple) return false
+
+    const previousCouple = couple
+    const previousBlockedPhrasesDraft = blockedPhrasesDraft
 
     setSaving(true)
-    setMessage(null)
-
-    const normalizedBlockedPhrases = parseBlockedPhrasesDraft(blockedPhrasesDraft)
-    const nextCouple = {
-      ...couple,
-      blockedPhrases: normalizedBlockedPhrases,
+    updateFieldFeedback(fieldKey, { tone: 'saving', text: t('saving') })
+    if (options?.showGlobalMessage) {
+      setMessage(null)
+    }
+    setCouple(nextCouple)
+    if (options?.blockedPhrasesDraft !== undefined) {
+      setBlockedPhrasesDraft(options.blockedPhrasesDraft)
     }
 
-    setCouple(nextCouple)
+    const result = await patchCouple(nextCouple, options?.fallbackMessage ?? t('saveFailed'))
 
-    const res = await fetch(`/api/couples/${couple.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(buildCoupleUpdatePayload(nextCouple)),
-    })
-
-    if (res.ok) {
-      const data = await res.json()
-      const normalizedCouple = normalizeCoupleResponse(data)
+    if (result.ok) {
+      const normalizedCouple = result.data
       setCouple(normalizedCouple)
+      setPersistedCouple(normalizedCouple)
       setBlockedPhrasesDraft(buildBlockedPhrasesDraft(normalizedCouple.blockedPhrases))
-      setMessage({ type: 'success', text: t('saved') })
+      updateFieldFeedback(fieldKey, { tone: 'saved', text: t('saved') })
+
+      if (options?.showGlobalMessage && options.successMessage) {
+        setMessage({ type: 'success', text: options.successMessage })
+      }
+      setSaving(false)
+      return true
     } else {
-      const data = await res.json()
-      setMessage({
-        type: 'error',
-        text: extractApiErrorMessage(data, t('saveFailed')),
-      })
+      setCouple(previousCouple)
+      setBlockedPhrasesDraft(previousBlockedPhrasesDraft)
+      updateFieldFeedback(fieldKey, { tone: 'error', text: result.error })
+
+      if (options?.showGlobalMessage) {
+        setMessage({ type: 'error', text: result.error })
+      }
     }
 
     setSaving(false)
+    return false
+  }
+
+  async function handleEditableCoupleFieldSave(fieldKey: Exclude<EditableTextFieldKey, 'profileName'>) {
+    if (!couple) return
+
+    let nextCouple = couple
+
+    if (fieldKey === 'blockedPhrases') {
+      nextCouple = {
+        ...couple,
+        blockedPhrases: parseBlockedPhrasesDraft(blockedPhrasesDraft),
+      }
+    }
+
+    const didSave = await handleImmediateCoupleSave(fieldKey, nextCouple, {
+      blockedPhrasesDraft: fieldKey === 'blockedPhrases' ? buildBlockedPhrasesDraft(nextCouple.blockedPhrases) : undefined,
+    })
+
+    if (didSave) {
+      setEditingTextField(null)
+    }
+  }
+
+  function handleCancelTextFieldEdit(fieldKey: EditableTextFieldKey) {
+    if (fieldKey === 'profileName') {
+      setNameInput(persistedProfileName)
+      setEditingTextField(null)
+      updateFieldFeedback('profileName', null)
+      return
+    }
+
+    if (!persistedCouple) return
+
+    switch (fieldKey) {
+      case 'spaceName':
+        setCouple(prev => prev ? { ...prev, name: persistedCouple.name } : prev)
+        break
+      case 'slug':
+        setCouple(prev => prev ? { ...prev, slug: persistedCouple.slug } : prev)
+        break
+      case 'bio':
+        setCouple(prev => prev ? { ...prev, bio: persistedCouple.bio } : prev)
+        break
+      case 'blockedPhrases':
+        setCouple(prev => prev ? { ...prev, blockedPhrases: persistedCouple.blockedPhrases } : prev)
+        setBlockedPhrasesDraft(buildBlockedPhrasesDraft(persistedCouple.blockedPhrases))
+        break
+      default:
+        break
+    }
+
+    setEditingTextField(null)
+    updateFieldFeedback(fieldKey, null)
   }
 
   async function handleGenerateInvite() {
@@ -657,34 +801,13 @@ export default function SettingsPage() {
   async function handleResetMemoryPreferences() {
     if (!couple) return
 
-    setSaving(true)
-    setMessage(null)
-
     const nextCouple = buildResetMemoryPreferencesInput(couple)
-    setCouple(nextCouple)
-    setBlockedPhrasesDraft('')
-
-    const res = await fetch(`/api/couples/${couple.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(buildCoupleUpdatePayload(nextCouple)),
+    await handleImmediateCoupleSave('memoryReset', nextCouple, {
+      fallbackMessage: t('memoryPreferencesResetFailed'),
+      successMessage: t('memoryPreferencesReset'),
+      showGlobalMessage: true,
+      blockedPhrasesDraft: '',
     })
-
-    if (res.ok) {
-      const data = await res.json()
-      const normalizedCouple = normalizeCoupleResponse(data)
-      setCouple(normalizedCouple)
-      setBlockedPhrasesDraft(buildBlockedPhrasesDraft(normalizedCouple.blockedPhrases))
-      setMessage({ type: 'success', text: t('memoryPreferencesReset') })
-    } else {
-      const data = await res.json()
-      setMessage({
-        type: 'error',
-        text: extractApiErrorMessage(data, t('memoryPreferencesResetFailed')),
-      })
-    }
-
-    setSaving(false)
   }
 
   if (loading) {
@@ -738,7 +861,7 @@ export default function SettingsPage() {
         </div>
       ) : null}
 
-      <form onSubmit={handleProfileSubmit}>
+      <div>
         <Section
           title={t('profileTitle')}
           eyebrow="Profile"
@@ -801,13 +924,54 @@ export default function SettingsPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label={t('profileNickname')}>
-                <input
-                  value={nameInput}
-                  onChange={e => setNameInput(e.target.value)}
-                  className={controlClass}
-                  placeholder={t('profileNicknamePlaceholder')}
-                />
+              <Field
+                label={t('profileNickname')}
+                status={fieldFeedback.profileName}
+              >
+                {editingTextField === 'profileName' ? (
+                  <div className="space-y-2">
+                    <input
+                      value={nameInput}
+                      onChange={e => setNameInput(e.target.value)}
+                      className={controlClass}
+                      placeholder={t('profileNicknamePlaceholder')}
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        onClick={() => void handleProfileNameSave()}
+                        loading={profileSaving}
+                        variant="brand"
+                      >
+                        {t('save')}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => handleCancelTextFieldEdit('profileName')}
+                        disabled={profileSaving}
+                        variant="ghost"
+                      >
+                        {t('cancel')}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className={readOnlyControlClass}>
+                      {nameInput.trim() || t('profileNicknamePlaceholder')}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        onClick={() => setEditingTextField('profileName')}
+                        variant="secondary"
+                        leadingIcon={<EditIcon />}
+                      >
+                        {t('edit')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </Field>
 
               <Field label={t('email')}>
@@ -848,69 +1012,179 @@ export default function SettingsPage() {
                 </label>
               </Field>
             ) : null}
-
-            <div className="flex flex-wrap gap-2.5">
-              <Button
-                type="submit"
-                loading={profileSaving}
-                variant="brand"
-                leadingIcon={<RefreshIcon />}
-              >
-                {profileSaving ? t('saving') : t('saveProfile')}
-              </Button>
-            </div>
           </div>
         </Section>
-      </form>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-4">
         <Section
           title={t('spaceBasicInfo')}
           eyebrow="Identity"
           description={t('slugHint')}
           accent="plum"
         >
-          <Field label={t('name')}>
-            <input
-              value={couple.name}
-              onChange={e => setCouple(prev => prev ? { ...prev, name: e.target.value } : prev)}
-              required
-              className={controlClass}
-              placeholder={t('namePlaceholder')}
-            />
+          <Field
+            label={t('name')}
+            status={fieldFeedback.spaceName}
+          >
+            {editingTextField === 'spaceName' ? (
+              <div className="space-y-2">
+                <input
+                  value={couple.name}
+                  onChange={e => setCouple(prev => prev ? { ...prev, name: e.target.value } : prev)}
+                  required
+                  className={controlClass}
+                  placeholder={t('namePlaceholder')}
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => void handleEditableCoupleFieldSave('spaceName')}
+                    loading={saving}
+                    variant="brand"
+                  >
+                    {t('save')}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => handleCancelTextFieldEdit('spaceName')}
+                    disabled={saving}
+                    variant="ghost"
+                  >
+                    {t('cancel')}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className={readOnlyControlClass}>{couple.name || t('namePlaceholder')}</div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => setEditingTextField('spaceName')}
+                    variant="secondary"
+                    leadingIcon={<EditIcon />}
+                  >
+                    {t('edit')}
+                  </Button>
+                </div>
+              </div>
+            )}
           </Field>
 
-          <Field label={t('slug')} hint={t('slugHint')}>
-            <input
-              value={couple.slug}
-              onChange={e => setCouple(prev => prev ? { ...prev, slug: e.target.value } : prev)}
-              required
-              pattern="^[a-z0-9-]+$"
-              className={controlClass}
-              placeholder="my-love-story"
-            />
+          <Field
+            label={t('slug')}
+            hint={t('slugHint')}
+            status={fieldFeedback.slug}
+          >
+            {editingTextField === 'slug' ? (
+              <div className="space-y-2">
+                <input
+                  value={couple.slug}
+                  onChange={e => setCouple(prev => prev ? { ...prev, slug: e.target.value } : prev)}
+                  required
+                  pattern="^[a-z0-9-]+$"
+                  className={controlClass}
+                  placeholder="my-love-story"
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => void handleEditableCoupleFieldSave('slug')}
+                    loading={saving}
+                    variant="brand"
+                  >
+                    {t('save')}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => handleCancelTextFieldEdit('slug')}
+                    disabled={saving}
+                    variant="ghost"
+                  >
+                    {t('cancel')}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className={readOnlyControlClass}>{couple.slug || 'my-love-story'}</div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => setEditingTextField('slug')}
+                    variant="secondary"
+                    leadingIcon={<EditIcon />}
+                  >
+                    {t('edit')}
+                  </Button>
+                </div>
+              </div>
+            )}
           </Field>
 
-          <Field label={t('date')}>
+          <Field label={t('date')} status={fieldFeedback.startDate}>
             <VelvetDatePicker
               ariaLabel={t('date')}
+              disabled={saving}
               locale={locale}
               value={couple.startDate?.split('T')[0] || ''}
-              onChange={value => setCouple(prev => prev ? {
-                ...prev,
+              onChange={value => void handleImmediateCoupleSave('startDate', {
+                ...couple,
                 startDate: value || null,
-              } : prev)}
+              })}
             />
           </Field>
 
-          <Field label={t('bio')}>
-            <textarea
-              value={couple.bio || ''}
-              onChange={e => setCouple(prev => prev ? { ...prev, bio: e.target.value || null } : prev)}
-              rows={3}
-              className={textareaClass}
-              placeholder={t('bioPlaceholder')}
-            />
+          <Field
+            label={t('bio')}
+            status={fieldFeedback.bio}
+          >
+            {editingTextField === 'bio' ? (
+              <div className="space-y-2">
+                <textarea
+                  value={couple.bio || ''}
+                  onChange={e => setCouple(prev => prev ? { ...prev, bio: e.target.value || null } : prev)}
+                  rows={3}
+                  className={textareaClass}
+                  placeholder={t('bioPlaceholder')}
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => void handleEditableCoupleFieldSave('bio')}
+                    loading={saving}
+                    variant="brand"
+                  >
+                    {t('save')}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => handleCancelTextFieldEdit('bio')}
+                    disabled={saving}
+                    variant="ghost"
+                  >
+                    {t('cancel')}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className={`${readOnlyControlClass} min-h-[108px] whitespace-pre-wrap px-3.5 py-3 leading-6`}>
+                  {couple.bio || t('bioPlaceholder')}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => setEditingTextField('bio')}
+                    variant="secondary"
+                    leadingIcon={<EditIcon />}
+                  >
+                    {t('edit')}
+                  </Button>
+                </div>
+              </div>
+            )}
           </Field>
         </Section>
 
@@ -920,12 +1194,17 @@ export default function SettingsPage() {
           description={t('visibilityDescription')}
           accent={couple.isPublic ? 'plum' : 'rose'}
         >
+          <div className="space-y-2">
           <label className={checkboxCardClass}>
             <span className="relative mt-0.5 inline-flex">
               <input
                 type="checkbox"
                 checked={couple.isPublic}
-                onChange={e => setCouple(prev => prev ? { ...prev, isPublic: e.target.checked } : prev)}
+                onChange={e => void handleImmediateCoupleSave('visibility', {
+                  ...couple,
+                  isPublic: e.target.checked,
+                })}
+                disabled={saving}
                 className={checkboxInputClass}
               />
               <span className={checkboxVisualClass} aria-hidden="true">
@@ -951,6 +1230,12 @@ export default function SettingsPage() {
               </span>
             </span>
           </label>
+            {fieldFeedback.visibility ? (
+              <p className={`text-xs ${buildFieldFeedbackClass(fieldFeedback.visibility.tone)}`}>
+                {fieldFeedback.visibility.text}
+              </p>
+            ) : null}
+          </div>
         </Section>
 
         <Section
@@ -989,14 +1274,16 @@ export default function SettingsPage() {
           <Field
             label={t('captionStyleLabel')}
             hint={t('captionStyleHint')}
+            status={fieldFeedback.captionStyle}
           >
             <VelvetSelect
               ariaLabel={t('captionStyleLabel')}
+              disabled={saving}
               value={couple.captionStylePreference || ''}
-              onChange={value => setCouple(prev => prev ? {
-                ...prev,
+              onChange={value => void handleImmediateCoupleSave('captionStyle', {
+                ...couple,
                 captionStylePreference: value || null,
-              } : prev)}
+              })}
               options={[
                 { value: '', label: t('useSystemDefault') },
                 ...CAPTION_STYLE_OPTIONS.map(option => ({
@@ -1010,14 +1297,16 @@ export default function SettingsPage() {
           <Field
             label={t('toneLabel')}
             hint={t('toneHint')}
+            status={fieldFeedback.tone}
           >
             <VelvetSelect
               ariaLabel={t('toneLabel')}
+              disabled={saving}
               value={couple.tonePreference || ''}
-              onChange={value => setCouple(prev => prev ? {
-                ...prev,
+              onChange={value => void handleImmediateCoupleSave('tone', {
+                ...couple,
                 tonePreference: value || null,
-              } : prev)}
+              })}
               options={[
                 { value: '', label: t('useSystemDefault') },
                 ...TONE_OPTIONS.map(option => ({
@@ -1031,18 +1320,53 @@ export default function SettingsPage() {
           <Field
             label={t('blockedPhrasesLabel')}
             hint={t('blockedPhrasesHint')}
+            status={fieldFeedback.blockedPhrases}
           >
-            <textarea
-              value={blockedPhrasesDraft}
-              onChange={e => setBlockedPhrasesDraft(e.target.value)}
-              onBlur={() => setCouple(prev => prev ? {
-                ...prev,
-                blockedPhrases: parseBlockedPhrasesDraft(blockedPhrasesDraft),
-              } : prev)}
-              rows={4}
-              className={textareaClass}
-              placeholder={t('blockedPhrasesPlaceholder')}
-            />
+            {editingTextField === 'blockedPhrases' ? (
+              <div className="space-y-2">
+                <textarea
+                  value={blockedPhrasesDraft}
+                  onChange={e => setBlockedPhrasesDraft(e.target.value)}
+                  rows={4}
+                  className={textareaClass}
+                  placeholder={t('blockedPhrasesPlaceholder')}
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => void handleEditableCoupleFieldSave('blockedPhrases')}
+                    loading={saving}
+                    variant="brand"
+                  >
+                    {t('save')}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => handleCancelTextFieldEdit('blockedPhrases')}
+                    disabled={saving}
+                    variant="ghost"
+                  >
+                    {t('cancel')}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className={`${readOnlyControlClass} min-h-[108px] whitespace-pre-wrap px-3.5 py-3 leading-6`}>
+                  {blockedPhrasesDraft || t('blockedPhrasesPlaceholder')}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => setEditingTextField('blockedPhrases')}
+                    variant="secondary"
+                    leadingIcon={<EditIcon />}
+                  >
+                    {t('edit')}
+                  </Button>
+                </div>
+              </div>
+            )}
           </Field>
 
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-[22px] border border-[var(--line)] bg-[var(--panel-strong)]/75 px-4 py-4">
@@ -1056,7 +1380,7 @@ export default function SettingsPage() {
             </div>
             <Button
               type="button"
-              onClick={() => void handleResetMemoryPreferences()}
+              onClick={() => setShowResetMemoryPreferencesConfirm(true)}
               disabled={saving || !memoryPreferenceSummary.hasCustomPreferences}
               variant="secondary"
               leadingIcon={<RefreshIcon />}
@@ -1085,14 +1409,15 @@ export default function SettingsPage() {
           description={t('coverRecentPhotosHint')}
           accent="plum"
         >
-          <Field label={t('coverSource')}>
+          <Field label={t('coverSource')} status={fieldFeedback.coverMode}>
             <VelvetSelect
               ariaLabel={t('coverSource')}
+              disabled={saving}
               value={couple.coverMode}
-              onChange={value => setCouple(prev => prev ? {
-                ...prev,
+              onChange={value => void handleImmediateCoupleSave('coverMode', {
+                ...couple,
                 coverMode: value as CoverMode,
-              } : prev)}
+              })}
               options={[
                 { value: 'NONE', label: t('coverNone') },
                 { value: 'PHOTO', label: t('coverPhoto') },
@@ -1112,37 +1437,45 @@ export default function SettingsPage() {
                   ))}
                 </div>
               ) : recentCoverPhotos.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {recentCoverPhotos.map(photo => {
-                    const selected = couple.coverPhotoId === photo.id
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {recentCoverPhotos.map(photo => {
+                      const selected = couple.coverPhotoId === photo.id
 
-                    return (
-                      <button
-                        key={photo.id}
-                        type="button"
-                        onClick={() => setCouple(prev => prev ? applyCoverPhotoSelection(prev, photo) : prev)}
-                        className={buildCoverTileClassName(selected)}
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={photo.previewUrl}
-                          alt={photo.fileName}
-                          className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-                          loading="lazy"
-                        />
-                        {selected ? (
-                          <div className={coverSelectedBadgeClass}>
-                            {t('coverSelected')}
+                      return (
+                        <button
+                          key={photo.id}
+                          type="button"
+                          onClick={() => void handleImmediateCoupleSave('coverPhoto', applyCoverPhotoSelection(couple, photo))}
+                          disabled={saving}
+                          className={buildCoverTileClassName(selected)}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={photo.previewUrl}
+                            alt={photo.fileName}
+                            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                            loading="lazy"
+                          />
+                          {selected ? (
+                            <div className={coverSelectedBadgeClass}>
+                              {t('coverSelected')}
+                            </div>
+                          ) : null}
+                          <div className={coverTileCaptionClass}>
+                            <p className="truncate text-[11px] uppercase tracking-[0.16em] text-white/92">
+                              {photo.fileName}
+                            </p>
                           </div>
-                        ) : null}
-                        <div className={coverTileCaptionClass}>
-                          <p className="truncate text-[11px] uppercase tracking-[0.16em] text-white/92">
-                            {photo.fileName}
-                          </p>
-                        </div>
-                      </button>
-                    )
-                  })}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {fieldFeedback.coverPhoto ? (
+                    <p className={`text-xs ${buildFieldFeedbackClass(fieldFeedback.coverPhoto.tone)}`}>
+                      {fieldFeedback.coverPhoto.text}
+                    </p>
+                  ) : null}
                 </div>
               ) : (
                 <div className={emptyStateClass}>
@@ -1190,16 +1523,7 @@ export default function SettingsPage() {
             {previewReady ? t('visibilityHintOn') : t('visibilityHintOff')}
           </p>
         </Section>
-
-        <Button
-          type="submit"
-          loading={saving}
-          variant="brand"
-          leadingIcon={<RefreshIcon />}
-        >
-          {saving ? t('saving') : t('save')}
-        </Button>
-      </form>
+      </div>
 
       <div className="border-t border-[var(--line)]/80 pt-5">
         <Section
@@ -1211,6 +1535,25 @@ export default function SettingsPage() {
           <InviteSection couple={couple} onGenerate={handleGenerateInvite} onRegenerate={handleRegenerateInvite} />
         </Section>
       </div>
+
+      <Modal
+        open={showResetMemoryPreferencesConfirm}
+        onClose={() => setShowResetMemoryPreferencesConfirm(false)}
+        title={t('memoryPreferenceResetConfirmTitle')}
+        description={t('memoryPreferenceResetConfirmDescription')}
+        confirmText={t('memoryPreferenceResetConfirmAction')}
+        cancelText={t('cancel')}
+        confirmVariant="danger"
+        confirmLoading={saving}
+        onConfirm={() => {
+          setShowResetMemoryPreferencesConfirm(false)
+          void handleResetMemoryPreferences()
+        }}
+      >
+        <p className="text-sm text-[var(--text-soft)]">
+          {t('memoryPreferenceResetHint')}
+        </p>
+      </Modal>
 
       <PhotoViewer
         open={avatarPreviewOpen && avatarPreviewItem !== null}
@@ -1243,7 +1586,7 @@ const controlClass = `h-10 w-full rounded-[16px] border border-[var(--line)] bg-
 
 const textareaClass = `${controlClass} h-auto min-h-[108px] py-3 leading-6 resize-none`
 
-const readOnlyControlClass = `${controlClass} bg-[var(--dashboard-surface-gradient)] text-[var(--text-soft)]`
+const readOnlyControlClass = `${controlClass} flex items-center bg-[var(--dashboard-surface-gradient)] text-[var(--text-soft)]`
 
 const chipClass = `inline-flex rounded-full border border-[rgba(111,79,102,0.16)] bg-white/72 px-2.5 py-1 text-[10px]
   uppercase tracking-[0.22em] text-[rgba(91,58,82,0.88)] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]`
@@ -1279,6 +1622,14 @@ function buildMessageBannerClass(type: 'success' | 'error') {
       ? 'border-[rgba(111,79,102,0.16)] bg-[linear-gradient(135deg,rgba(111,79,102,0.09),rgba(201,162,161,0.14))] text-[var(--text)]'
       : 'border-[rgba(166,79,98,0.16)] bg-[linear-gradient(135deg,rgba(122,45,62,0.08),rgba(201,162,161,0.12))] text-[var(--text)]'
   }`
+}
+
+function buildFieldFeedbackClass(tone: FieldFeedbackTone) {
+  if (tone === 'error') {
+    return 'text-[rgb(133,59,75)]'
+  }
+
+  return 'text-[var(--text-faint)]'
 }
 
 function buildCoverTileClass(selected: boolean) {
@@ -1383,7 +1734,17 @@ function Section({
   )
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({
+  label,
+  hint,
+  status,
+  children,
+}: {
+  label: string
+  hint?: string
+  status?: FieldFeedback
+  children: React.ReactNode
+}) {
   return (
     <div className="space-y-2">
       <div className="space-y-1">
@@ -1393,6 +1754,11 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
         {hint ? <p className="text-xs leading-5 text-[var(--text-faint)]">{hint}</p> : null}
       </div>
       {children}
+      {status ? (
+        <p className={`text-xs ${buildFieldFeedbackClass(status.tone)}`}>
+          {status.text}
+        </p>
+      ) : null}
     </div>
   )
 }

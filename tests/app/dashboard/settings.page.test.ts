@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
 import {
@@ -365,6 +366,35 @@ test('buildResetMemoryPreferencesInput clears stored AI memory preferences', () 
       inviteExpiresAt: null,
     }
   )
+})
+
+test('settings page gates memory preference reset behind a confirmation modal', () => {
+  const source = readFileSync('src/app/(dashboard)/settings/page.tsx', 'utf8')
+
+  assert.equal(source.includes('const [showResetMemoryPreferencesConfirm, setShowResetMemoryPreferencesConfirm] = useState(false)'), true)
+  assert.equal(source.includes("onClick={() => setShowResetMemoryPreferencesConfirm(true)}"), true)
+  assert.equal(source.includes("title={t('memoryPreferenceResetConfirmTitle')}"), true)
+  assert.equal(source.includes("description={t('memoryPreferenceResetConfirmDescription')}"), true)
+  assert.equal(source.includes("confirmText={t('memoryPreferenceResetConfirmAction')}"), true)
+  assert.equal(source.includes("setShowResetMemoryPreferencesConfirm(false)\n          void handleResetMemoryPreferences()"), true)
+})
+
+test('settings page uses inline edit controls and immediate saves instead of one page-level save button', () => {
+  const source = readFileSync('src/app/(dashboard)/settings/page.tsx', 'utf8')
+
+  assert.equal(source.includes('const [editingTextField, setEditingTextField] = useState<EditableTextFieldKey | null>(null)'), true)
+  assert.equal(source.includes('async function handleImmediateCoupleSave('), true)
+  assert.equal(source.includes("editingTextField === 'slug'"), true)
+  assert.equal(source.includes("editingTextField === 'blockedPhrases'"), true)
+  assert.equal(source.includes("onChange={value => void handleImmediateCoupleSave("), true)
+  assert.equal(source.includes("type=\"submit\"\n          loading={saving}\n          variant=\"brand\""), false)
+  assert.equal(source.includes('<form onSubmit={handleSubmit} className=\"space-y-4\">'), false)
+})
+
+test('settings page read-only text fields keep content vertically centered', () => {
+  const source = readFileSync('src/app/(dashboard)/settings/page.tsx', 'utf8')
+
+  assert.equal(source.includes("const readOnlyControlClass = `${controlClass} flex items-center bg-[var(--dashboard-surface-gradient)] text-[var(--text-soft)]`"), true)
 })
 
 test('buildStyleMemoryInsightCards exposes long-term memory hints for settings surfaces', () => {
