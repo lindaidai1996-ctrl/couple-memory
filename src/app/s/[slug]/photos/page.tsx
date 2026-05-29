@@ -7,6 +7,7 @@ import {
   getPublicSpacePageDataBySlug,
   resolvePublicMetadata,
 } from '@/lib/public-metadata'
+import { buildPublicSpaceHomePath } from '@/lib/public-routes'
 
 type Translator = (key: string) => string
 
@@ -47,7 +48,7 @@ export default async function PhotosPage({
     <div className="min-h-screen py-12">
       <header className="max-w-5xl mx-auto px-4 mb-12">
         <Link
-          href={`/s/${slug}`}
+          href={buildPublicSpaceHomePath(slug)}
           className="inline-flex items-center gap-2 text-film-muted hover:text-film-accent-light
             transition-colors text-sm mb-8"
         >

@@ -286,9 +286,9 @@ Expected: PASS
 **Files:**
 - Modify: `src/lib/public-metadata.ts`
 - Create: `src/app/api/public/[slug]/memory-reviews/route.ts`
-- Create: `src/app/s/[slug]/reviews/page.tsx`
-- Create: `src/app/s/[slug]/reviews/[reviewId]/page.tsx`
-- Modify: `src/app/s/[slug]/page.tsx`
+- Create: `src/app/story/[slug]/reviews/page.tsx`
+- Create: `src/app/story/[slug]/reviews/[reviewId]/page.tsx`
+- Modify: `src/app/story/[slug]/page.tsx`
 - Create: `tests/app/public-reviews-page.test.ts`
 - Modify: `tests/app/public-home-page.test.ts`
 
@@ -311,7 +311,7 @@ export type PublicPageKind = 'home' | 'photos' | 'timeline' | 'reviews'
 
 ```tsx
 <NavCard
-  href={`/s/${slug}/reviews`}
+  href={`/story/${slug}/reviews`}
   title={uiText.reviews}
   subtitle={uiText.reviewsSubtitle}
   icon={...}
@@ -347,7 +347,7 @@ Expected: PASS
 
 - [ ] **Step 3: Run lint on touched files**
 
-Run: `npm run lint -- src/app/(dashboard)/dashboard/page.tsx src/app/s/[slug]/page.tsx src/lib/public-metadata.ts src/lib/memory-reviews/review-builder.ts src/lib/memory-reviews/review-queries.ts src/lib/memory-reviews/review-mappers.ts`
+Run: `npm run lint -- src/app/(dashboard)/dashboard/page.tsx src/app/story/[slug]/page.tsx src/lib/public-metadata.ts src/lib/memory-reviews/review-builder.ts src/lib/memory-reviews/review-queries.ts src/lib/memory-reviews/review-mappers.ts`
 
 Expected: PASS
 

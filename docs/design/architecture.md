@@ -93,7 +93,7 @@
 
 ### URL 路由
 
-MVP 采用路径模式：`https://domain.com/s/{slug}`
+MVP 采用路径模式：`https://domain.com/story/{slug}`
 
 后续可升级为子域名模式 `{slug}.domain.com`，需配置通配符 SSL 证书和 Nginx 路由。
 
@@ -169,7 +169,7 @@ async function withCoupleAuth(req, { requiredRole }) {
 
 ### ADR-3: 路径模式 vs 子域名
 
-**决策**：MVP 用路径模式 `/s/{slug}`
+**决策**：MVP 用路径模式 `/story/{slug}`
 
 **理由**：路径模式不需要通配符 SSL 证书，Nginx 配置简单，部署成本低。子域名模式的好处（更短的 URL、品牌感）在 MVP 阶段不是必需的。升级路径清晰：加通配符证书 + 修改 Nginx 路由即可。
 

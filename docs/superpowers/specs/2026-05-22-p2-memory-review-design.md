@@ -228,10 +228,10 @@ AI 输出必须是结构化 JSON，避免直接拼长文本。
 
 新增公开页面：
 
-- `src/app/s/[slug]/reviews/page.tsx`
-- `src/app/s/[slug]/reviews/[reviewId]/page.tsx`
+- `src/app/story/[slug]/reviews/page.tsx`
+- `src/app/story/[slug]/reviews/[reviewId]/page.tsx`
 
-公开首页 [src/app/s/[slug]/page.tsx](/Users/user/Documents/codes/work/src/app/s/[slug]/page.tsx) 只补入口卡片，不承载完整回顾正文。
+公开首页 [src/app/story/[slug]/page.tsx](/Users/user/Documents/codes/work/src/app/story/[slug]/page.tsx) 只补入口卡片，不承载完整回顾正文。
 
 Dashboard 页 [src/app/(dashboard)/dashboard/page.tsx](/Users/user/Documents/codes/work/src/app/(dashboard)/dashboard/page.tsx) 新增回顾状态卡。
 

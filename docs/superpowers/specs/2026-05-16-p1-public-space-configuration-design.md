@@ -10,9 +10,9 @@
 
 当前公开空间已经具备基础浏览链路：
 
-- `/s/[slug]` 公开首页
-- `/s/[slug]/photos` 公开照片页
-- `/s/[slug]/timeline` 公开时间轴页
+- `/story/[slug]` 公开首页
+- `/story/[slug]/photos` 公开照片页
+- `/story/[slug]/timeline` 公开时间轴页
 
 同时，数据库中已经存在以下字段基础：
 

@@ -8,6 +8,7 @@ import {
   type PublicReviewPair,
   resolvePublicMetadata,
 } from '@/lib/public-metadata'
+import { buildPublicReviewSharePath, buildPublicSpaceHomePath } from '@/lib/public-routes'
 
 type Translator = (key: string) => string
 
@@ -66,7 +67,7 @@ export default async function PublicReviewPage({
     <div className="min-h-screen px-6 py-12 md:py-20">
       <div className="mx-auto max-w-5xl">
         <Link
-          href={`/s/${slug}`}
+          href={buildPublicSpaceHomePath(slug)}
           className="mb-10 inline-flex items-center gap-1.5 text-sm text-film-muted transition-colors hover:text-film-accent-light"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -112,7 +113,7 @@ export default async function PublicReviewPage({
                   </div>
                   {section.review ? (
                     <Link
-                      href={`/s/${slug}/review/share/${section.id}`}
+                      href={buildPublicReviewSharePath(slug, section.id)}
                       className="rounded-full border border-white/14 px-4 py-2 text-xs uppercase tracking-[0.18em] text-film-accent-light transition-colors hover:bg-white/8"
                     >
                       {t('shareCard')}

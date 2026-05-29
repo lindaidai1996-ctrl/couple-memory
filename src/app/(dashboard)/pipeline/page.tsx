@@ -170,8 +170,8 @@ export default function PipelineRunsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-warm-text">{uiText.title}</h1>
-          <p className="text-sm text-warm-muted mt-1">{uiText.subtitle}</p>
+          <h1 className="dashboard-page-title tracking-[-0.03em] text-warm-text">{uiText.title}</h1>
+          <p className="mt-3 text-sm tracking-[0.03em] text-warm-muted">{uiText.subtitle}</p>
         </div>
 
         <VelvetSelect

@@ -4,7 +4,7 @@ import test from 'node:test'
 import {
   buildPublicReviewSections,
   buildPublicReviewUiText,
-} from '../../src/app/s/[slug]/review/page'
+} from '../../src/app/story/[slug]/review/page'
 
 test('buildPublicReviewUiText exposes translated review page copy', () => {
   const uiText = buildPublicReviewUiText(key => key)

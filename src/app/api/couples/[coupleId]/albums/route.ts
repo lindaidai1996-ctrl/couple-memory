@@ -2,14 +2,60 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withAuth } from '@/lib/api-middleware'
 
+type AlbumForMemorySiteReadiness = {
+  chapters: Array<{
+    id: string
+    title?: string
+    photos: Array<{ id: string }>
+  }>
+}
+
+export function buildAlbumMemorySiteReadiness(album: AlbumForMemorySiteReadiness) {
+  return {
+    chapterCount: album.chapters.length,
+    eligiblePhotoCount: album.chapters.reduce(
+      (sum, chapter) => sum + chapter.photos.length,
+      0
+    ),
+  }
+}
+
 export const GET = withAuth(async (req, { coupleUser }) => {
   const albums = await prisma.album.findMany({
     where: { coupleId: coupleUser.coupleId },
     orderBy: { sortOrder: 'asc' },
-    include: { _count: { select: { photos: true } } },
+    include: {
+      _count: { select: { photos: true } },
+      chapters: {
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+        select: {
+          id: true,
+          title: true,
+          photos: {
+            where: {
+              status: 'READY',
+              OR: [
+                { displayUrl: { not: null } },
+                { thumbnailUrl: { not: null } },
+              ],
+            },
+            select: { id: true },
+          },
+        },
+      },
+    },
   })
   return NextResponse.json({
-    albums: albums.map(a => ({ ...a, photoCount: a._count.photos })),
+    albums: albums.map(a => ({
+      ...a,
+      photoCount: a._count.photos,
+      memorySiteReadiness: buildAlbumMemorySiteReadiness(a),
+      chapters: a.chapters.map(chapter => ({
+        id: chapter.id,
+        title: chapter.title,
+        eligiblePhotoCount: chapter.photos.length,
+      })),
+    })),
     total: albums.length,
   })
 })

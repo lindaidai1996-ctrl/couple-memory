@@ -17,6 +17,8 @@ import {
   shiftYear,
 } from '@/lib/velvet-date'
 
+const VELVET_FLOATING_PANEL_Z_INDEX = 140
+
 type VelvetDatePickerProps = {
   ariaLabel?: string
   defaultValue?: string
@@ -149,7 +151,7 @@ export function VelvetDatePicker({
             top: position.top,
             left: position.left,
             width: Math.max(position.width, 320),
-            zIndex: 80,
+            zIndex: VELVET_FLOATING_PANEL_Z_INDEX,
           }}
           className="velvet-date-panel overflow-hidden rounded-[22px]"
         >

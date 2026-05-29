@@ -42,7 +42,7 @@
 - Modify: `src/app/error.tsx`
 - Modify: `src/app/global-error.tsx`
 - Modify: `src/app/invite/[code]/page.tsx`
-- Modify: `src/app/s/[slug]/error.tsx`
+- Modify: `src/app/story/[slug]/error.tsx`
 - Modify: `src/components/*` button-owning files
 
 - [ ] Replace repeated action/cancel/delete buttons with `Button`.

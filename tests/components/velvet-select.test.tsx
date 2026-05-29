@@ -38,6 +38,7 @@ test('VelvetSelect panel can grow beyond trigger width for longer option labels'
   assert.equal(style.width, 'max-content')
   assert.equal(style.minWidth, 180)
   assert.equal(style.maxWidth, 'calc(100vw - 1rem)')
+  assert.equal(style.zIndex, 140)
 })
 
 test('selected velvet option hover keeps readable selected-state text in light mode', () => {
@@ -46,4 +47,12 @@ test('selected velvet option hover keeps readable selected-state text in light m
   assert.equal(css.includes('.velvet-select-option-selected:hover'), true)
   assert.equal(css.includes('.velvet-date-day-selected:hover'), true)
   assert.equal(css.includes('color: #fffafc;'), true)
+})
+
+test('memory site detail actions use VelvetSelect instead of native select controls', () => {
+  const source = readFileSync('src/components/memory-site-detail-actions.tsx', 'utf8')
+
+  assert.equal(source.includes("import { VelvetSelect } from '@/components/forms/velvet-select'"), true)
+  assert.equal(source.includes('<VelvetSelect'), true)
+  assert.equal(source.includes('<select'), false)
 })

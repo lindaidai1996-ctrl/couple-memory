@@ -1,10 +1,18 @@
 import type { Metadata } from 'next'
 
 import { mapMemoryReview, type MemoryReviewListItem, type MemoryReviewRecord } from './memory-reviews/review-mappers'
+import {
+  buildPublicMemorySitePath,
+  buildPublicPhotosPath,
+  buildPublicReviewPath,
+  buildPublicSpaceHomePath,
+  buildPublicTimelinePath,
+  buildPublicTopicPath,
+} from './public-routes'
 
 const SITE_NAME = 'Couple Memory'
 
-export type PublicPageKind = 'home' | 'photos' | 'timeline' | 'review' | 'topics'
+export type PublicPageKind = 'home' | 'photos' | 'timeline' | 'review' | 'topics' | 'site'
 
 export interface PublicSpaceMetadataSource {
   name: string
@@ -107,29 +115,34 @@ const pageConfig: Record<
   }
 > = {
   home: {
-    path: slug => `/s/${slug}`,
+    path: slug => buildPublicSpaceHomePath(slug),
     title: name => `${name} | ${SITE_NAME}`,
     descriptionPrefix: () => '',
   },
   photos: {
-    path: slug => `/s/${slug}/photos`,
+    path: slug => buildPublicPhotosPath(slug),
     title: name => `${name} 的照片 | ${SITE_NAME}`,
     descriptionPrefix: name => `查看 ${name} 公开空间中的照片记录。`,
   },
   timeline: {
-    path: slug => `/s/${slug}/timeline`,
+    path: slug => buildPublicTimelinePath(slug),
     title: name => `${name} 的时间轴 | ${SITE_NAME}`,
     descriptionPrefix: name => `浏览 ${name} 公开空间的时间轴节点。`,
   },
   review: {
-    path: slug => `/s/${slug}/review`,
+    path: slug => buildPublicReviewPath(slug),
     title: name => `${name} 的回顾 | ${SITE_NAME}`,
     descriptionPrefix: name => `阅读 ${name} 公开空间整理出的年度与周年回顾。`,
   },
   topics: {
-    path: slug => `/s/${slug}/topics/firsts`,
+    path: slug => buildPublicTopicPath(slug, 'firsts'),
     title: name => `${name} 的专题 | ${SITE_NAME}`,
     descriptionPrefix: name => `浏览 ${name} 公开空间整理出的专题内容与足迹总结。`,
+  },
+  site: {
+    path: slug => buildPublicMemorySitePath(slug),
+    title: name => `${name} 的纪念站 | ${SITE_NAME}`,
+    descriptionPrefix: name => `阅读 ${name} 公开空间生成的单页纪念站。`,
   },
 }
 

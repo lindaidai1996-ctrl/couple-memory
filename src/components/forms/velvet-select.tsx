@@ -7,7 +7,10 @@ import { createPortal } from 'react-dom'
 import { buttonClassName } from '@/components/ui/button'
 import { useFloatingPanel } from '@/components/forms/velvet-floating-panel'
 
+const VELVET_FLOATING_PANEL_Z_INDEX = 140
+
 export type VelvetSelectOption = {
+  description?: string
   value: string
   label: string
 }
@@ -56,7 +59,7 @@ export function buildVelvetSelectPanelStyle(position: {
     width: 'max-content',
     minWidth: position.width,
     maxWidth: 'calc(100vw - 1rem)',
-    zIndex: 80,
+    zIndex: VELVET_FLOATING_PANEL_Z_INDEX,
   }
 }
 
@@ -90,8 +93,15 @@ export function VelvetSelect({
           className={buildVelvetSelectControlClassName({ fullWidth })}
           onClick={() => setOpen(current => !current)}
         >
-          <span className={selectedOption ? 'text-[var(--color-warm-text)]' : 'text-[var(--dashboard-text-faint)]'}>
-            {selectedOption?.label ?? placeholder}
+          <span className="flex min-w-0 flex-1 flex-col items-start text-left">
+            <span className={`${selectedOption ? 'text-[var(--color-warm-text)]' : 'text-[var(--dashboard-text-faint)]'} w-full truncate`}>
+              {selectedOption?.label ?? placeholder}
+            </span>
+            {selectedOption?.description ? (
+              <span className="mt-1 w-full truncate text-[11px] leading-4 text-[var(--dashboard-text-faint)]">
+                {selectedOption.description}
+              </span>
+            ) : null}
           </span>
           <span
             aria-hidden="true"
@@ -122,7 +132,7 @@ export function VelvetSelect({
                   className={`${buttonClassName({
                     size: 'sm',
                     variant: selected ? 'subtle' : 'ghost',
-                    className: 'flex min-h-[38px] items-center justify-between rounded-[14px] px-3 text-sm',
+                    className: 'flex min-h-[38px] items-start justify-between rounded-[14px] px-3 py-2 text-left text-sm',
                   })} ${
                     selected
                       ? 'velvet-select-option-selected'
@@ -133,9 +143,18 @@ export function VelvetSelect({
                     setOpen(false)
                   }}
                 >
-                  <span>{option.label}</span>
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate">{option.label}</span>
+                    {option.description ? (
+                      <span className={`mt-1 truncate text-[11px] leading-4 ${
+                        selected ? 'text-white/82 dark:text-[#fff7fb]/82' : 'text-[var(--dashboard-text-faint)]'
+                      }`}>
+                        {option.description}
+                      </span>
+                    ) : null}
+                  </span>
                   {selected ? (
-                    <span className="text-xs text-white/82 dark:text-[#fff7fb]/82">✓</span>
+                    <span className="ml-3 pt-0.5 text-xs text-white/82 dark:text-[#fff7fb]/82">✓</span>
                   ) : null}
                 </button>
               )

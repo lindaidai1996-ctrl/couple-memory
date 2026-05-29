@@ -15,6 +15,7 @@ import {
   buildProfileUpdatePayload,
   buildBlockedPhrasesDraft,
   buildCoupleUpdatePayload,
+  buildMemorySitePreviewUrl,
   buildPublicPreviewUrl,
   resolveDisplayAvatarUrl,
   extractApiErrorMessage,
@@ -432,7 +433,14 @@ test('parseBlockedPhrasesDraft normalizes textarea input only when syncing', () 
 test('buildPublicPreviewUrl creates public preview link from origin and slug', () => {
   assert.equal(
     buildPublicPreviewUrl('https://example.com', 'our-space'),
-    'https://example.com/s/our-space'
+    'https://example.com/story/our-space'
+  )
+})
+
+test('buildMemorySitePreviewUrl creates memory-site preview link from origin and slug', () => {
+  assert.equal(
+    buildMemorySitePreviewUrl('https://example.com/', 'our-space'),
+    'https://example.com/story/our-space/site'
   )
 })
 
@@ -468,7 +476,7 @@ test('buildSettingsHeroCards summarizes publication, cover, and ai preferences',
       {
         label: 'Publication',
         value: 'Live',
-        detail: 'Slug /s/our-space is available for sharing.',
+        detail: 'Slug /story/our-space is available for sharing.',
       },
       {
         label: 'Visual Mood',

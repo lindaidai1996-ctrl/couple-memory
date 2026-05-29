@@ -1,7 +1,11 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 
 import {
+  buildDashboardContentClassName,
+  buildDashboardLayoutClassName,
+  buildDashboardPreferenceDockVisibility,
   dashboardLayoutClassName,
   mobileNavButtonClassName,
   mobileNavOverlayClassName,
@@ -12,6 +16,26 @@ import {
 test('dashboard shell uses xl breakpoint for persistent sidebar layout', () => {
   assert.match(dashboardLayoutClassName, /\bxl:grid-cols-\[220px_minmax\(0,1fr\)\]/)
   assert.doesNotMatch(dashboardLayoutClassName, /\blg:grid-cols-\[220px_minmax\(0,1fr\)\]/)
+})
+
+test('focus review shell drops the desktop sidebar column and widens content', () => {
+  assert.doesNotMatch(
+    buildDashboardLayoutClassName({ mode: 'focus-review' }),
+    /\bxl:grid-cols-\[220px_minmax\(0,1fr\)\]/
+  )
+
+  const contentClassName = buildDashboardContentClassName({ mode: 'focus-review' })
+
+  assert.match(contentClassName, /\bmax-w-none\b/)
+  assert.match(contentClassName, /\bpt-6\b/)
+})
+
+test('focus review shell hides the global preference dock to avoid overlapping the review toolbar', () => {
+  assert.equal(buildDashboardPreferenceDockVisibility({ mode: 'default' }), true)
+  assert.equal(buildDashboardPreferenceDockVisibility({ mode: 'focus-review' }), false)
+
+  const source = readFileSync('src/components/dashboard-shell.tsx', 'utf8')
+  assert.match(source, /buildDashboardPreferenceDockVisibility/)
 })
 
 test('mobile navigation controls are hidden starting at xl', () => {

@@ -85,7 +85,7 @@ export default function ReviewsPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-[11px] uppercase tracking-[0.3em] text-warm-muted">Memory Reviews</p>
-            <h1 className="mt-3 font-[var(--font-dashboard-title)] text-[clamp(2rem,4vw,3rem)] leading-none tracking-[-0.04em] text-warm-text">
+            <h1 className="dashboard-page-title mt-3 text-warm-text">
               {uiText.title}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-warm-muted">
@@ -136,7 +136,7 @@ export default function ReviewsPage() {
                   <p className="text-[11px] uppercase tracking-[0.26em] text-warm-muted">
                     {review.type === 'YEARLY' ? t('yearlyLabel') : t('anniversaryLabel')}
                   </p>
-                  <h2 className="mt-3 font-[var(--font-dashboard-title)] text-[28px] leading-none tracking-[-0.04em] text-warm-text">
+                  <h2 className="dashboard-section-title mt-3 text-warm-text">
                     {review.title}
                   </h2>
                 </div>

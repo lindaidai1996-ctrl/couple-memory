@@ -129,7 +129,7 @@ src/app/
 ### 功能
 
 - 主按钮调用 `reset()` 重新渲染当前路由段
-- 次按钮调用 `router.push('/')` 返回首页（后台）或 `router.push('/s/[slug]')`（公开页）
+- 次按钮调用 `router.push('/')` 返回首页（后台）或 `router.push('/story/[slug]')`（公开页）
 - `global-error.tsx` 是完整 `<html>` 文档（Next.js 要求），内联样式，不依赖任何外部资源
 
 ---

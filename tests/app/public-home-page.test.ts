@@ -8,7 +8,7 @@ import {
   buildPublicHomeReviewSection,
   buildPublicHomeTopicSection,
   buildPublicHomeUiText,
-} from '../../src/app/s/[slug]/page'
+} from '../../src/app/story/[slug]/page'
 
 test('buildPublicHomeUiText exposes narrative copy keys', () => {
   const uiText = buildPublicHomeUiText(key => key)
@@ -141,6 +141,7 @@ test('buildPublicHomeReviewSection exposes review entry state', () => {
 test('buildPublicHomeTopicSection exposes available topic navigation items', () => {
   const section = buildPublicHomeTopicSection({
     slug: 'sun-moon',
+    hasMemorySite: false,
     reviews: {
       yearlyReview: {
         id: 'review-1',
@@ -161,10 +162,20 @@ test('buildPublicHomeTopicSection exposes available topic navigation items', () 
 
   assert.equal(section.hasTopics, true)
   assert.deepEqual(section.items.map(item => item.href), [
-    '/s/sun-moon/topics/phases',
-    '/s/sun-moon/topics/firsts',
-    '/s/sun-moon/topics/footprints',
-    '/s/sun-moon/review',
-    '/s/sun-moon/review/share/yearly',
+    '/story/sun-moon/topics/phases',
+    '/story/sun-moon/topics/firsts',
+    '/story/sun-moon/topics/footprints',
+    '/story/sun-moon/review',
+    '/story/sun-moon/review/share/yearly',
   ])
+})
+
+test('buildPublicHomeTopicSection adds the memory-site entry when a published site exists', () => {
+  const section = buildPublicHomeTopicSection({
+    slug: 'sun-moon',
+    hasMemorySite: true,
+    reviews: { yearlyReview: null, anniversaryReview: null },
+  })
+
+  assert.equal(section.items[0]?.href, '/story/sun-moon/site')
 })

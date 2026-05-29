@@ -4,7 +4,7 @@ import test from 'node:test'
 import {
   buildPublicReviewShareCard,
   buildPublicReviewShareUiText,
-} from '../../src/app/s/[slug]/review/share/[type]/page'
+} from '../../src/app/story/[slug]/review/share/[type]/page'
 
 test('buildPublicReviewShareUiText exposes translated share-card copy', () => {
   const uiText = buildPublicReviewShareUiText(key => key)

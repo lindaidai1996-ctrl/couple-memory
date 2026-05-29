@@ -7,6 +7,7 @@ import {
   getPublicTimelineByCoupleId,
   resolvePublicMetadata,
 } from '@/lib/public-metadata'
+import { buildPublicSpaceHomePath } from '@/lib/public-routes'
 
 type Translator = (key: string) => string
 
@@ -47,7 +48,7 @@ export default async function PublicTimelinePage({
     <div className="min-h-screen px-6 py-12 md:py-20">
       <div className="max-w-4xl mx-auto">
         <Link
-          href={`/s/${slug}`}
+          href={buildPublicSpaceHomePath(slug)}
           className="inline-flex items-center gap-1.5 text-sm text-film-muted hover:text-film-accent-light
             transition-colors mb-10"
         >

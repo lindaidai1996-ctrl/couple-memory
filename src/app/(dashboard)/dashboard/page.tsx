@@ -10,6 +10,7 @@ import {
   buildOrganizationReadiness,
   type OrganizationReadinessAction,
 } from '@/lib/readiness/organization-readiness'
+import { buildPublicSpaceLabel } from '@/lib/public-routes'
 import { getTranslations } from 'next-intl/server'
 import { redirect } from 'next/navigation'
 
@@ -114,7 +115,7 @@ export default async function DashboardPage() {
           <p className="text-[11px] uppercase tracking-[0.3em] text-warm-muted">
             Dashboard
           </p>
-          <h1 className="mt-4 font-[var(--font-dashboard-title)] text-[clamp(2rem,4vw,3.4rem)] leading-none tracking-[-0.04em] text-warm-text">
+          <h1 className="dashboard-page-title mt-4 text-warm-text">
             {t('emptyTitle')}
           </h1>
           <p className="mx-auto mt-4 max-w-lg text-sm leading-6 text-warm-muted">
@@ -188,7 +189,7 @@ export default async function DashboardPage() {
               <span>Velvet Plum</span>
             </div>
             <div className="space-y-2">
-              <h1 className="max-w-2xl font-[var(--font-dashboard-title)] text-[clamp(2rem,4vw,3.6rem)] leading-[0.96] tracking-[-0.04em]">
+              <h1 className="dashboard-hero-title max-w-2xl">
                 {couple.name || t('spaceNameFallback')}
               </h1>
               <p className="max-w-2xl text-sm leading-6 text-[var(--dashboard-hero-muted)] sm:text-[15px]">
@@ -284,7 +285,7 @@ export default async function DashboardPage() {
                 <p className="text-[11px] uppercase tracking-[0.28em] text-warm-muted">
                   Public Link
                 </p>
-                <h2 className="mt-3 font-[var(--font-dashboard-title)] text-[28px] leading-none tracking-[-0.04em] text-warm-text">
+                <h2 className="dashboard-section-title mt-3 text-warm-text">
                   分享页入口
                 </h2>
               </div>
@@ -303,7 +304,7 @@ export default async function DashboardPage() {
                     URL
                   </p>
                   <p className="mt-2 break-all font-medium text-warm-text">
-                    /s/{couple.slug}
+                    {buildPublicSpaceLabel(couple.slug)}
                   </p>
                 </div>
                 <p className="text-xs leading-5 text-warm-muted">
@@ -325,7 +326,7 @@ export default async function DashboardPage() {
                 <p className="text-[11px] uppercase tracking-[0.28em] text-warm-muted">
                   Memory Reviews
                 </p>
-                <h2 className="mt-3 font-[var(--font-dashboard-title)] text-[28px] leading-none tracking-[-0.04em] text-warm-text">
+                <h2 className="dashboard-section-title mt-3 text-warm-text">
                   {t('reviewTitle')}
                 </h2>
               </div>
@@ -372,7 +373,7 @@ export default async function DashboardPage() {
             <p className="text-[11px] uppercase tracking-[0.28em] text-warm-muted">
               Curation
             </p>
-            <h2 className="mt-2 font-[var(--font-dashboard-title)] text-[26px] leading-none tracking-[-0.04em] text-warm-text">
+            <h2 className="dashboard-section-title mt-2 text-warm-text">
               {t('curationTitle')}
             </h2>
           </div>

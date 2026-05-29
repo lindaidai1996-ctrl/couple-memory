@@ -9,22 +9,22 @@ import {
 } from '../../src/components/photo-detail-modal'
 import {
   buildPublicPhotosUiText,
-} from '../../src/app/s/[slug]/photos/page'
+} from '../../src/app/story/[slug]/photos/page'
 import {
   buildPublicTimelineUiText,
-} from '../../src/app/s/[slug]/timeline/page'
+} from '../../src/app/story/[slug]/timeline/page'
 import {
   buildPublicReviewUiText,
-} from '../../src/app/s/[slug]/review/page'
+} from '../../src/app/story/[slug]/review/page'
 import {
   buildPublicReviewShareUiText,
-} from '../../src/app/s/[slug]/review/share/[type]/page'
+} from '../../src/app/story/[slug]/review/share/[type]/page'
 import {
   buildPublicFirstsUiText,
-} from '../../src/app/s/[slug]/topics/firsts/page'
+} from '../../src/app/story/[slug]/topics/firsts/page'
 import {
   buildPublicFootprintsUiText,
-} from '../../src/app/s/[slug]/topics/footprints/page'
+} from '../../src/app/story/[slug]/topics/footprints/page'
 import {
   buildErrorUiText,
 } from '../../src/app/error'

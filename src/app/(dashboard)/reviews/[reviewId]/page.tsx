@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server'
 import { notFound, redirect } from 'next/navigation'
 
 import { auth } from '@/lib/auth'
+import { buildPublicReviewSharePath } from '@/lib/public-routes'
 import { prisma } from '@/lib/prisma'
 import { getMemoryReviewById } from '@/lib/memory-reviews/review-queries'
 
@@ -69,7 +70,7 @@ export default async function ReviewDetailPage({
             <p className="text-[11px] uppercase tracking-[0.3em] text-warm-muted">
               {coupleUser.couple.name}
             </p>
-            <h1 className="mt-4 font-[var(--font-dashboard-title)] text-[clamp(2rem,4vw,3rem)] leading-none tracking-[-0.04em] text-warm-text">
+            <h1 className="dashboard-page-title mt-4 text-warm-text">
               {review.title}
             </h1>
             {review.subtitle ? (
@@ -80,7 +81,10 @@ export default async function ReviewDetailPage({
             {coupleUser.couple.isPublic && coupleUser.couple.slug ? (
               <div className="mt-6">
                 <a
-                  href={`/s/${coupleUser.couple.slug}/review/share/${review.type === 'YEARLY' ? 'yearly' : 'anniversary'}`}
+                  href={buildPublicReviewSharePath(
+                    coupleUser.couple.slug,
+                    review.type === 'YEARLY' ? 'yearly' : 'anniversary'
+                  )}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex rounded-[18px] border border-warm-border px-4 py-2.5 text-sm text-warm-text transition-colors hover:bg-warm-bg"

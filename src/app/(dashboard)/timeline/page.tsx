@@ -606,7 +606,7 @@ export default function TimelinePage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-warm-text">{uiText.title}</h1>
+          <h1 className="dashboard-page-title text-warm-text">{uiText.title}</h1>
           {reviewState.hasPending ? (
             <div className="flex flex-wrap items-center gap-3">
               <p className="text-sm text-info">{uiText.pendingReview(reviewState.pendingCount)}</p>

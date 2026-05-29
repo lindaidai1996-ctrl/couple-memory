@@ -501,12 +501,12 @@ git commit -m "feat(error): add dashboard error boundary page (warm theme)"
 ## Task 7: 错误边界 — 公开页 error.tsx
 
 **Files:**
-- Create: `src/app/s/[slug]/error.tsx`
+- Create: `src/app/story/[slug]/error.tsx`
 
 - [ ] **Step 1: 创建公开页错误页面**
 
 ```tsx
-// src/app/s/[slug]/error.tsx
+// src/app/story/[slug]/error.tsx
 'use client'
 
 import { useRouter, useParams } from 'next/navigation'
@@ -540,7 +540,7 @@ export default function PublicError({
           刷新页面
         </button>
         <button
-          onClick={() => router.push(`/s/${slug}`)}
+          onClick={() => router.push(`/story/${slug}`)}
           className="px-5 py-2.5 text-sm font-medium text-film-muted border border-film-surface
             rounded-[var(--radius-md)] hover:bg-film-surface transition-colors"
         >
@@ -555,7 +555,7 @@ export default function PublicError({
 - [ ] **Step 2: Commit**
 
 ```bash
-git add src/app/s/[slug]/error.tsx
+git add src/app/story/[slug]/error.tsx
 git commit -m "feat(error): add public page error boundary (film theme)"
 ```
 
@@ -1079,7 +1079,7 @@ Expected: 无错误
 
 - [ ] **Step 2: ESLint 检查**
 
-Run: `npx eslint src/components/skeleton/ src/app/error.tsx src/app/global-error.tsx src/app/s/[slug]/error.tsx src/app/invite/ src/app/api/invite/[code]/info/ src/hooks/use-image-preload.ts`
+Run: `npx eslint src/components/skeleton/ src/app/error.tsx src/app/global-error.tsx src/app/story/[slug]/error.tsx src/app/invite/ src/app/api/invite/[code]/info/ src/hooks/use-image-preload.ts`
 Expected: 无错误或仅 warning
 
 - [ ] **Step 3: 开发服务器冒烟测试**

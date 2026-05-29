@@ -278,8 +278,8 @@ git add . && git commit -m "feat: add timeline management page"
 ### Task 27: 公开展示页面 — 首页 + API
 
 **Files:**
-- Create: `src/app/s/[slug]/layout.tsx`
-- Create: `src/app/s/[slug]/page.tsx`
+- Create: `src/app/story/[slug]/layout.tsx`
+- Create: `src/app/story/[slug]/page.tsx`
 - Create: `src/app/api/public/[slug]/route.ts`
 - Create: `src/app/api/public/[slug]/photos/route.ts`
 - Create: `src/app/api/public/[slug]/timeline/route.ts`
@@ -321,7 +321,7 @@ git add . && git commit -m "feat: add public space homepage with APIs"
 ### Task 28: 公开展示 — 照片流 + 5 种排版模板
 
 **Files:**
-- Create: `src/app/s/[slug]/photos/page.tsx`
+- Create: `src/app/story/[slug]/photos/page.tsx`
 - Create: `src/components/layouts/cinema-wide.tsx`
 - Create: `src/components/layouts/side-by-side.tsx`
 - Create: `src/components/layouts/portrait-hero.tsx`
@@ -399,7 +399,7 @@ git add . && git commit -m "feat: add photo stream with 5 layout templates and s
 ### Task 29: 公开展示 — 时间轴页面
 
 **Files:**
-- Create: `src/app/s/[slug]/timeline/page.tsx`
+- Create: `src/app/story/[slug]/timeline/page.tsx`
 - Create: `src/components/timeline-view.tsx`
 
 - [ ] **Step 1: 时间轴可视化组件**

@@ -4,11 +4,11 @@ import test from 'node:test'
 import {
   buildPublicFirstsSections,
   buildPublicFirstsUiText,
-} from '../../src/app/s/[slug]/topics/firsts/page'
+} from '../../src/app/story/[slug]/topics/firsts/page'
 import {
   buildPublicFootprintsCards,
   buildPublicFootprintsUiText,
-} from '../../src/app/s/[slug]/topics/footprints/page'
+} from '../../src/app/story/[slug]/topics/footprints/page'
 
 test('buildPublicFirstsUiText exposes translated firsts-topic copy', () => {
   const uiText = buildPublicFirstsUiText(key => key)

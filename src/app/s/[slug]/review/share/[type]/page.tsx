@@ -7,6 +7,7 @@ import {
   getPublicSpacePageDataBySlug,
   resolvePublicMetadata,
 } from '@/lib/public-metadata'
+import { buildPublicReviewPath, buildPublicReviewSharePath } from '@/lib/public-routes'
 
 type ShareType = 'yearly' | 'anniversary'
 type Translator = (key: string) => string
@@ -78,7 +79,7 @@ export default async function PublicReviewSharePage({
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.12),_transparent_45%),linear-gradient(180deg,#130d13_0%,#1f1420_48%,#120d13_100%)] px-6 py-10 text-white">
       <div className="mx-auto max-w-3xl">
         <Link
-          href={`/s/${slug}/review`}
+          href={buildPublicReviewPath(slug)}
           className="mb-8 inline-flex items-center gap-1.5 text-sm text-white/72 transition-colors hover:text-white"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -161,7 +162,7 @@ export default async function PublicReviewSharePage({
                   {space.name}
                 </p>
                 <p className="mt-6 text-xs uppercase tracking-[0.24em] text-white/40">
-                  /s/{slug}/review/share/{type}
+                  {buildPublicReviewSharePath(slug, type)}
                 </p>
               </div>
             </div>

@@ -9,6 +9,15 @@ import {
   type PublicReviewPair,
   resolvePublicMetadata,
 } from '@/lib/public-metadata'
+import { getPublishedMemorySiteByCoupleId } from '@/lib/memory-sites/site-queries'
+import {
+  buildPublicMemorySitePath,
+  buildPublicPhotosPath,
+  buildPublicReviewPath,
+  buildPublicReviewSharePath,
+  buildPublicTimelinePath,
+  buildPublicTopicPath,
+} from '@/lib/public-routes'
 
 type Translator = (key: string) => string
 
@@ -30,6 +39,7 @@ export function buildPublicHomeUiText(t: Translator) {
     topicAnniversaryReview: t('topicAnniversaryReview'),
     topicYearlyShare: t('topicYearlyShare'),
     topicAnniversaryShare: t('topicAnniversaryShare'),
+    topicMemorySite: t('topicMemorySite'),
     topicPhases: t('topicPhases'),
     topicFirsts: t('topicFirsts'),
     topicFootprints: t('topicFootprints'),
@@ -103,14 +113,17 @@ export function buildPublicHomeReviewSection({
 export function buildPublicHomeTopicSection({
   slug,
   reviews,
+  hasMemorySite,
 }: {
   slug: string
   reviews: PublicReviewPair
+  hasMemorySite: boolean
 }) {
   type TopicItem = {
     id: string
     href: string
     kind:
+      | 'memorySite'
       | 'yearlyReview'
       | 'anniversaryReview'
       | 'yearlyShare'
@@ -122,28 +135,36 @@ export function buildPublicHomeTopicSection({
   }
 
   const items = [
+    hasMemorySite
+      ? {
+          id: 'memory-site',
+          href: buildPublicMemorySitePath(slug),
+          kind: 'memorySite' as const,
+          title: '',
+        }
+      : null,
     {
       id: 'phases-topic',
-      href: `/s/${slug}/topics/phases`,
+      href: buildPublicTopicPath(slug, 'phases'),
       kind: 'phases' as const,
       title: '',
     },
     {
       id: 'firsts-topic',
-      href: `/s/${slug}/topics/firsts`,
+      href: buildPublicTopicPath(slug, 'firsts'),
       kind: 'firsts' as const,
       title: '',
     },
     {
       id: 'footprints-topic',
-      href: `/s/${slug}/topics/footprints`,
+      href: buildPublicTopicPath(slug, 'footprints'),
       kind: 'footprints' as const,
       title: '',
     },
     reviews.yearlyReview
       ? {
           id: 'yearly-review',
-          href: `/s/${slug}/review`,
+          href: buildPublicReviewPath(slug),
           kind: 'yearlyReview' as const,
           title: reviews.yearlyReview.title,
         }
@@ -151,7 +172,7 @@ export function buildPublicHomeTopicSection({
     reviews.anniversaryReview
       ? {
           id: 'anniversary-review',
-          href: `/s/${slug}/review`,
+          href: buildPublicReviewPath(slug),
           kind: 'anniversaryReview' as const,
           title: reviews.anniversaryReview.title,
         }
@@ -159,7 +180,7 @@ export function buildPublicHomeTopicSection({
     reviews.yearlyReview
       ? {
           id: 'yearly-share',
-          href: `/s/${slug}/review/share/yearly`,
+          href: buildPublicReviewSharePath(slug, 'yearly'),
           kind: 'yearlyShare' as const,
           title: reviews.yearlyReview.title,
         }
@@ -167,7 +188,7 @@ export function buildPublicHomeTopicSection({
     reviews.anniversaryReview
       ? {
           id: 'anniversary-share',
-          href: `/s/${slug}/review/share/anniversary`,
+          href: buildPublicReviewSharePath(slug, 'anniversary'),
           kind: 'anniversaryShare' as const,
           title: reviews.anniversaryReview.title,
         }
@@ -182,6 +203,7 @@ export function buildPublicHomeTopicSection({
 
 function getTopicTitle(
   kind:
+    | 'memorySite'
     | 'yearlyReview'
     | 'anniversaryReview'
     | 'yearlyShare'
@@ -192,6 +214,8 @@ function getTopicTitle(
   uiText: ReturnType<typeof buildPublicHomeUiText>
 ) {
   switch (kind) {
+    case 'memorySite':
+      return uiText.topicMemorySite
     case 'yearlyReview':
       return uiText.topicYearlyReview
     case 'anniversaryReview':
@@ -211,6 +235,7 @@ function getTopicTitle(
 
 function getTopicIcon(
   kind:
+    | 'memorySite'
     | 'yearlyReview'
     | 'anniversaryReview'
     | 'yearlyShare'
@@ -220,6 +245,22 @@ function getTopicIcon(
     | 'footprints'
 ) {
   switch (kind) {
+    case 'memorySite':
+      return (
+        <svg
+          width="28"
+          height="28"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <rect x="4" y="4" width="16" height="16" rx="2" />
+          <path d="M8 9h8" />
+          <path d="M8 13h8" />
+          <path d="M8 17h5" />
+        </svg>
+      )
     case 'yearlyShare':
     case 'anniversaryShare':
       return (
@@ -328,6 +369,7 @@ export default async function PublicHomePage({
 
   const narrativeAlbums = await getPublicNarrativeAlbumsByCoupleId(space.id)
   const reviews = await getPublicMemoryReviewsByCoupleId(space.id)
+  const publishedMemorySite = await getPublishedMemorySiteByCoupleId(space.id)
   const uiText = buildPublicHomeUiText(t)
   const narrativeSection = buildPublicHomeNarrativeSection({ albums: narrativeAlbums })
   const reviewSection = buildPublicHomeReviewSection({
@@ -337,6 +379,7 @@ export default async function PublicHomePage({
   const topicSection = buildPublicHomeTopicSection({
     slug,
     reviews,
+    hasMemorySite: Boolean(publishedMemorySite),
   })
   const sectionOrder = buildPublicHomeSectionOrder({
     hasNarrativeAlbums: narrativeSection.hasNarrativeAlbums,
@@ -524,7 +567,7 @@ export default async function PublicHomePage({
               <div className="max-w-3xl mx-auto">
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 <NavCard
-                  href={`/s/${slug}/photos`}
+                  href={buildPublicPhotosPath(slug)}
                   title={uiText.photos}
                   subtitle={uiText.photosSubtitle}
                   icon={
@@ -543,7 +586,7 @@ export default async function PublicHomePage({
                   }
                 />
                 <NavCard
-                  href={`/s/${slug}/timeline`}
+                  href={buildPublicTimelinePath(slug)}
                   title={uiText.timeline}
                   subtitle={uiText.timelineSubtitle}
                   icon={
@@ -563,7 +606,7 @@ export default async function PublicHomePage({
                   }
                 />
                 <NavCard
-                  href={`/s/${slug}/review`}
+                  href={buildPublicReviewPath(slug)}
                   title={uiText.review}
                   subtitle={
                     reviewSection.hasReviews

@@ -32,3 +32,12 @@ Use Conventional Commits:
 
 1. Run relevant checks for changed files when feasible (lint/tests/type checks).
 2. If checks are skipped or unavailable, explicitly state that in the final report.
+
+## Dev Server Restart Rule
+
+When working on local runtime issues in this repository, the agent should proactively manage the dev server instead of leaving restart steps to the user.
+
+1. If changes affect Prisma schema, Prisma client generation, migrations, `next-intl` messages, environment-dependent server code, or route/module cache behavior, assume a stale dev server may be part of the problem.
+2. Before asking the user to retry manually, check whether the currently running dev server belongs to this repository.
+3. If it does, stop the stale process and restart the local dev server from this repository, then reproduce the issue again.
+4. If the process ownership or working directory cannot be confirmed safely, explain that uncertainty before taking action.

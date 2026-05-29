@@ -18,6 +18,7 @@ type CoupleRecord = {
   bio: string | null
   theme: string
   isPublic: boolean
+  plan: string
 }
 
 type CoupleUserRecord = {

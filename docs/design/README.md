@@ -105,7 +105,7 @@ Superpowers 相关的正式规格和实施计划已经统一整理到 [docs/supe
 - AI 故事生成 / 风格迁移 / 语音旁白
 - AI 对话记忆检索
 - 微信/手机号登录（NextAuth Provider 预留扩展能力）
-- 子域名模式（MVP 用路径 `/s/slug`）
+- 子域名模式（MVP 用路径 `/story/slug`）
 
 ## 竞品概览
 

@@ -48,6 +48,16 @@ enum MemoryReviewStatus {
   FAILED
 }
 
+enum MemorySiteStyle {
+  VELVET_PLUM_EDITORIAL
+}
+
+enum MemorySiteStatus {
+  DRAFT
+  READY
+  PUBLISHED
+}
+
 model User {
   id           String       @id @default(cuid())
   email        String       @unique
@@ -80,6 +90,7 @@ model Couple {
   albums                 Album[]
   milestones             Milestone[]
   memoryReviews          MemoryReview[]
+  memorySites            MemorySite[]
   pipelineRuns           PipelineRun[]
   createdAt              DateTime        @default(now())
   updatedAt              DateTime        @updatedAt
@@ -264,4 +275,27 @@ model MemoryReview {
   @@index([coupleId, type, year])
   @@index([coupleId, type, anniversaryYear])
   @@unique([coupleId, scopeKey])
+}
+
+model MemorySite {
+  id               String           @id @default(cuid())
+  couple           Couple           @relation(fields: [coupleId], references: [id])
+  coupleId         String
+  scopeKey         String
+  sourceAlbumId    String?
+  sourceChapterIds String[]         @default([])
+  style            MemorySiteStyle
+  status           MemorySiteStatus @default(DRAFT)
+  title            String
+  subtitle         String?
+  intro            String
+  closing          String
+  coverPhotoUrl    String?
+  payload          Json
+  publishedAt      DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([coupleId, scopeKey])
+  @@index([coupleId, status, publishedAt])
 }

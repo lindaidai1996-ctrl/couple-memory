@@ -4,7 +4,7 @@ import test from 'node:test'
 import {
   buildPublicPhaseTopicCards,
   buildPublicPhaseTopicUiText,
-} from '../../src/app/s/[slug]/topics/phases/page'
+} from '../../src/app/story/[slug]/topics/phases/page'
 
 test('buildPublicPhaseTopicUiText exposes translated phase-topic copy', () => {
   const uiText = buildPublicPhaseTopicUiText((key, values) =>

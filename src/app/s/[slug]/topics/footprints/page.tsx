@@ -8,6 +8,7 @@ import {
   resolvePublicMetadata,
   type PublicFootprintLocation,
 } from '@/lib/public-metadata'
+import { buildPublicSpaceHomePath } from '@/lib/public-routes'
 
 type Translator = (key: string, values?: Record<string, string | number>) => string
 
@@ -61,7 +62,7 @@ export default async function PublicFootprintsPage({
     <div className="min-h-screen px-6 py-12 md:py-20">
       <div className="mx-auto max-w-5xl">
         <Link
-          href={`/s/${slug}`}
+          href={buildPublicSpaceHomePath(slug)}
           className="mb-10 inline-flex items-center gap-1.5 text-sm text-film-muted transition-colors hover:text-film-accent-light"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

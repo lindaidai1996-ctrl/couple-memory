@@ -10,6 +10,11 @@ import { ArrowRightIcon, Button, EditIcon, PlusIcon, RefreshIcon } from '@/compo
 import { mediaTileButtonClassName } from '@/components/ui/media-tile'
 import { Modal } from '@/components/ui/modal'
 import { resolveUserAvatarUrl } from '@/lib/default-avatar'
+import {
+  buildPublicMemorySitePath,
+  buildPublicSpaceHomePath,
+  buildPublicSpaceLabel,
+} from '@/lib/public-routes'
 import { compressAndUploadAvatar, type UploadStage } from '@/lib/upload'
 import {
   CAPTION_STYLE_OPTIONS,
@@ -292,7 +297,12 @@ export function buildCoupleUpdatePayload(input: CoupleUpdateInput) {
 
 export function buildPublicPreviewUrl(origin: string, slug: string) {
   const normalizedOrigin = origin.endsWith('/') ? origin.slice(0, -1) : origin
-  return `${normalizedOrigin}/s/${slug}`
+  return `${normalizedOrigin}${buildPublicSpaceHomePath(slug)}`
+}
+
+export function buildMemorySitePreviewUrl(origin: string, slug: string) {
+  const normalizedOrigin = origin.endsWith('/') ? origin.slice(0, -1) : origin
+  return `${normalizedOrigin}${buildPublicMemorySitePath(slug)}`
 }
 
 export function buildSettingsHeroCards(input: SettingsHeroCardInput): SettingsHeroCard[] {
@@ -300,7 +310,7 @@ export function buildSettingsHeroCards(input: SettingsHeroCardInput): SettingsHe
     ? {
         label: 'Publication',
         value: 'Live',
-        detail: `Slug /s/${input.slug} is available for sharing.`,
+        detail: `Slug ${buildPublicSpaceLabel(input.slug)} is available for sharing.`,
       }
     : {
         label: 'Publication',

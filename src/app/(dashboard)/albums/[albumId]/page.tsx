@@ -1030,7 +1030,7 @@ export default function AlbumDetailPage() {
           </svg>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-warm-text">{album.title}</h1>
+          <h1 className="dashboard-page-title text-warm-text">{album.title}</h1>
           {album.description && (
             <p className="text-sm text-warm-muted mt-0.5">{album.description}</p>
           )}

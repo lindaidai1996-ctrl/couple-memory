@@ -19,6 +19,7 @@ export function Sidebar() {
   const navItems = [
     { href: '/dashboard', label: t('dashboard'), icon: DashboardIcon },
     { href: '/albums', label: t('albums'), icon: AlbumIcon },
+    { href: '/sites', label: t('sites'), icon: SiteIcon },
     { href: '/timeline', label: t('timeline'), icon: TimelineIcon },
     { href: '/pipeline', label: t('pipeline'), icon: PipelineIcon },
     { href: '/settings', label: t('settings'), icon: SettingsIcon },
@@ -160,6 +161,18 @@ function PipelineIcon({ active }: { active: boolean }) {
       <path d="M14 6h3" />
       <path d="M14 18h3" />
       <path d="M12 8v8" />
+    </svg>
+  )
+}
+
+function SiteIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="4" width="16" height="16" rx="2" />
+      <path d="M8 9h8" />
+      <path d="M8 13h8" />
+      <path d="M8 17h5" />
     </svg>
   )
 }

@@ -1,0 +1,141 @@
+<h2>纪念站编辑页调整方向</h2>
+<p class="subtitle">只解决 3 个问题：顶部重叠、替换图片过长、页面缺少动效。建议优先看 B。</p>
+
+<div class="cards">
+  <div class="card" data-choice="A" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">A. 最小收口</div>
+        <div class="mockup-body">
+          <div style="padding:18px;background:linear-gradient(180deg,#f7f1ef,#fbf8f6);min-height:320px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(133,101,112,.18);background:rgba(255,255,255,.8);border-radius:24px;padding:14px 18px;box-shadow:0 14px 34px rgba(69,46,54,.08);backdrop-filter:blur(16px);">
+              <div style="display:flex;gap:10px;align-items:center;">
+                <span style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#7e6770;">返回列表</span>
+                <span style="border:1px solid rgba(133,101,112,.16);border-radius:999px;padding:6px 10px;font-size:12px;color:#7e6770;">草稿</span>
+              </div>
+              <div style="display:flex;gap:10px;">
+                <span style="padding:9px 14px;border-radius:999px;background:#ead9dc;color:#5c4650;font-size:12px;">发布</span>
+                <span style="padding:9px 14px;border-radius:999px;border:1px solid rgba(133,101,112,.16);background:#fff;color:#33272d;font-size:12px;">编辑</span>
+              </div>
+            </div>
+            <div style="margin-top:14px;border-radius:22px;border:1px solid rgba(133,101,112,.14);background:rgba(255,255,255,.72);padding:14px 16px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                <div style="border:1px solid rgba(133,101,112,.14);border-radius:18px;padding:14px;background:rgba(255,255,255,.7);font-size:12px;">换一版选图</div>
+                <div style="border:1px solid rgba(133,101,112,.14);border-radius:18px;padding:14px;background:rgba(255,255,255,.7);font-size:12px;">替换某一张图</div>
+                <div style="border:1px solid rgba(133,101,112,.14);border-radius:18px;padding:14px;background:rgba(255,255,255,.7);font-size:12px;">修改文案</div>
+              </div>
+            </div>
+            <div style="margin-top:18px;height:150px;border-radius:28px;background:linear-gradient(135deg,#837078,#5f4c55);"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 最小收口</h3>
+      <p>隐藏全局主题/语言按钮；替换图片仍用三段下拉，但把当前图片标签缩短到“图片 1 / 图片 2”；只加轻微淡入。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="B" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">B. 推荐方案</div>
+        <div class="mockup-body">
+          <div style="padding:18px;background:radial-gradient(circle at top,#f4ece9,#faf7f4 58%);min-height:320px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(133,101,112,.2);background:rgba(255,255,255,.76);border-radius:26px;padding:14px 18px;box-shadow:0 18px 38px rgba(69,46,54,.1);backdrop-filter:blur(18px);">
+              <div style="display:flex;gap:10px;align-items:center;">
+                <span style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#7e6770;">返回列表</span>
+                <span style="border:1px solid rgba(133,101,112,.16);border-radius:999px;padding:6px 10px;font-size:12px;color:#7e6770;">草稿</span>
+              </div>
+              <div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#8b7680;">先审阅成品，再决定是否微调</div>
+              <div style="display:flex;gap:10px;">
+                <span style="padding:9px 14px;border-radius:999px;background:#d8c3c9;color:#5c4650;font-size:12px;">发布</span>
+                <span style="padding:9px 14px;border-radius:999px;border:1px solid rgba(133,101,112,.16);background:#fff;color:#33272d;font-size:12px;">编辑</span>
+              </div>
+            </div>
+            <div style="margin-top:16px;height:138px;border-radius:28px;background:linear-gradient(135deg,#75626a,#46363d);position:relative;overflow:hidden;">
+              <div style="position:absolute;inset:auto 18px 18px auto;width:120px;height:8px;background:rgba(255,255,255,.22);border-radius:999px;"></div>
+              <div style="position:absolute;inset:auto 18px 34px auto;width:84px;height:8px;background:rgba(255,255,255,.14);border-radius:999px;"></div>
+            </div>
+            <div style="margin-top:16px;border:1px solid rgba(133,101,112,.14);border-radius:24px;background:rgba(255,255,255,.84);padding:18px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+                <div>
+                  <div style="font-size:12px;color:#7e6770;margin-bottom:8px;">当前图片</div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(133,101,112,.16);border-radius:18px;padding:12px 14px;background:#fff;">
+                    <div>
+                      <div style="font-size:14px;color:#33272d;">图片 2</div>
+                      <div style="font-size:11px;color:#8b7680;margin-top:4px;">黄昏雪地里的木屋与栅栏</div>
+                    </div>
+                    <div style="color:#a7969d;">▾</div>
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:12px;color:#7e6770;margin-bottom:8px;">替换为</div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;border:1px dashed rgba(133,101,112,.18);border-radius:18px;padding:12px 14px;background:#fcfaf9;color:#c4b8bd;">
+                    这个章节暂时没有更多可替换照片
+                    <div>▾</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 推荐方案</h3>
+      <p>隐藏全局偏好按钮；编辑条保持轻量；“当前图片”下拉改成短主标签 + 次级一句描述；Hero、章节卡片、工具条展开都加低存在感的位移与渐显。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="C" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">C. 更强编辑感</div>
+        <div class="mockup-body">
+          <div style="padding:18px;background:linear-gradient(180deg,#f8f3f0,#fff);min-height:320px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(133,101,112,.2);background:rgba(255,255,255,.82);border-radius:26px;padding:14px 18px;box-shadow:0 18px 38px rgba(69,46,54,.1);">
+              <div style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#7e6770;">审阅态工具条</div>
+              <div style="display:flex;gap:10px;">
+                <span style="padding:9px 14px;border-radius:999px;background:#fff;border:1px solid rgba(133,101,112,.16);font-size:12px;">主题</span>
+                <span style="padding:9px 14px;border-radius:999px;background:#fff;border:1px solid rgba(133,101,112,.16);font-size:12px;">语言</span>
+                <span style="padding:9px 14px;border-radius:999px;background:#d8c3c9;font-size:12px;">编辑</span>
+              </div>
+            </div>
+            <div style="margin-top:16px;display:grid;grid-template-columns:220px 1fr;gap:16px;">
+              <div style="border-radius:22px;border:1px solid rgba(133,101,112,.14);background:rgba(255,255,255,.78);padding:16px;">
+                <div style="font-size:12px;color:#7e6770;">左侧编辑目录</div>
+                <div style="margin-top:12px;height:12px;background:#efe4e7;border-radius:999px;"></div>
+                <div style="margin-top:10px;height:12px;background:#f5edef;border-radius:999px;"></div>
+                <div style="margin-top:10px;height:12px;background:#f5edef;border-radius:999px;"></div>
+              </div>
+              <div style="height:220px;border-radius:28px;background:linear-gradient(135deg,#75626a,#46363d);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 更强编辑感</h3>
+      <p>保留更多控制入口和更明显动效，信息更全，但会更像后台编辑器，容易削弱“成品审阅感”。</p>
+    </div>
+  </div>
+</div>
+
+<div class="pros-cons" style="margin-top:24px;">
+  <div class="pros">
+    <h4>推荐 B 的原因</h4>
+    <ul>
+      <li>直接解决顶部冲突，不让主题/语言按钮抢纪念站审阅头部。</li>
+      <li>把长文案从下拉触发器里拿掉，只保留选择所需信息。</li>
+      <li>动效存在，但不会把页面做成花哨模板。</li>
+    </ul>
+  </div>
+  <div class="cons">
+    <h4>B 的代价</h4>
+    <ul>
+      <li>需要补一层轻量客户端动效封装，而不是纯静态样式。</li>
+      <li>替换图片候选项最好补一个“短标题生成规则”。</li>
+    </ul>
+  </div>
+</div>

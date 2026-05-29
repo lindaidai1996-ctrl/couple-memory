@@ -64,7 +64,7 @@
 
 - 当前没有发现 `P1` 已落地能力的代码级阻塞缺口。
 - 2026-05-24 第二轮临时样本验收已补齐此前的数据环境缺口：
-  - 临时将样本 couple 切换为 `isPublic=true`，通过 `http://127.0.0.1:3000/s/couple-mp6f7m0g` 验证公开页首页已接入真实相册标题、摘录后的相册说明、章节标题与章节摘要。
+  - 临时将样本 couple 切换为 `isPublic=true`，通过 `http://127.0.0.1:3000/story/couple-mp6f7m0g` 验证公开页首页已接入真实相册标题、摘录后的相册说明、章节标题与章节摘要。
   - 临时创建 `4` 条自动生成候选里程碑，其中：
     - `1` 条通过真实 PATCH handler 完成“编辑后确认”
     - `2` 条通过真实 PATCH handler 完成顺序确认，等价于页面上的批量确认行为
@@ -111,7 +111,7 @@
   - `P1`: 如果后续继续打磨，应优先观察真实公开数据下的多相册排布效果。
   - `P2`: 章节摘要的更细粒度文风优化可以延后，不阻塞当前窗口。
 - 代码与测试证据：
-  - 代码：`src/app/s/[slug]/page.tsx`
+  - 代码：`src/app/story/[slug]/page.tsx`
   - 测试：`tests/app/public-home-page.test.ts`
 
 ---
@@ -175,8 +175,8 @@
   - `src/app/api/couples/[coupleId]/memory-reviews/generate/route.ts`
   - `src/app/api/couples/[coupleId]/memory-reviews/route.ts`
   - `src/app/api/public/[slug]/memory-reviews/route.ts`
-  - `src/app/s/[slug]/review/page.tsx`
-  - `src/app/s/[slug]/review/share/[type]/page.tsx`
+  - `src/app/story/[slug]/review/page.tsx`
+  - `src/app/story/[slug]/review/share/[type]/page.tsx`
 - 已运行相关测试：
   - `tests/api/memory-review-generate-route.test.ts`
   - `tests/api/memory-review-routes.test.ts`

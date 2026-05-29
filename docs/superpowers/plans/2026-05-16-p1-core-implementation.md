@@ -25,10 +25,10 @@
 - Modify: `src/app/(dashboard)/albums/[albumId]/page.tsx`
 - Modify: `src/components/photo-detail-modal.tsx`
 - Modify: `src/app/(dashboard)/settings/page.tsx`
-- Modify: `src/app/s/[slug]/layout.tsx`
-- Modify: `src/app/s/[slug]/page.tsx`
-- Modify: `src/app/s/[slug]/photos/page.tsx`
-- Modify: `src/app/s/[slug]/timeline/page.tsx`
+- Modify: `src/app/story/[slug]/layout.tsx`
+- Modify: `src/app/story/[slug]/page.tsx`
+- Modify: `src/app/story/[slug]/photos/page.tsx`
+- Modify: `src/app/story/[slug]/timeline/page.tsx`
 - Modify: `src/app/api/couples/[coupleId]/route.ts`
 - Modify: `src/app/api/couples/[coupleId]/photos/route.ts`
 - Modify: `src/app/api/couples/[coupleId]/photos/[photoId]/route.ts`
@@ -276,10 +276,10 @@ git commit -m "feat: add public space configuration flows"
 ### Task 5: Implement Public Space SEO
 
 **Files:**
-- Modify: `src/app/s/[slug]/layout.tsx`
-- Modify: `src/app/s/[slug]/page.tsx`
-- Modify: `src/app/s/[slug]/photos/page.tsx`
-- Modify: `src/app/s/[slug]/timeline/page.tsx`
+- Modify: `src/app/story/[slug]/layout.tsx`
+- Modify: `src/app/story/[slug]/page.tsx`
+- Modify: `src/app/story/[slug]/photos/page.tsx`
+- Modify: `src/app/story/[slug]/timeline/page.tsx`
 - Create: `tests/lib/public-metadata.test.ts`
 
 - [ ] **Step 1: Write the failing test**
@@ -291,7 +291,7 @@ import { buildPublicMetadata } from '@/lib/public-metadata'
 
 test('buildPublicMetadata uses coverPhotoUrl as og image when present', () => {
   const metadata = buildPublicMetadata({
-    path: '/s/our-story',
+    path: '/story/our-story',
     name: 'Our Story',
     bio: 'hello',
     coverPhotoUrl: 'https://cdn/cover.jpg',
@@ -326,7 +326,7 @@ Expected: PASS
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/app/s/[slug]/layout.tsx src/app/s/[slug]/page.tsx src/app/s/[slug]/photos/page.tsx src/app/s/[slug]/timeline/page.tsx src/lib/public-metadata.ts tests/lib/public-metadata.test.ts
+git add src/app/story/[slug]/layout.tsx src/app/story/[slug]/page.tsx src/app/story/[slug]/photos/page.tsx src/app/story/[slug]/timeline/page.tsx src/lib/public-metadata.ts tests/lib/public-metadata.test.ts
 git commit -m "feat: add public space metadata generation"
 ```
 

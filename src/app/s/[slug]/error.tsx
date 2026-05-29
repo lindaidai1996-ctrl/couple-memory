@@ -3,6 +3,7 @@
 import { useRouter, useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { ArrowRightIcon, Button, RefreshIcon } from '@/components/ui/button'
+import { buildPublicSpaceHomePath } from '@/lib/public-routes'
 
 export default function PublicError({
   reset,
@@ -35,7 +36,7 @@ export default function PublicError({
           {t('retry')}
         </Button>
         <Button
-          onClick={() => router.push(`/s/${slug}`)}
+          onClick={() => router.push(buildPublicSpaceHomePath(slug))}
           scheme="film"
           variant="secondary"
           trailingIcon={<ArrowRightIcon />}
