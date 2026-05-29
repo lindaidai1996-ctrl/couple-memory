@@ -55,7 +55,7 @@ test('memory site reveal uses one-time rise-and-fade motion with reduced-motion-
 
   assert.match(className, /\bmemory-site-reveal\b/)
   assert.match(className, /\bmemory-site-reveal-children\b/)
-  assert.equal(style['--memory-site-reveal-delay'], '120ms')
+  assert.equal((style as Record<string, string>)['--memory-site-reveal-delay'], '120ms')
   assert.match(pageSource, /MemorySiteReveal/)
   assert.match(sectionSource, /data-memory-site-reveal-child/)
 })

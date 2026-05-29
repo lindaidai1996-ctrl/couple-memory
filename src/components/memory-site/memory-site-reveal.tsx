@@ -46,10 +46,10 @@ export function MemorySiteReveal({
     }
 
     if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
-      const frame = window.requestAnimationFrame(() => {
+      const frame = globalThis.requestAnimationFrame(() => {
         setRevealed(true)
       })
-      return () => window.cancelAnimationFrame(frame)
+      return () => globalThis.cancelAnimationFrame(frame)
     }
 
     const observer = new IntersectionObserver(
